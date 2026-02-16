@@ -1,0 +1,11 @@
+.env
+.env.*
+node_modules
+.next
+dist
+build
+.DS_Store
+.replit
+replit.nix
+*.log
+attached_assets/

@@ -1,0 +1,174 @@
+[35m.github/copilot-instructions.md[m[36m:[m[32m20[m[36m:[m  - `STRIPE_[1;31mSECRET[m_KEY` is required at startup (checked in [server/routes.ts](server/routes.ts)).
+[35m.github/copilot-instructions.md[m[36m:[m[32m33[m[36m:[m  - Stripe (payments, webhooks): price IDs and `STRIPE_[1;31mSECRET[m_KEY`. Watch for webhook routes and `webhook_events` handling.
+[35m.github/copilot-instructions.md[m[36m:[m[32m44[m[36m:[m  - `STRIPE_[1;31mSECRET[m_KEY` missing will throw at startup; run server with env set when testing payment or price-related code.
+[35m.github/workflows/eas-build.yml[m[36m:[m[32m157[m[36m:[m          APP_STORE_CONNECT_[1;31mAPI_KEY[m_PATH: ${{ github.workspace }}/mobile-app/appstoreconnect.json
+[35mActionLadder Launch Checklist - Quick Re.md[m[36m:[m[32m19[m[36m:[m[ ] Get STRIPE_[1;31mSECRET[m_KEY ([1;31msk_live_[mxxx)
+[35mActionLadder Launch Checklist - Quick Re.md[m[36m:[m[32m38[m[36m:[mSTRIPE_[1;31mSECRET[m_KEY=[1;31msk_live_[m...
+[35mActionLadder Launch Checklist - Quick Re.md[m[36m:[m[32m40[m[36m:[mSTRIPE_WEBHOOK_[1;31mSECRET[m=whsec_live_...
+[35mActionLadder Launch Checklist - Quick Re.md[m[36m:[m[32m41[m[36m:[mOPENAI_[1;31mAPI_KEY[m=sk-...
+[35mActionLadder Launch Checklist - Quick Re.md[m[36m:[m[32m42[m[36m:[mSENDGRID_[1;31mAPI_KEY[m=SG...
+[35mActionLadder Launch Checklist - Quick Re.md[m[36m:[m[32m299[m[36m:[mexport STRIPE_[1;31mSECRET[m_KEY="[1;31msk_live_[m..."
+[35mAppGuide.md[m[36m:[m[32m682[m[36m:[mSESSION_[1;31mSECRET[m=your-random-secret-key-minimum-32-characters-long
+[35mAppGuide.md[m[36m:[m[32m685[m[36m:[mSTRIPE_[1;31mSECRET[m_KEY=[1;31msk_test_[m...
+[35mAppGuide.md[m[36m:[m[32m686[m[36m:[mSTRIPE_WEBHOOK_[1;31mSECRET[m=whsec_...
+[35mAppGuide.md[m[36m:[m[32m696[m[36m:[mOPENAI_[1;31mAPI_KEY[m=sk-proj-...
+[35mAppGuide.md[m[36m:[m[32m699[m[36m:[mSENDGRID_[1;31mAPI_KEY[m=SG....
+[35mAppGuide.md[m[36m:[m[32m784[m[36m:[m  - `STRIPE_[1;31mSECRET[m_KEY` (required for any payment)
+[35mAppGuide.md[m[36m:[m[32m785[m[36m:[m  - `STRIPE_WEBHOOK_[1;31mSECRET[m` (required for webhooks)
+[35mAppGuide.md[m[36m:[m[32m828[m[36m:[m- **Required Environment Variable:** `OPENAI_[1;31mAPI_KEY[m`
+[35mAppGuide.md[m[36m:[m[32m844[m[36m:[m  - `SENDGRID_[1;31mAPI_KEY[m`
+[35mAppGuide.md[m[36m:[m[32m864[m[36m:[m  - `SESSION_[1;31mSECRET[m`
+[35mAppGuide.md[m[36m:[m[32m1424[m[36m:[m3. Copy webhook signing secret to `.env` as `STRIPE_WEBHOOK_[1;31mSECRET[m`
+[35mPRODUCTION_DEPLOYMENT.md[m[36m:[m[32m23[m[36m:[mexport STRIPE_[1;31mSECRET[m_KEY=[1;31msk_live_[m********
+[35mPRODUCTION_DEPLOYMENT.md[m[36m:[m[32m33[m[36m:[mSTRIPE_[1;31mSECRET[m_KEY=[1;31msk_live_[m...
+[35mPRODUCTION_DEPLOYMENT.md[m[36m:[m[32m35[m[36m:[mSTRIPE_WEBHOOK_[1;31mSECRET[m=whsec_live_...  # Get from step 3
+[35mPRODUCTION_DEPLOYMENT.md[m[36m:[m[32m44[m[36m:[mOPENAI_[1;31mAPI_KEY[m=sk-...
+[35mattached_assets/Pasted--ActionLadder-Side-Betting-Side-Pots-Goal-Lock-funds-before-the-first-break-so-nobody-c-1756791954233_1756791954234.txt[m[36m:[m[32m42[m[36m:[mSTRIPE_[1;31mSECRET[m_KEY=[1;31msk_test_[mXXX
+[35mattached_assets/Pasted--ActionLadder-Side-Betting-Side-Pots-Goal-Lock-funds-before-the-first-break-so-nobody-c-1756791954233_1756791954234.txt[m[36m:[m[32m44[m[36m:[mSTRIPE_WEBHOOK_[1;31mSECRET[m=whsec_XXX
+[35mattached_assets/Pasted--ActionLadder-Side-Betting-Side-Pots-Goal-Lock-funds-before-the-first-break-so-nobody-c-1756791954233_1756791954234.txt[m[36m:[m[32m188[m[36m:[mexport const stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY as string, {
+[35mattached_assets/Pasted--ActionLadder-Side-Betting-Side-Pots-Goal-Lock-funds-before-the-first-break-so-nobody-c-1756791954233_1756791954234.txt[m[36m:[m[32m255[m[36m:[m    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_[1;31mSECRET[m!);
+[35mattached_assets/Pasted--ActionLadder-Side-Betting-Side-Pots-Goal-Lock-funds-before-the-first-break-so-nobody-c-1756791954233_1756791954234.txt[m[36m:[m[32m535[m[36m:[m* Replace keys with `[1;31msk_live_[m…` / `pk_live_…`.
+[35mattached_assets/Pasted--ActionLadder-Side-Betting-Side-Pots-Goal-Lock-funds-before-the-first-break-so-nobody-c-1756792034613_1756792034613.txt[m[36m:[m[32m44[m[36m:[mSTRIPE_[1;31mSECRET[m_KEY=[1;31msk_test_[mXXX
+[35mattached_assets/Pasted--ActionLadder-Side-Betting-Side-Pots-Goal-Lock-funds-before-the-first-break-so-nobody-c-1756792034613_1756792034613.txt[m[36m:[m[32m46[m[36m:[mSTRIPE_WEBHOOK_[1;31mSECRET[m=whsec_XXX
+[35mattached_assets/Pasted--ActionLadder-Side-Betting-Side-Pots-Goal-Lock-funds-before-the-first-break-so-nobody-c-1756792034613_1756792034613.txt[m[36m:[m[32m245[m[36m:[m* Switch to Live mode → new live webhook → replace keys with `[1;31msk_live_[m…` / `pk_live_…`.
+[35mattached_assets/Pasted--Monetization-Review-Gameplan-Action-Ladder-Use-this-checklist-and-drop-in-snippets-to-turn-re-1757152126316_1757152126316.txt[m[36m:[m[32m75[m[36m:[mSTRIPE_[1;31mSECRET[m_KEY=
+[35mattached_assets/Pasted--Monetization-Review-Gameplan-Action-Ladder-Use-this-checklist-and-drop-in-snippets-to-turn-re-1757152126316_1757152126316.txt[m[36m:[m[32m76[m[36m:[mSTRIPE_WEBHOOK_[1;31mSECRET[m=
+[35mattached_assets/Pasted--Monetization-Review-Gameplan-Action-Ladder-Use-this-checklist-and-drop-in-snippets-to-turn-re-1757152126316_1757152126316.txt[m[36m:[m[32m102[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY!, { apiVersion: '2023-10-16' });
+[35mattached_assets/Pasted--Monetization-Review-Gameplan-Action-Ladder-Use-this-checklist-and-drop-in-snippets-to-turn-re-1757152126316_1757152126316.txt[m[36m:[m[32m147[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY!, { apiVersion: '2023-10-16' });
+[35mattached_assets/Pasted--Monetization-Review-Gameplan-Action-Ladder-Use-this-checklist-and-drop-in-snippets-to-turn-re-1757152126316_1757152126316.txt[m[36m:[m[32m159[m[36m:[m    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_[1;31mSECRET[m!);
+[35mattached_assets/Pasted--Monetization-Review-Gameplan-Action-Ladder-Use-this-checklist-and-drop-in-snippets-to-turn-re-1757152126316_1757152126316.txt[m[36m:[m[32m297[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY!, { apiVersion: '2023-10-16' });
+[35mattached_assets/Pasted--Stripe-Subscriptions-React-Components-Waitlist-Logic-Bo-1756279318032_1756279318032.txt[m[36m:[m[32m81[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY as string, { apiVersion: "2024-06-20" });
+[35mattached_assets/Pasted--api-player-id-revenue-returns-the-PlayerRevenueView-cheaper-cost-winnings-only-api-admin--1757664495380_1757664495380.txt[m[36m:[m[32m75[m[36m:[m    const decoded = jwt.verify(token, process.env.JWT_[1;31mSECRET[m!);
+[35mattached_assets/Pasted--scripts-createStripeCatalog-mjs-import-dotenv-config-import-Stripe-from-stripe-const-s-1756479725748_1756479725753.txt[m[36m:[m[32m5[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY, { apiVersion: '2024-06-20' });
+[35mattached_assets/Pasted--src-routes-billing-ts-drop-in-replacement-with-Waitlist-Ad-1756254812605_1756254812605.txt[m[36m:[m[32m14[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY as string, { apiVersion: "2024-06-20" });
+[35mattached_assets/Pasted--src-routes-billing-ts-drop-in-replacement-with-Waitlist-Ad-1756254812605_1756254812605.txt[m[36m:[m[32m58[m[36m:[mconst ADMIN_JWT_[1;31mSECRET[m = process.env.ADMIN_JWT_[1;31mSECRET[m ?? "super-secret-change-me";
+[35mattached_assets/Pasted--src-routes-billing-ts-drop-in-replacement-with-Waitlist-Ad-1756254812605_1756254812605.txt[m[36m:[m[32m61[m[36m:[m  return jwt.sign({ role: "ADMIN" }, ADMIN_JWT_[1;31mSECRET[m, { expiresIn: "7d" });
+[35mattached_assets/Pasted--src-routes-billing-ts-drop-in-replacement-with-Waitlist-Ad-1756254812605_1756254812605.txt[m[36m:[m[32m68[m[36m:[m    const payload = jwt.verify(token, ADMIN_JWT_[1;31mSECRET[m) as any;
+[35mattached_assets/Pasted--src-routes-billing-ts-drop-in-replacement-with-Waitlist-Ad-1756254812605_1756254812605.txt[m[36m:[m[32m141[m[36m:[m    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_[1;31mSECRET[m as string);
+[35mattached_assets/Pasted--src-routes-billing-ts-drop-in-replacement-with-Waitlist-Ad-1756254812605_1756254812605.txt[m[36m:[m[32m209[m[36m:[m// ADMIN_JWT_[1;31mSECRET[m=long_random_string
+[35mattached_assets/Pasted-0-New-env-vars-add-to-env-pricing-TOURNAMENT-BASIC-USD-25-TOURNAMENT-NONMEMBER-USD-30-admin-1756256470375_1756256470376.txt[m[36m:[m[32m7[m[36m:[mADMIN_[1;31mAPI_KEY[m=change_this_to_a_long_random_string
+[35mattached_assets/Pasted-0-New-env-vars-add-to-env-pricing-TOURNAMENT-BASIC-USD-25-TOURNAMENT-NONMEMBER-USD-30-admin-1756256470375_1756256470376.txt[m[36m:[m[32m88[m[36m:[mconst ADMIN_[1;31mAPI_KEY[m = process.env.ADMIN_[1;31mAPI_KEY[m;
+[35mattached_assets/Pasted-0-New-env-vars-add-to-env-pricing-TOURNAMENT-BASIC-USD-25-TOURNAMENT-NONMEMBER-USD-30-admin-1756256470375_1756256470376.txt[m[36m:[m[32m91[m[36m:[m  if (!ADMIN_[1;31mAPI_KEY[m || key === ADMIN_[1;31mAPI_KEY[m) return next();
+[35mattached_assets/Pasted-0-New-env-vars-env-invite-token-lifetime-INVITE-TTL-HOURS-168-7-days-default-ope-1756256819261_1756256819261.txt[m[36m:[m[32m9[m[36m:[mADMIN_[1;31mAPI_KEY[m=change_this_to_a_long_random_string
+[35mattached_assets/Pasted-1-Install-packages-npm-i-express-multer-mime-aws-sdk-client-s3-aws-sdk-s3-request-presigner-doten-1757578551107_1757578551108.txt[m[36m:[m[32m12[m[36m:[mS3_[1;31mSECRET[m_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxx
+[35mattached_assets/Pasted-1-Install-packages-npm-i-express-multer-mime-aws-sdk-client-s3-aws-sdk-s3-request-presigner-doten-1757578551107_1757578551108.txt[m[36m:[m[32m29[m[36m:[m    secretAccessKey: process.env.S3_[1;31mSECRET[m_ACCESS_KEY,
+[35mattached_assets/Pasted-1-Install-small-deps-npm-i-ejs-cookie-parser-2-server-js-enable-EJS-static-cookie-auth-and-U-1756257051193_1756257051194.txt[m[36m:[m[32m24[m[36m:[m  if (!process.env.ADMIN_[1;31mAPI_KEY[m) return res.status(500).send("ADMIN_[1;31mAPI_KEY[m not set");
+[35mattached_assets/Pasted-1-Install-small-deps-npm-i-ejs-cookie-parser-2-server-js-enable-EJS-static-cookie-auth-and-U-1756257051193_1756257051194.txt[m[36m:[m[32m25[m[36m:[m  if (key === process.env.ADMIN_[1;31mAPI_KEY[m) return next();
+[35mattached_assets/Pasted-1-Install-small-deps-npm-i-ejs-cookie-parser-2-server-js-enable-EJS-static-cookie-auth-and-U-1756257051193_1756257051194.txt[m[36m:[m[32m38[m[36m:[m  if (key === process.env.ADMIN_[1;31mAPI_KEY[m) {
+[35mattached_assets/Pasted-1-Install-small-deps-npm-i-ejs-cookie-parser-2-server-js-enable-EJS-static-cookie-auth-and-U-1756257051193_1756257051194.txt[m[36m:[m[32m286[m[36m:[m    <input type="password" name="key" placeholder="Paste ADMIN_[1;31mAPI_KEY[m" required />
+[35mattached_assets/Pasted-1-Install-small-deps-npm-i-ejs-cookie-parser-2-server-js-enable-EJS-static-cookie-auth-and-U-1756257051193_1756257051194.txt[m[36m:[m[32m605[m[36m:[mSet ADMIN_[1;31mAPI_KEY[m and APP_URL in .env.
+[35mattached_assets/Pasted-Action-Ladder-Challenge-Calendar-Auto-Fees-v1-typescript-Action-Ladder-Challenge-Calend-1757837958200_1757837958201.txt[m[36m:[m[32m60[m[36m:[mSTRIPE_[1;31mSECRET[m_KEY=
+[35mattached_assets/Pasted-Action-Ladder-Challenge-Calendar-Auto-Fees-v1-typescript-Action-Ladder-Challenge-Calend-1757837958200_1757837958201.txt[m[36m:[m[32m61[m[36m:[mSTRIPE_WEBHOOK_[1;31mSECRET[m=
+[35mattached_assets/Pasted-Action-Ladder-DB-Stripe-Seed-Kit-Postgres-Stripe-Below-is-a-complete-ready-to-paste-setup-fo-1757668061326_1757668061327.txt[m[36m:[m[32m81[m[36m:[m  if (!process.env.STRIPE_[1;31mSECRET[m_KEY || !process.env.DATABASE_URL) {
+[35mattached_assets/Pasted-Action-Ladder-DB-Stripe-Seed-Kit-Postgres-Stripe-Below-is-a-complete-ready-to-paste-setup-fo-1757668061326_1757668061327.txt[m[36m:[m[32m82[m[36m:[m    throw new Error('Missing STRIPE_[1;31mSECRET[m_KEY or DATABASE_URL');
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757666802500_1757666802501.txt[m[36m:[m[32m177[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY!, {
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757666802500_1757666802501.txt[m[36m:[m[32m259[m[36m:[mSTRIPE_[1;31mSECRET[m_KEY=[1;31msk_test_[mXXXXXXXXXXXXXXXXXXXXXXXX
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757666802500_1757666802501.txt[m[36m:[m[32m263[m[36m:[mSTRIPE_WEBHOOK_[1;31mSECRET[m=whsec_XXXXXXXXXXXXXXXXXXXX
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757667172635_1757667172635.txt[m[36m:[m[32m85[m[36m:[m  if (!process.env.STRIPE_[1;31mSECRET[m_KEY || !process.env.DATABASE_URL) {
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757667172635_1757667172635.txt[m[36m:[m[32m86[m[36m:[m    throw new Error('Missing STRIPE_[1;31mSECRET[m_KEY or DATABASE_URL');
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757668468094_1757668468094.txt[m[36m:[m[32m80[m[36m:[m  if (!process.env.STRIPE_[1;31mSECRET[m_KEY || !process.env.DATABASE_URL) {
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757668468094_1757668468094.txt[m[36m:[m[32m81[m[36m:[m    throw new Error('Missing STRIPE_[1;31mSECRET[m_KEY or DATABASE_URL');
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757668468094_1757668468094.txt[m[36m:[m[32m535[m[36m:[m      - STRIPE_[1;31mAPI_KEY[m=${STRIPE_[1;31mSECRET[m_KEY}
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757668468094_1757668468094.txt[m[36m:[m[32m546[m[36m:[m      STRIPE_[1;31mSECRET[m_KEY=${STRIPE_[1;31mSECRET[m_KEY}
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757668468094_1757668468094.txt[m[36m:[m[32m547[m[36m:[m      STRIPE_WEBHOOK_[1;31mSECRET[m=${STRIPE_WEBHOOK_[1;31mSECRET[m}
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757668468094_1757668468094.txt[m[36m:[m[32m599[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY!, { apiVersion: '2024-06-20' });
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757668468094_1757668468094.txt[m[36m:[m[32m600[m[36m:[mconst webhookSecret = process.env.STRIPE_WEBHOOK_[1;31mSECRET[m;
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757668468094_1757668468094.txt[m[36m:[m[32m610[m[36m:[m    if (!webhookSecret) throw new Error('Missing STRIPE_WEBHOOK_[1;31mSECRET[m');
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757668468094_1757668468094.txt[m[36m:[m[32m697[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY!, { apiVersion: '2024-06-20' });
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757668468094_1757668468094.txt[m[36m:[m[32m712[m[36m:[m    const whSecret = process.env.STRIPE_WEBHOOK_[1;31mSECRET[m;
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757668468094_1757668468094.txt[m[36m:[m[32m716[m[36m:[m      console.error('Missing STRIPE_WEBHOOK_[1;31mSECRET[m');
+[35mattached_assets/Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres--1757668468094_1757668468094.txt[m[36m:[m[32m796[m[36m:[m# copy value → STRIPE_WEBHOOK_[1;31mSECRET[m=whsec_****************
+[35mattached_assets/Pasted-Action-Ladder-Grouped-Navbar-play-teams-tournaments-rankings-media-Ai-promote-operator-types-1757668268711_1757668268711.txt[m[36m:[m[32m74[m[36m:[m//       const { payload } = await jwtVerify(token, new TextEncoder().encode(process.env.JWT_[1;31mSECRET[m!));
+[35mattached_assets/Pasted-Before-anything-Verify-signature-with-STRIPE-WEBHOOK-SECRET-using-stripe-webhooks-constructEvent-ra-1756536144577_1756536144578.txt[m[36m:[m[32m3[m[36m:[mVerify signature with STRIPE_WEBHOOK_[1;31mSECRET[m using stripe.webhooks.constructEvent(rawBody, sig, secret).
+[35mattached_assets/Pasted-Create-a-product-and-price-representing-your-subscription-fee-You-can-use-the-API-or-the-Dashboard--1756536575464_1756536575465.txt[m[36m:[m[32m18[m[36m:[m  -u "[1;31msk_test_[m51RzCXFDc2BliYufwtBAh31fJ7jXYX3vk3PNoCQcXYp86BeGkvPXwV32wXXClGsj2z4LjPyxqE65y9wlkIdFaulsf00TB6KmqPt:" \
+[35mattached_assets/Pasted-Create-a-product-and-price-representing-your-subscription-fee-You-can-use-the-API-or-the-Dashboard--1756536575464_1756536575465.txt[m[36m:[m[32m52[m[36m:[m  -u "[1;31msk_test_[m51RzCXFDc2BliYufwtBAh31fJ7jXYX3vk3PNoCQcXYp86BeGkvPXwV32wXXClGsj2z4LjPyxqE65y9wlkIdFaulsf00TB6KmqPt:" \
+[35mattached_assets/Pasted-Create-a-product-and-price-representing-your-subscription-fee-You-can-use-the-API-or-the-Dashboard--1756536575464_1756536575465.txt[m[36m:[m[32m85[m[36m:[m  -u "[1;31msk_test_[m51RzCXFDc2BliYufwtBAh31fJ7jXYX3vk3PNoCQcXYp86BeGkvPXwV32wXXClGsj2z4LjPyxqE65y9wlkIdFaulsf00TB6KmqPt:" \
+[35mattached_assets/Pasted-In-Replit-open-the-Shell-Console-tab-or-the-Logs-in-your-Deployment-dashboard-Trigger-the-login-a-1759005462326_1759005462327.txt[m[36m:[m[32m24[m[36m:[m      client_secret: process.env.REPLIT_CLIENT_[1;31mSECRET[m,
+[35mattached_assets/Pasted-In-Replit-open-the-Shell-Console-tab-or-the-Logs-in-your-Deployment-dashboard-Trigger-the-login-a-1759005462326_1759005462327.txt[m[36m:[m[32m62[m[36m:[mREPLIT_CLIENT_[1;31mSECRET[m
+[35mattached_assets/Pasted-Pasted-Action-Ladder-DB-Stripe-Seed-Kit-Postgres-Stripe-Below-is-a-complete-ready-to-paste-setup-fo--1757675237524_1757675237524.txt[m[36m:[m[32m82[m[36m:[m  if (!process.env.STRIPE_[1;31mSECRET[m_KEY || !process.env.DATABASE_URL) {
+[35mattached_assets/Pasted-Pasted-Action-Ladder-DB-Stripe-Seed-Kit-Postgres-Stripe-Below-is-a-complete-ready-to-paste-setup-fo--1757675237524_1757675237524.txt[m[36m:[m[32m83[m[36m:[m    throw new Error('Missing STRIPE_[1;31mSECRET[m_KEY or DATABASE_URL');
+[35mattached_assets/Pasted-Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres-1-1757675144980_1757675144981.txt[m[36m:[m[32m86[m[36m:[m  if (!process.env.STRIPE_[1;31mSECRET[m_KEY || !process.env.DATABASE_URL) {
+[35mattached_assets/Pasted-Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres-1-1757675144980_1757675144981.txt[m[36m:[m[32m87[m[36m:[m    throw new Error('Missing STRIPE_[1;31mSECRET[m_KEY or DATABASE_URL');
+[35mattached_assets/Pasted-Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres-1-1757675268672_1757675268672.txt[m[36m:[m[32m81[m[36m:[m  if (!process.env.STRIPE_[1;31mSECRET[m_KEY || !process.env.DATABASE_URL) {
+[35mattached_assets/Pasted-Pasted-Action-Ladder-Db-stripe-Seed-Kit-postgres-Stripe-Action-Ladder-DB-Stripe-Seed-Kit-Postgres-1-1757675268672_1757675268672.txt[m[36m:[m[32m82[m[36m:[m    throw new Error('Missing STRIPE_[1;31mSECRET[m_KEY or DATABASE_URL');
+[35mattached_assets/Pasted-Pasted-Action-Ladder-Grouped-Navbar-play-teams-tournaments-rankings-media-Ai-promote-operator-types--1757675257305_1757675257306.txt[m[36m:[m[32m75[m[36m:[m//       const { payload } = await jwtVerify(token, new TextEncoder().encode(process.env.JWT_[1;31mSECRET[m!));
+[35mattached_assets/Pasted-Pasted-api-player-id-revenue-returns-the-PlayerRevenueView-cheaper-cost-winnings-only-api-admin-17-1757675084118_1757675084119.txt[m[36m:[m[32m76[m[36m:[m    const decoded = jwt.verify(token, process.env.JWT_[1;31mSECRET[m!);
+[35mattached_assets/Pasted-Quick-publish-checks-2-mins-1-Open-the-site-on-your-phone-and-a-laptop-mobile-desktop-2--1756578657657_1756578657658.txt[m[36m:[m[32m54[m[36m:[mIf 400/401, re-copy your STRIPE_WEBHOOK_[1;31mSECRET[m (whsec_…) into your server env and redeploy.
+[35mattached_assets/Pasted-STRIPE-SECRET-KEY-sk-test-STRIPE-WEBHOOK-SECRET-whsec-APP-BASE-URL-https-yourdomain-com--1756256710433_1756256710434.txt[m[36m:[m[32m1[m[36m:[mSTRIPE_[1;31mSECRET[m_KEY=[1;31msk_test_[m...
+[35mattached_assets/Pasted-STRIPE-SECRET-KEY-sk-test-STRIPE-WEBHOOK-SECRET-whsec-APP-BASE-URL-https-yourdomain-com--1756256710433_1756256710434.txt[m[36m:[m[32m2[m[36m:[mSTRIPE_WEBHOOK_[1;31mSECRET[m=whsec_...
+[35mattached_assets/Pasted-STRIPE-SECRET-KEY-sk-test-STRIPE-WEBHOOK-SECRET-whsec-APP-BASE-URL-https-yourdomain-com--1756256710433_1756256710434.txt[m[36m:[m[32m29[m[36m:[mADMIN_JWT_[1;31mSECRET[m=change_this
+[35mattached_assets/Pasted-STRIPE-SECRET-KEY-sk-test-STRIPE-WEBHOOK-SECRET-whsec-APP-BASE-URL-https-yourdomain-com--1756256710433_1756256710434.txt[m[36m:[m[32m45[m[36m:[mCopy Signing Secret → .env as STRIPE_WEBHOOK_[1;31mSECRET[m.
+[35mattached_assets/Pasted-This-integration-uses-only-Accounts-Account-Links-Events-EventDestinations-and-Persons-from-API--1756522428620_1756522428620.txt[m[36m:[m[32m22[m[36m:[m  -H "Authorization: Bearer [1;31msk_test_[m51RzCXFDc2BliYufwtBAh31fJ7jXYX3vk3PNoCQcXYp86BeGkvPXwV32wXXClGsj2z4LjPyxqE65y9wlkIdFaulsf00TB6KmqPt" \
+[35mattached_assets/Pasted-This-integration-uses-only-Accounts-Account-Links-Events-EventDestinations-and-Persons-from-API--1756522428620_1756522428620.txt[m[36m:[m[32m267[m[36m:[m  -H "Authorization: Bearer [1;31msk_test_[m51RzCXFDc2BliYufwtBAh31fJ7jXYX3vk3PNoCQcXYp86BeGkvPXwV32wXXClGsj2z4LjPyxqE65y9wlkIdFaulsf00TB6KmqPt" \
+[35mattached_assets/Pasted-This-integration-uses-only-Accounts-Account-Links-Events-EventDestinations-and-Persons-from-API--1756522428620_1756522428620.txt[m[36m:[m[32m318[m[36m:[m  -u "[1;31msk_test_[m51RzCXFDc2BliYufwtBAh31fJ7jXYX3vk3PNoCQcXYp86BeGkvPXwV32wXXClGsj2z4LjPyxqE65y9wlkIdFaulsf00TB6KmqPt:" \
+[35mattached_assets/Pasted-Visibility-roles-concept-Keep-all-objects-private-in-S3-Use-two-logical-prefixes-private-r-1757578643449_1757578643449.txt[m[36m:[m[32m21[m[36m:[mconst JWT_[1;31mSECRET[m = process.env.JWT_[1;31mSECRET[m || "dev_only_change_me";
+[35mattached_assets/Pasted-Visibility-roles-concept-Keep-all-objects-private-in-S3-Use-two-logical-prefixes-private-r-1757578643449_1757578643449.txt[m[36m:[m[32m29[m[36m:[m    const user = jwt.verify(token, JWT_[1;31mSECRET[m);
+[35mattached_assets/Pasted-import-type-NextApiRequest-NextApiResponse-from-next-import-Stripe-from-stripe-import--1756255658975_1756255658975.txt[m[36m:[m[32m8[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY!, { apiVersion: "2024-06-20" });
+[35mattached_assets/Pasted-import-type-NextApiRequest-NextApiResponse-from-next-import-Stripe-from-stripe-import--1756255658975_1756255658975.txt[m[36m:[m[32m9[m[36m:[mconst endpointSecret = process.env.STRIPE_WEBHOOK_[1;31mSECRET[m!; // from dashboard/CLI
+[35mattached_assets/Pasted-require-dotenv-config-const-express-require-express-const-cors-require-cors-con-1756255801773_1756255801773.txt[m[36m:[m[32m12[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY, {
+[35mattached_assets/Pasted-require-dotenv-config-const-express-require-express-const-cors-require-cors-con-1756255801773_1756255801773.txt[m[36m:[m[32m96[m[36m:[m        process.env.STRIPE_WEBHOOK_[1;31mSECRET[m
+[35mattached_assets/Pasted-require-dotenv-config-const-express-require-express-const-cors-require-cors-con-1756255941334_1756255941334.txt[m[36m:[m[32m12[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY, {
+[35mattached_assets/Pasted-require-dotenv-config-const-express-require-express-const-cors-require-cors-con-1756255941334_1756255941334.txt[m[36m:[m[32m96[m[36m:[m        process.env.STRIPE_WEBHOOK_[1;31mSECRET[m
+Binary file [35mattached_assets/action_ladder_stripe_system_1757150179112.zip[m matches
+Binary file [35mattached_assets/action_ladder_stripe_system_1757150189478.zip[m matches
+[35mscripts/createStripeCatalog.mjs[m[36m:[m[32m7[m[36m:[m * For TEST: STRIPE_[1;31mSECRET[m_KEY=[1;31msk_test_[m... node scripts/createStripeCatalog.mjs
+[35mscripts/createStripeCatalog.mjs[m[36m:[m[32m8[m[36m:[m * For LIVE: STRIPE_[1;31mSECRET[m_KEY=[1;31msk_live_[m... node scripts/createStripeCatalog.mjs
+[35mscripts/createStripeCatalog.mjs[m[36m:[m[32m13[m[36m:[mconst stripeSecretKey = process.env.STRIPE_[1;31mSECRET[m_KEY;
+[35mscripts/createStripeCatalog.mjs[m[36m:[m[32m16[m[36m:[m  console.error('❌ STRIPE_[1;31mSECRET[m_KEY environment variable is required');
+[35mscripts/createStripeCatalog.mjs[m[36m:[m[32m20[m[36m:[mconst isLive = stripeSecretKey.startsWith('[1;31msk_live_[m');
+[35mscripts/upload-google-secret.sh[m[36m:[m[32m5[m[36m:[m  echo "Usage: $0 <service-account.json> [[1;31mSECRET[m_NAME]"
+[35mscripts/upload-google-secret.sh[m[36m:[m[32m6[m[36m:[m  echo "Defaults [1;31mSECRET[m_NAME=GOOGLE_SERVICE_ACCOUNT_JSON"
+[35mscripts/upload-google-secret.sh[m[36m:[m[32m15[m[36m:[m[1;31mSECRET[m_NAME="${2:-GOOGLE_SERVICE_ACCOUNT_JSON}"
+[35mscripts/upload-google-secret.sh[m[36m:[m[32m29[m[36m:[mecho "Uploading secret $[1;31mSECRET[m_NAME to the current GitHub repo (requires gh auth)
+[35mscripts/upload-google-secret.sh[m[36m:[m[32m31[m[36m:[mgh secret set "$[1;31mSECRET[m_NAME" --body "$ENCODED"
+[35mscripts/upload-google-secret.sh[m[36m:[m[32m33[m[36m:[mecho "Done. The secret $[1;31mSECRET[m_NAME is set."
+[35mserver/billing.js[m[36m:[m[32m52[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY, {
+[35mserver/billing.js[m[36m:[m[32m59[m[36m:[mconst ADMIN_[1;31mAPI_KEY[m = process.env.ADMIN_[1;31mAPI_KEY[m;
+[35mserver/billing.js[m[36m:[m[32m72[m[36m:[m  if (!ADMIN_[1;31mAPI_KEY[m || key === ADMIN_[1;31mAPI_KEY[m) return next();
+[35mserver/billing.js[m[36m:[m[32m357[m[36m:[m        process.env.STRIPE_WEBHOOK_[1;31mSECRET[m
+[35mserver/config/stripe.ts[m[36m:[m[32m3[m[36m:[mif (!process.env.STRIPE_[1;31mSECRET[m_KEY) {
+[35mserver/config/stripe.ts[m[36m:[m[32m4[m[36m:[m  throw new Error("STRIPE_[1;31mSECRET[m_KEY is required");
+[35mserver/config/stripe.ts[m[36m:[m[32m7[m[36m:[mexport const stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY, {
+[35mserver/controllers/admin.controller.ts[m[36m:[m[32m6[m[36m:[mif (!process.env.STRIPE_[1;31mSECRET[m_KEY) {
+[35mserver/controllers/admin.controller.ts[m[36m:[m[32m7[m[36m:[m  throw new Error('Missing required Stripe secret: STRIPE_[1;31mSECRET[m_KEY');
+[35mserver/controllers/admin.controller.ts[m[36m:[m[32m10[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY, {
+[35mserver/controllers/charity.controller.ts[m[36m:[m[32m7[m[36m:[mif (!process.env.STRIPE_[1;31mSECRET[m_KEY) {
+[35mserver/controllers/charity.controller.ts[m[36m:[m[32m8[m[36m:[m  throw new Error('Missing required Stripe secret: STRIPE_[1;31mSECRET[m_KEY');
+[35mserver/controllers/charity.controller.ts[m[36m:[m[32m11[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY);
+[35mserver/controllers/financial.controller.ts[m[36m:[m[32m14[m[36m:[mif (!process.env.STRIPE_[1;31mSECRET[m_KEY) {
+[35mserver/controllers/financial.controller.ts[m[36m:[m[32m15[m[36m:[m  throw new Error('Missing required Stripe secret: STRIPE_[1;31mSECRET[m_KEY');
+[35mserver/controllers/financial.controller.ts[m[36m:[m[32m18[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY);
+[35mserver/controllers/financial.controller.ts[m[36m:[m[32m731[m[36m:[m    if (!process.env.STRIPE_WEBHOOK_[1;31mSECRET[m) {
+[35mserver/controllers/financial.controller.ts[m[36m:[m[32m740[m[36m:[m        process.env.STRIPE_WEBHOOK_[1;31mSECRET[m
+[35mserver/controllers/paymentOnboarding.controller.ts[m[36m:[m[32m20[m[36m:[mif (!process.env.STRIPE_[1;31mSECRET[m_KEY) {
+[35mserver/controllers/paymentOnboarding.controller.ts[m[36m:[m[32m21[m[36m:[m  throw new Error('Missing required Stripe secret: STRIPE_[1;31mSECRET[m_KEY');
+[35mserver/controllers/paymentOnboarding.controller.ts[m[36m:[m[32m24[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY, {
+[35mserver/controllers/paymentOnboarding.controller.ts[m[36m:[m[32m316[m[36m:[m    if (!process.env.STRIPE_WEBHOOK_[1;31mSECRET[m) {
+[35mserver/controllers/paymentOnboarding.controller.ts[m[36m:[m[32m317[m[36m:[m      console.error('Missing STRIPE_WEBHOOK_[1;31mSECRET[m');
+[35mserver/controllers/paymentOnboarding.controller.ts[m[36m:[m[32m325[m[36m:[m      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_[1;31mSECRET[m);
+[35mserver/controllers/rookie.controller.ts[m[36m:[m[32m5[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY!);
+[35mserver/replitAuth.ts[m[36m:[m[32m43[m[36m:[m    secret: process.env.SESSION_[1;31mSECRET[m!,
+[35mserver/routes.ts[m[36m:[m[32m60[m[36m:[mif (!process.env.STRIPE_[1;31mSECRET[m_KEY) {
+[35mserver/routes.ts[m[36m:[m[32m61[m[36m:[m  throw new Error('Missing required Stripe secret: STRIPE_[1;31mSECRET[m_KEY');
+[35mserver/routes.ts[m[36m:[m[32m64[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY);
+[35mserver/services/ai-service.ts[m[36m:[m[32m5[m[36m:[mif (!process.env.OPENAI_[1;31mAPI_KEY[m) {
+[35mserver/services/ai-service.ts[m[36m:[m[32m6[m[36m:[m  throw new Error('Missing required OpenAI API key: OPENAI_[1;31mAPI_KEY[m');
+[35mserver/services/ai-service.ts[m[36m:[m[32m10[m[36m:[m  apiKey: process.env.OPENAI_[1;31mAPI_KEY[m,
+[35mserver/services/playerBilling.ts[m[36m:[m[32m6[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY!);
+[35mserver/services/prizePoolService.ts[m[36m:[m[32m5[m[36m:[mif (!process.env.STRIPE_[1;31mSECRET[m_KEY) {
+[35mserver/services/prizePoolService.ts[m[36m:[m[32m6[m[36m:[m  throw new Error('Missing required Stripe secret: STRIPE_[1;31mSECRET[m_KEY');
+[35mserver/services/prizePoolService.ts[m[36m:[m[32m9[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY);
+[35mserver/services/qrCodeService.ts[m[36m:[m[32m377[m[36m:[m    const secret = process.env.SESSION_[1;31mSECRET[m;
+[35mserver/services/qrCodeService.ts[m[36m:[m[32m379[m[36m:[m      throw new Error('SESSION_[1;31mSECRET[m environment variable is required for secure signatures');
+[35mserver/services/qrCodeService.ts[m[36m:[m[32m394[m[36m:[m    const data = `${challengeId}:${hallId}:${process.env.SESSION_[1;31mSECRET[m || 'default-secret'}`;
+[35mserver/services/refund-service.ts[m[36m:[m[32m3[m[36m:[mif (!process.env.STRIPE_[1;31mSECRET[m_KEY) {
+[35mserver/services/refund-service.ts[m[36m:[m[32m4[m[36m:[m  throw new Error('Missing required Stripe secret: STRIPE_[1;31mSECRET[m_KEY');
+[35mserver/services/refund-service.ts[m[36m:[m[32m7[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY, {
+[35mserver/services/rewardService.ts[m[36m:[m[32m5[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY!, {
+[35mserver/services/transparency-logs.ts[m[36m:[m[32m78[m[36m:[m    if (!process.env.GOOGLE_SHEETS_[1;31mAPI_KEY[m) {
+[35mserver/trainingRewardsScheduler.ts[m[36m:[m[32m358[m[36m:[m      if (!process.env.SENDGRID_[1;31mAPI_KEY[m) {
+[35mserver/trainingRewardsScheduler.ts[m[36m:[m[32m359[m[36m:[m        console.log('[REWARDS_CRON] SENDGRID_[1;31mAPI_KEY[m not set - skipping email (dev mode)');
+[35mserver/trainingRewardsScheduler.ts[m[36m:[m[32m368[m[36m:[m      mailService.setApiKey(process.env.SENDGRID_[1;31mAPI_KEY[m);
+[35mserver/utils/stripeSafe.ts[m[36m:[m[32m4[m[36m:[mif (!process.env.STRIPE_[1;31mSECRET[m_KEY) {
+[35mserver/utils/stripeSafe.ts[m[36m:[m[32m5[m[36m:[m  throw new Error('Missing required Stripe secret: STRIPE_[1;31mSECRET[m_KEY');
+[35mserver/utils/stripeSafe.ts[m[36m:[m[32m8[m[36m:[mconst stripe = new Stripe(process.env.STRIPE_[1;31mSECRET[m_KEY, {
