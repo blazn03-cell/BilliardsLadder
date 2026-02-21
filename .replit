@@ -9,7 +9,7 @@ packages = ["git"]
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["node", "./dist/index.cjs"]
+run = ["npm", "run", "start"]
 publicDir = "dist/public"
 
 [[ports]]
