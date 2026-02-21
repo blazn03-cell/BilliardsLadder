@@ -13,7 +13,6 @@ import {
   Star,
   ChevronRight
 } from "lucide-react";
-import logoBackground from "@assets/assets_task_01k3jk55jwew0tmd764vvanv2x_1756192093_img_0_1756634613619.webp";
 
 export default function Landing() {
   const playerFeatures = [
@@ -37,11 +36,7 @@ export default function Landing() {
         <div 
           className="absolute inset-0 opacity-25"
           style={{
-            backgroundImage: `url(${logoBackground})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            filter: 'brightness(1.2) contrast(1.1)'
+            background: 'radial-gradient(ellipse at center, rgba(16,185,129,0.3) 0%, transparent 70%)',
           }}
         ></div>
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/25 via-felt-dark/80 to-felt-dark/90"></div>

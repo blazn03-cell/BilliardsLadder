@@ -62,10 +62,8 @@ import HallLeaderboard from "@/pages/HallLeaderboard";
 import TrainingSession from "@/pages/TrainingSession";
 import CoachFeedback from "@/pages/CoachFeedback";
 import AdminTrainingRewards from "@/pages/AdminTrainingRewards";
-import logoBackground from "@assets/assets_task_01k3jk55jwew0tmd764vvanv2x_1756192093_img_0_1756634613619.webp";
-
 // Auth-protected route component
-function AppContent({ activeTab, logoBackground }: { activeTab: string; logoBackground: string }) {
+function AppContent({ activeTab }: { activeTab: string }) {
   const { user, isLoading, isAuthenticated } = useAuth();
   
   // Get current tab from URL params
@@ -96,10 +94,7 @@ function AppContent({ activeTab, logoBackground }: { activeTab: string; logoBack
         <div 
           className="absolute inset-0 opacity-10"
           style={{
-            backgroundImage: `url(${logoBackground})`,
-            backgroundSize: 'contain',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
+            background: 'radial-gradient(ellipse at center, rgba(16,185,129,0.3) 0%, transparent 70%)',
           }}
         ></div>
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 via-transparent to-emerald-600/20"></div>
@@ -376,10 +371,7 @@ function App() {
           <div 
             className="absolute inset-0 opacity-5"
             style={{
-              backgroundImage: `url(${logoBackground})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat'
+              background: 'radial-gradient(ellipse at center, rgba(16,185,129,0.2) 0%, transparent 70%)',
             }}
           ></div>
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-felt-dark/80 to-felt-dark/90"></div>
@@ -447,7 +439,7 @@ function App() {
               <CoachFeedback />
             </Route>
             <Route path="/app">
-              <AppContent activeTab={activeTab} logoBackground={logoBackground} />
+              <AppContent activeTab={activeTab} />
             </Route>
             <Route component={NotFound} />
             </Switch>
