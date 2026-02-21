@@ -62,7 +62,7 @@ import HallLeaderboard from "@/pages/HallLeaderboard";
 import TrainingSession from "@/pages/TrainingSession";
 import CoachFeedback from "@/pages/CoachFeedback";
 import AdminTrainingRewards from "@/pages/AdminTrainingRewards";
-import logoBackground from "@assets/ChatGPT_Image_Feb_21,_2026,_03_03_57_PM_1771707854740.png";
+const logoBackground = "/images/logo-background.png";
 // Auth-protected route component
 function AppContent({ activeTab }: { activeTab: string }) {
   const { user, isLoading, isAuthenticated } = useAuth();

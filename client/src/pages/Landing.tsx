@@ -13,7 +13,7 @@ import {
   Star,
   ChevronRight
 } from "lucide-react";
-import logoBackground from "@assets/ChatGPT_Image_Feb_21,_2026,_03_03_57_PM_1771707854740.png";
+const logoBackground = "/images/logo-background.png";
 
 export default function Landing() {
   const playerFeatures = [
