@@ -11,11 +11,9 @@ import { OperatorSubscriptionCalculator } from "../utils/operator-subscription-u
 import { calculateOperatorSubscriptionSplit } from "../services/operatorSubscriptionSplits";
 import { payStaffFromInvoice } from "../routes/admin.routes";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
+  : (null as unknown as Stripe);
 
 // Stripe Price IDs for ActionLadder Commission System
 const prices = {

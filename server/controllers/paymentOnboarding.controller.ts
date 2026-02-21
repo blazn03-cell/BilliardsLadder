@@ -17,13 +17,9 @@ const deactivatePaymentMethodSchema = z.object({
   paymentMethodId: z.string().min(1, "Payment Method ID is required")
 });
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-06-20",
-});
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-06-20" })
+  : (null as unknown as Stripe);
 
 // Create SetupIntent for collecting default payment method
 export function createSetupIntent(storage: IStorage) {

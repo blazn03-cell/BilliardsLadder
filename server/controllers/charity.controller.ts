@@ -4,11 +4,9 @@ import { IStorage } from "../storage";
 import { insertCharityEventSchema, insertBountySchema, insertAddedMoneyFundSchema } from "@shared/schema";
 import { createSafeCheckoutSession } from "../utils/stripeSafe";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
+  : (null as unknown as Stripe);
 
 // Stripe Price IDs for charity donations
 const prices = {

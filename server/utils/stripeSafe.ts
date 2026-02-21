@@ -1,13 +1,11 @@
 import Stripe from "stripe";
 import { sanitizeFields } from "@shared/safeLanguage";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-08-27.basil",
-});
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-08-27.basil",
+    })
+  : (null as unknown as Stripe);
 
 export async function createSafeProduct(payload: Stripe.ProductCreateParams) {
   const clean = sanitizeFields(payload as any, ["name", "description", "statement_descriptor"]);

@@ -2,11 +2,9 @@ import { storage } from "../storage";
 import type { InsertPrizePool, InsertPrizePoolContribution, InsertPrizePoolDistribution } from "@shared/schema";
 import Stripe from "stripe";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
+  : (null as unknown as Stripe);
 
 // Prize Pool Distribution Percentages (Pro tier with corrected Growth Fund)
 export const DISTRIBUTION_CONFIG = {

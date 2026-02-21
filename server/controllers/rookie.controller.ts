@@ -2,7 +2,9 @@ import { Request, Response } from "express";
 import { IStorage } from "../storage";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
+  : (null as unknown as Stripe);
 
 const prices = {
   rookie_monthly: "price_1S36UcDc2BliYufwVpgpOph9",

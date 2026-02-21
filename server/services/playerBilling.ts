@@ -3,7 +3,9 @@ import Stripe from "stripe";
 import { storage } from "../storage";
 import { requireAnyAuth } from "../middleware/auth";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
+  : (null as unknown as Stripe);
 
 // Player subscription tiers - designed to compete with traditional leagues
 export function getPlayerSubscriptionTier(tier: string) {

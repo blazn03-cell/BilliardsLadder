@@ -2,13 +2,9 @@ import OpenAI from 'openai';
 import { storage } from '../storage';
 import type { Player, Match } from '@shared/schema';
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error('Missing required OpenAI API key: OPENAI_API_KEY');
-}
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 // Helper functions for gathering billiards data
 async function getPlayerStats(playerId: string): Promise<string> {
@@ -53,6 +49,9 @@ async function getPlayerRankings(limit: number = 10): Promise<string> {
 }
 
 async function callOpenAI(messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[]): Promise<string> {
+  if (!openai) {
+    return 'AI service is not configured. Please set the OPENAI_API_KEY environment variable.';
+  }
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-4",

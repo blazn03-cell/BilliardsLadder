@@ -49,9 +49,11 @@ app.set("trust proxy", 1);
 app.use(cors({ origin: true }));
 app.use("/api", express.json()); // JSON for normal API routes
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-06-20",
-});
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2024-06-20",
+    })
+  : null;
 
 // Environment variables for pricing
 const TOURNAMENT_BASIC_USD = Number(process.env.TOURNAMENT_BASIC_USD || 25);

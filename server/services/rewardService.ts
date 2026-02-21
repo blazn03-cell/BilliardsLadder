@@ -2,9 +2,11 @@ import Stripe from 'stripe';
 import { storage } from '../storage';
 import type { InsertSubscriptionReward } from '@shared/schema';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20" as any,
-});
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2024-06-20" as any,
+    })
+  : (null as unknown as Stripe);
 
 export async function createTrainingRewardCoupon(
   discountPercent: 50 | 100,

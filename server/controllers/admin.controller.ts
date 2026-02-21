@@ -3,13 +3,9 @@ import Stripe from "stripe";
 import { storage } from "../storage";
 import type { User, InsertUser } from "../storage";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-12-18.acacia",
-});
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-12-18.acacia" })
+  : (null as unknown as Stripe);
 
 // Invite a trusted friend to receive payouts
 export async function inviteStaff(req: Request, res: Response) {
