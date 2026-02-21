@@ -13,6 +13,7 @@ import {
   Star,
   ChevronRight
 } from "lucide-react";
+import logoBackground from "@assets/ChatGPT_Image_Feb_21,_2026,_03_03_57_PM_1771707854740.png";
 
 export default function Landing() {
   const playerFeatures = [
@@ -34,9 +35,13 @@ export default function Landing() {
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none">
         <div 
-          className="absolute inset-0 opacity-25"
+          className="absolute inset-0 opacity-30"
           style={{
-            background: 'radial-gradient(ellipse at center, rgba(16,185,129,0.3) 0%, transparent 70%)',
+            backgroundImage: `url(${logoBackground})`,
+            backgroundSize: 'contain',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            filter: 'hue-rotate(90deg) saturate(3) brightness(0.7) contrast(1.4) sepia(0.3)',
           }}
         ></div>
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/25 via-felt-dark/80 to-felt-dark/90"></div>

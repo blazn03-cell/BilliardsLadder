@@ -62,6 +62,7 @@ import HallLeaderboard from "@/pages/HallLeaderboard";
 import TrainingSession from "@/pages/TrainingSession";
 import CoachFeedback from "@/pages/CoachFeedback";
 import AdminTrainingRewards from "@/pages/AdminTrainingRewards";
+import logoBackground from "@assets/ChatGPT_Image_Feb_21,_2026,_03_03_57_PM_1771707854740.png";
 // Auth-protected route component
 function AppContent({ activeTab }: { activeTab: string }) {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -92,9 +93,13 @@ function AppContent({ activeTab }: { activeTab: string }) {
       {/* Hero Banner */}
       <section className="py-12 relative overflow-hidden">
         <div 
-          className="absolute inset-0 opacity-10"
+          className="absolute inset-0 opacity-15"
           style={{
-            background: 'radial-gradient(ellipse at center, rgba(16,185,129,0.3) 0%, transparent 70%)',
+            backgroundImage: `url(${logoBackground})`,
+            backgroundSize: 'contain',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            filter: 'hue-rotate(90deg) saturate(2) brightness(0.8) contrast(1.3) sepia(0.4)',
           }}
         ></div>
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 via-transparent to-emerald-600/20"></div>
@@ -369,9 +374,13 @@ function App() {
         {/* Professional Logo Background */}
         <div className="fixed inset-0 pointer-events-none">
           <div 
-            className="absolute inset-0 opacity-5"
+            className="absolute inset-0 opacity-8"
             style={{
-              background: 'radial-gradient(ellipse at center, rgba(16,185,129,0.2) 0%, transparent 70%)',
+              backgroundImage: `url(${logoBackground})`,
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              filter: 'hue-rotate(90deg) saturate(3) brightness(0.6) contrast(1.5) sepia(0.3)',
             }}
           ></div>
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-felt-dark/80 to-felt-dark/90"></div>
