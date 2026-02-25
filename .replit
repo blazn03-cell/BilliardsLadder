@@ -50,3 +50,7 @@ expertMode = true
 
 [objectStorage]
 defaultBucketID = "replit-objstore-d4587319-29e4-4d19-aef8-8cdfbff79e33"
+
+[userenv]
+
+[userenv.shared]
