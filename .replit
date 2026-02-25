@@ -54,3 +54,4 @@ defaultBucketID = "replit-objstore-d4587319-29e4-4d19-aef8-8cdfbff79e33"
 [userenv]
 
 [userenv.shared]
+VITE_STRIPE_PUBLIC_KEY = "pk_live_51RzCX3DvTG8XWAaKcXL65H0ihu9SF719Rs9IE7VHjpeAlthatXkUPvqEMHNOkCwQKNGv4sEMFnSOcB4EaEYPVNLn00zHyxgS1T"
