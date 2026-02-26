@@ -2578,3 +2578,17 @@ export type SelectPrizePoolContribution = PrizePoolContribution;
 export type PrizePoolDistribution = typeof prizePoolDistributions.$inferSelect;
 export type InsertPrizePoolDistribution = z.infer<typeof insertPrizePoolDistributionSchema>;
 export type SelectPrizePoolDistribution = PrizePoolDistribution;
+
+export interface PlayerQueue {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  city: string;
+  experience: "beginner" | "intermediate" | "advanced" | "pro";
+  preferredGames: string[];
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+}
+
+export type InsertPlayerQueue = Omit<PlayerQueue, "id" | "status" | "createdAt">;

@@ -66,6 +66,7 @@ import AdminTrainingRewards from "@/pages/AdminTrainingRewards";
 import FounderDashboard from "@/pages/FounderDashboard";
 import RegionalOperatorDashboard from "@/pages/RegionalOperatorDashboard";
 import FounderLogin from "@/pages/FounderLogin";
+import JoinPage from "@/pages/JoinPage";
 const logoBackground = "/images/logo-background.png";
 // Auth-protected route component
 function AppContent({ activeTab }: { activeTab: string }) {
@@ -459,6 +460,9 @@ function App() {
             </Route>
             <Route path="/regional-dashboard">
               <RegionalOperatorDashboard />
+            </Route>
+            <Route path="/join">
+              <JoinPage />
             </Route>
             <Route path="/app">
               <AppContent activeTab={activeTab} />

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../lib/queryClient';
-import type { PlayerQueue, InsertPlayerQueue } from '../../../shared/schema';
+import type { PlayerQueue, InsertPlayerQueue } from '@shared/schema';
 
 const JoinPage: React.FC = () => {
   const [formData, setFormData] = useState({

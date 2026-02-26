@@ -180,7 +180,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Forgot Password Routes
   setupForgotPasswordRoutes(app);
-  
+
+  // Player Queue (Join Page) - in-memory store
+  const playerQueue: any[] = [];
+
+  app.get("/api/player-queue", (_req, res) => {
+    res.json(playerQueue);
+  });
+
+  app.post("/api/player-queue", (req, res) => {
+    const { name, email, phone, city, experience, preferredGames } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ message: "Name and email are required" });
+    }
+    const entry = {
+      id: crypto.randomUUID(),
+      name,
+      email,
+      phone: phone || "",
+      city: city || "",
+      experience: experience || "intermediate",
+      preferredGames: preferredGames || [],
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+    playerQueue.push(entry);
+    res.status(201).json(entry);
+  });
+
   app.get("/api/player/earnings", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
