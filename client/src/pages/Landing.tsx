@@ -189,7 +189,7 @@ export default function Landing() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                Why Action Ladder?
+                Why Billiards Ladder?
               </h2>
               <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
                 Built by pool players, for pool players. Experience the difference professional management makes.
@@ -237,11 +237,11 @@ export default function Landing() {
               <div className="flex items-center gap-3">
                 <img 
                   src="/billiards-logo.svg"
-                  alt="Action Ladder Billiards Logo"
+                  alt="Billiards Ladder Logo"
                   className="h-10 w-10 rounded-lg object-cover border border-emerald-400/30"
                 />
                 <span className="font-bold text-emerald-300 text-lg">
-                  ACTIONLADDER
+                  BILLIARDS LADDER
                 </span>
               </div>
               
@@ -258,7 +258,7 @@ export default function Landing() {
               
               <div className="pt-6 border-t border-gray-800/50 w-full">
                 <p className="text-gray-500 text-sm">
-                  © 2024 Action Ladder Billiards. All rights reserved.
+                  © 2024 Billiards Ladder. All rights reserved.
                 </p>
               </div>
             </div>

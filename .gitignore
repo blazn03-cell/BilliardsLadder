@@ -1,11 +1,8 @@
+node_modules/
+.cache/
+dist/
 .env
 .env.*
-node_modules
-.next
-dist
-build
-.DS_Store
-.replit
-replit.nix
 *.log
-attached_assets/
+.DS_Store
+ecrets from repo"

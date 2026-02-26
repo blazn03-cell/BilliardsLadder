@@ -91,7 +91,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       case 'api': 
         return "Server temporarily unavailable. Our team has been notified.";
       default: 
-        return "ActionLadder encountered an unexpected error. Don't worry, your data is safe.";
+        return "Billiards Ladder encountered an unexpected error. Don't worry, your data is safe.";
     }
   };
 

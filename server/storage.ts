@@ -1224,7 +1224,7 @@ export class MemStorage implements IStorage {
     const ownerId = randomUUID();
     const ownerUser: User = {
       id: ownerId,
-      email: "owner@actionladder.com",
+      email: "owner@billiardsladder.com",
       name: "Platform Owner",
       globalRole: "OWNER",
       payoutShareBps: 4000, // 40% share
@@ -1774,7 +1774,7 @@ export class MemStorage implements IStorage {
       name: "rookie_hall",
       displayName: "Rookie Hall",
       monthlyFee: 9900, // $99
-      revenueSplitPercent: 5, // 5% to Action Ladder
+      revenueSplitPercent: 5, // 5% to Billiards Ladder
       maxTeams: 1,
       hasPromoTools: false,
       hasLiveStreamBonus: false,
@@ -1790,7 +1790,7 @@ export class MemStorage implements IStorage {
       name: "basic_hall",
       displayName: "Basic Hall",
       monthlyFee: 19900, // $199
-      revenueSplitPercent: 10, // 10% to Action Ladder
+      revenueSplitPercent: 10, // 10% to Billiards Ladder
       maxTeams: 1,
       hasPromoTools: false,
       hasLiveStreamBonus: false,
@@ -1806,7 +1806,7 @@ export class MemStorage implements IStorage {
       name: "elite_operator",
       displayName: "Elite Operator",
       monthlyFee: 39900, // $399
-      revenueSplitPercent: 10, // 10% to Action Ladder
+      revenueSplitPercent: 10, // 10% to Billiards Ladder
       maxTeams: 2,
       hasPromoTools: true,
       hasLiveStreamBonus: true,
@@ -1822,7 +1822,7 @@ export class MemStorage implements IStorage {
       name: "franchise",
       displayName: "Franchise",
       monthlyFee: 79900, // $799
-      revenueSplitPercent: 10, // 10% to Action Ladder
+      revenueSplitPercent: 10, // 10% to Billiards Ladder
       maxTeams: null, // Unlimited
       hasPromoTools: true,
       hasLiveStreamBonus: true,

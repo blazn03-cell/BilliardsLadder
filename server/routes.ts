@@ -61,17 +61,17 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : (null as unknown as Stripe);
 
-// Stripe Price IDs for ActionLadder Commission System
+// Stripe Price IDs for Billiards Ladder Commission System
 const prices = {
-  rookie_monthly: "price_1S36UcDc2BliYufwVpgpOph9", // ActionLadder Rookie Pass ($20/month → $4 operator commission)
-  basic_monthly: "price_1S36UcDc2BliYufwF8R8w5BY", // ActionLadder Basic Membership ($25/month → $7 operator commission)
-  pro_monthly: "price_1S36UdDc2BliYufwGZmAEVPq", // ActionLadder Pro Membership ($60/month → $10 operator commission)
+  rookie_monthly: "price_1S36UcDc2BliYufwVpgpOph9", // Billiards Ladder Rookie Pass ($20/month → $4 operator commission)
+  basic_monthly: "price_1S36UcDc2BliYufwF8R8w5BY", // Billiards Ladder Basic Membership ($25/month → $7 operator commission)
+  pro_monthly: "price_1S36UdDc2BliYufwGZmAEVPq", // Billiards Ladder Pro Membership ($60/month → $10 operator commission)
   small: process.env.SMALL_PRICE_ID, // Operator subscription tiers
   medium: process.env.MEDIUM_PRICE_ID,
   large: process.env.LARGE_PRICE_ID,
   mega: process.env.MEGA_PRICE_ID,
   // Charity Donation System
-  charity_product: "prod_Sz4wWq0exnJOBv", // ActionLadder Charity Donations
+  charity_product: "prod_Sz4wWq0exnJOBv", // Billiards Ladder Charity Donations
   charity_donations: {
     "5": "price_1S36mVDc2BliYufwKkppBTdZ",
     "10": "price_1S36mWDc2BliYufw9SnYauG6", 

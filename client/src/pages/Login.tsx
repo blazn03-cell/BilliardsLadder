@@ -57,16 +57,18 @@ export default function Login() {
         });
         
         // Role-based redirect
-        let redirectUrl = "/home";
+        let redirectUrl = "/";
         
         if (user?.globalRole === "OWNER") {
-          redirectUrl = "/owner-dashboard";
+          redirectUrl = "/founder-dashboard";
         } else if (user?.globalRole === "TRUSTEE") {
           redirectUrl = "/trustee-dashboard";
-        } else if (user?.globalRole === "OPERATOR") {
-          redirectUrl = "/operator-dashboard";
+        } else if (user?.globalRole === "REGIONAL_OPERATOR") {
+          redirectUrl = "/regional-dashboard";
+        } else if (user?.globalRole === "OPERATOR" || user?.globalRole === "POOL_HALL_OWNER" || user?.globalRole === "LOCAL_OPERATOR") {
+          redirectUrl = "/app?tab=operator-settings";
         } else if (user?.globalRole === "PLAYER") {
-          redirectUrl = "/home";
+          redirectUrl = "/app?tab=dashboard";
         }
         
         window.location.href = redirectUrl;
@@ -98,7 +100,7 @@ export default function Login() {
             Welcome Back
           </CardTitle>
           <p className="text-gray-400 text-sm">
-            Sign in to your ActionLadder account
+            Sign in to your Billiards Ladder account
           </p>
         </CardHeader>
         <CardContent className="space-y-6">

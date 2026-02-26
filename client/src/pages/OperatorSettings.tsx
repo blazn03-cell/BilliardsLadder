@@ -111,7 +111,7 @@ export default function OperatorSettings() {
     <div className="container mx-auto px-4 py-8" data-testid="operator-settings">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-green-400 mb-2">Operator Settings</h1>
-        <p className="text-gray-300">Customize your ActionLadder instance for your city and area</p>
+        <p className="text-gray-300">Customize your Billiards Ladder instance for your city and area</p>
       </div>
 
       <div className="grid gap-6 max-w-4xl">
@@ -156,7 +156,7 @@ export default function OperatorSettings() {
               Location Settings
             </CardTitle>
             <CardDescription className="text-gray-300">
-              Set your city and area to personalize the ActionLadder experience
+              Set your city and area to personalize the Billiards Ladder experience
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -191,8 +191,8 @@ export default function OperatorSettings() {
             
             <div className="mt-4">
               <p className="text-sm text-gray-400">
-                This will customize the branding throughout your ActionLadder instance.
-                For example: "{cityName || "Your City"} {areaName || "Your Area"} ActionLadder"
+                This will customize the branding throughout your Billiards Ladder instance.
+                For example: "{cityName || "Your City"} {areaName || "Your Area"} Billiards Ladder"
               </p>
             </div>
           </CardContent>
@@ -227,7 +227,7 @@ export default function OperatorSettings() {
             
             <div className="mt-4">
               <p className="text-sm text-gray-400">
-                This text will appear in select locations throughout your ActionLadder instance for additional branding.
+                This text will appear in select locations throughout your Billiards Ladder instance for additional branding.
               </p>
             </div>
           </CardContent>
@@ -247,7 +247,7 @@ export default function OperatorSettings() {
           <CardContent>
             <div className="bg-black/40 rounded-lg p-4 border border-green-600/20">
               <h3 className="text-xl font-bold text-green-400 mb-2">
-                {cityName || "Your City"} {areaName || "Your Area"} ActionLadder
+                {cityName || "Your City"} {areaName || "Your Area"} Billiards Ladder
               </h3>
               <p className="text-gray-300 mb-2">
                 In here, respect is earned in racks, not words
@@ -310,7 +310,7 @@ export default function OperatorSettings() {
               </div>
               
               <div className="mt-4 p-2 bg-green-900/20 rounded text-xs text-green-300">
-                💡 This preview shows how your branding will appear throughout the ActionLadder platform
+                💡 This preview shows how your branding will appear throughout the Billiards Ladder platform
               </div>
             </div>
           </CardContent>

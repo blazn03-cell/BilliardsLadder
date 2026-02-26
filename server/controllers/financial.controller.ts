@@ -15,7 +15,7 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : (null as unknown as Stripe);
 
-// Stripe Price IDs for ActionLadder Commission System
+// Stripe Price IDs for Billiards Ladder Commission System
 const prices = {
   rookie_monthly: "price_1S36UcDc2BliYufwVpgpOph9",
   basic_monthly: "price_1S36UcDc2BliYufwF8R8w5BY",

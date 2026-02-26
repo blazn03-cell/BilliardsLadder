@@ -69,7 +69,7 @@ export default function BillingSuccess() {
           </div>
 
           <div className="bg-gray-900/50 rounded-lg p-4 space-y-2">
-            <h3 className="font-semibold text-white">Welcome to ActionLadder!</h3>
+            <h3 className="font-semibold text-white">Welcome to Billiards Ladder!</h3>
             <p className="text-sm text-gray-400">
               Your account is now active and ready to use. You'll be redirected to your dashboard automatically.
             </p>

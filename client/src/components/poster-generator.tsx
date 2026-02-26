@@ -61,7 +61,7 @@ function CreatePosterDialog() {
       matchType: "8-Ball Race to 7",
       entryFee: "$500 WINNER TAKES ALL",
       date: "",
-      venue: "ActionLadder Billiards",
+      venue: "Billiards Ladder Billiards",
       theme: "fight-night",
     },
   });

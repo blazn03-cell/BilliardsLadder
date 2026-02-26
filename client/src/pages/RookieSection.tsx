@@ -142,9 +142,6 @@ export default function RookieSection() {
           <h1 className="text-4xl font-bold text-neon-green mb-2">Rookie Section</h1>
           <p className="text-gray-400">Entry-level pool for players building their skills</p>
           <div className="mt-4 flex justify-center space-x-4">
-            <div className="px-4 py-2 bg-green-600/20 border border-green-500/30 rounded-lg">
-              <p className="text-sm text-green-400">💰 $60 challenger fee • $6 operator commission</p>
-            </div>
             <div className="px-4 py-2 bg-blue-600/20 border border-blue-500/30 rounded-lg">
               <p className="text-sm text-blue-400">🎯 10 points for win • 5 points for loss</p>
             </div>
@@ -537,7 +534,7 @@ export default function RookieSection() {
                 <div className="mt-6 p-4 bg-green-600/20 border border-green-500/30 rounded-lg">
                   <h3 className="font-semibold text-green-400 mb-2">Graduation Path</h3>
                   <p className="text-sm text-gray-300">
-                    Earn 100 Rookie Points to automatically graduate to the main ActionLadder. 
+                    Earn 100 Rookie Points to automatically graduate to the main Billiards Ladder. 
                     You'll keep your rookie badge as a mark of where you started your journey!
                   </p>
                 </div>

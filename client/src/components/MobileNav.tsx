@@ -72,10 +72,10 @@ export function MobileNav({ navigationGroups, activeTab, setActiveTab, userRole 
             >
               <img 
                 src="/billiards-logo.svg"
-                alt="Action Ladder Billiards Logo"
+                alt="Billiards Ladder Billiards Logo"
                 className="h-8 w-8 rounded-lg object-cover border border-emerald-400/30"
               />
-              <span className="font-bold text-emerald-300 text-sm">ACTIONLADDER</span>
+              <span className="font-bold text-emerald-300 text-sm">BILLIARDS LADDER</span>
             </div>
             <Button
               variant="ghost"

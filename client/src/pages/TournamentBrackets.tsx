@@ -298,7 +298,7 @@ export default function TournamentBrackets() {
   const { toast } = useToast();
   
   // Tournament state
-  const [name, setName] = useState("Action Ladder Tournament");
+  const [name, setName] = useState("Billiards Ladder Tournament");
   const [format, setFormat] = useState<"single" | "double">("single");
   const [players, setPlayers] = useState<Player[]>(loadLocal("tournament_players", []));
   const [pName, setPName] = useState("");
@@ -636,14 +636,14 @@ export default function TournamentBrackets() {
                 
                 <div>
                   <Label className="text-gray-300">Format</Label>
-                  <div className="flex space-x-4 mt-2">
+                  <div className="flex flex-wrap gap-2 mt-2">
                     <Button
                       variant={format === "single" ? "default" : "outline"}
                       onClick={() => setFormat("single")}
                       className={format === "single" ? "bg-neon-green text-black" : "border-neon-green/50 text-neon-green"}
                       data-testid="button-format-single"
                     >
-                      Single Elimination
+                      🥇 Single Elimination
                     </Button>
                     <Button
                       variant={format === "double" ? "default" : "outline"}
@@ -651,8 +651,55 @@ export default function TournamentBrackets() {
                       className={format === "double" ? "bg-neon-green text-black" : "border-neon-green/50 text-neon-green"}
                       data-testid="button-format-double"
                     >
-                      Double Elimination
+                      🔄 Double Elimination
                     </Button>
+                    <Button
+                      variant={"outline"}
+                      className="border-blue-500/50 text-blue-400 hover:bg-blue-900/30"
+                      data-testid="button-format-round-robin"
+                    >
+                      🔁 Round Robin
+                    </Button>
+                    <Button
+                      variant={"outline"}
+                      className="border-purple-500/50 text-purple-400 hover:bg-purple-900/30"
+                      data-testid="button-format-pod-round-robin"
+                    >
+                      🏟️ Pod Round Robin
+                    </Button>
+                    <Button
+                      variant={"outline"}
+                      className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-900/30"
+                      data-testid="button-format-calcutta"
+                    >
+                      💰 Calcutta (Add-on)
+                    </Button>
+                  </div>
+                  {/* Pod Round Robin explanation */}
+                  <div className="mt-3 p-3 bg-purple-900/20 border border-purple-500/20 rounded-lg text-sm text-purple-300">
+                    <strong>Pod Round Robin:</strong> Small groups (pods) play round robin within their pod. Top winners from each pod advance to compete against other pod winners.
+                  </div>
+                </div>
+
+                {/* Table Number Fields */}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <Label className="text-gray-300">Number of Tables</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      placeholder="e.g. 4"
+                      className="mt-1 bg-black/20 border-neon-green/30 text-white"
+                      data-testid="input-table-count"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-gray-300">Table Numbers (comma-separated)</Label>
+                    <Input
+                      placeholder="e.g. 1, 2, 3, 4"
+                      className="mt-1 bg-black/20 border-neon-green/30 text-white"
+                      data-testid="input-table-numbers"
+                    />
                   </div>
                 </div>
               </CardContent>

@@ -118,8 +118,8 @@ export default function MonetizationDashboard() {
   const isOperator = mockUser?.globalRole === "OPERATOR";
   const isPlayer = mockUser?.globalRole === "PLAYER";
 
-  // STRICT PRIVACY: Only owner/trustee can see Action Ladder earnings
-  const canSeeActionLadderEarnings = isOwnerOrTrustee;
+  // STRICT PRIVACY: Only owner/trustee can see Billiards Ladder earnings
+  const canSeeBilliardsLadderEarnings = isOwnerOrTrustee;
   const canSeeOperatorEarnings = isOwnerOrTrustee || isOperator;
   const canSeeAllData = isOwnerOrTrustee;
 
@@ -153,7 +153,7 @@ export default function MonetizationDashboard() {
             <Badge variant="outline" className="text-green-400 border-green-400">
               Monthly Growth: +{formatPercent(earnings.monthlyGrowth)}
             </Badge>
-            {canSeeActionLadderEarnings && (
+            {canSeeBilliardsLadderEarnings && (
               <Badge variant="outline" className="text-red-400 border-red-400">
                 PRIVATE VIEW
               </Badge>
@@ -177,13 +177,13 @@ export default function MonetizationDashboard() {
           <TabsContent value="overview" className="space-y-6">
             {/* Revenue Distribution Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Action Ladder (OWNER + TRUSTEE ONLY) */}
-              {canSeeActionLadderEarnings && (
+              {/* Billiards Ladder (OWNER + TRUSTEE ONLY) */}
+              {canSeeBilliardsLadderEarnings && (
                 <Card className="bg-gray-900 border-green-500/30">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-green-400 flex items-center gap-2">
                       <DollarSign className="h-5 w-5" />
-                      Action Ladder (50%)
+                      Billiards Ladder (50%)
                     </CardTitle>
                     <CardDescription className="text-gray-400">
                       Platform Revenue - PRIVATE
@@ -282,10 +282,10 @@ export default function MonetizationDashboard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Only show Action Ladder split to Owner/Trustee */}
-                  {canSeeActionLadderEarnings && (
+                  {/* Only show Billiards Ladder split to Owner/Trustee */}
+                  {canSeeBilliardsLadderEarnings && (
                     <div className="p-4 rounded-lg bg-green-900/20 border border-green-500/30">
-                      <h4 className="text-green-400 font-semibold">Action Ladder Platform</h4>
+                      <h4 className="text-green-400 font-semibold">Billiards Ladder Platform</h4>
                       <p className="text-2xl font-bold text-white">35%</p>
                       <SafeText className="text-sm text-gray-400">
                         Reduced share - more money to players!
@@ -463,7 +463,7 @@ export default function MonetizationDashboard() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-400">Action Ladder</p>
+                        <p className="text-gray-400">Billiards Ladder</p>
                         <p className="text-xl font-bold text-blue-400">
                           {formatCurrency(commission.actionLadderShare)}
                         </p>

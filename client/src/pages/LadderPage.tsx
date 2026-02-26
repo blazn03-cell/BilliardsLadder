@@ -235,7 +235,7 @@ const LadderPage: React.FC = () => {
       {/* Games in Rotation */}
       <div className="felt-bg rounded-lg border border-green-700/30 p-6">
         <h2 className="text-3xl font-bold text-green-400 mb-6 text-center">
-          🎮 Main 9-Foot Table Games (Action Ladder Core)
+          🎮 Main 9-Foot Table Games (Billiards Ladder Core)
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

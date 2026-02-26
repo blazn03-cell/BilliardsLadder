@@ -62,6 +62,9 @@ import HallLeaderboard from "@/pages/HallLeaderboard";
 import TrainingSession from "@/pages/TrainingSession";
 import CoachFeedback from "@/pages/CoachFeedback";
 import AdminTrainingRewards from "@/pages/AdminTrainingRewards";
+import FounderDashboard from "@/pages/FounderDashboard";
+import RegionalOperatorDashboard from "@/pages/RegionalOperatorDashboard";
+import FounderLogin from "@/pages/FounderLogin";
 const logoBackground = "/images/logo-background.png";
 // Auth-protected route component
 function AppContent({ activeTab }: { activeTab: string }) {
@@ -280,12 +283,12 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
         >
           <img 
             src="/billiards-logo.svg"
-            alt="Action Ladder Billiards Logo"
+            alt="Billiards Ladder Logo"
             className="h-10 w-10 md:h-12 md:w-12 rounded-xl object-cover border border-emerald-400/30"
           />
           <div className="flex flex-col leading-tight">
             <span className="font-extrabold tracking-wide text-emerald-300 text-sm md:text-lg">
-              ACTIONLADDER
+              BILLIARDS LADDER
             </span>
             <span className="hidden sm:block text-xs text-emerald-200/70">
               In here, respect is earned in racks, not words
@@ -304,12 +307,12 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
               </DropdownMenuTrigger>
 
               <DropdownMenuContent 
-                className="max-h-96 w-64 overflow-y-auto bg-gray-900 text-white border border-gray-700"
+                className="max-h-96 w-72 overflow-y-auto bg-gray-950 text-white border border-emerald-500/40 shadow-2xl shadow-black/60 rounded-xl"
                 align="start"
               >
                 {group.items.map(item => (
                   <DropdownMenuItem
-                    className="hover:bg-emerald-700 hover:text-white cursor-pointer px-3 py-2 text-sm whitespace-nowrap"
+                    className="hover:bg-emerald-700/70 hover:text-white cursor-pointer px-4 py-3 text-sm font-medium whitespace-nowrap text-gray-200 rounded-lg mx-1 my-0.5 transition-colors"
                     key={item.id}
                     onClick={() => {
                       if (item.requiresAuth && !isAuthenticated) {
@@ -447,6 +450,15 @@ function App() {
             <Route path="/training/insights/:sessionId">
               <CoachFeedback />
             </Route>
+            <Route path="/founder-login">
+              <FounderLogin />
+            </Route>
+            <Route path="/founder-dashboard">
+              <FounderDashboard />
+            </Route>
+            <Route path="/regional-dashboard">
+              <RegionalOperatorDashboard />
+            </Route>
             <Route path="/app">
               <AppContent activeTab={activeTab} />
             </Route>
@@ -467,7 +479,7 @@ function App() {
               <a href="/refund" className="hover:text-neon-green transition-colors">Refund Policy</a>
               <a href="/acceptable-use" className="hover:text-neon-green transition-colors">Acceptable Use</a>
               <span className="text-neon-green">•</span>
-              <span>© 2025 ActionLadder</span>
+              <span>© 2025 Billiards Ladder</span>
               <span className="text-neon-green">•</span>
               <span className="font-mono">v1.0.0</span>
             </div>

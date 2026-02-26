@@ -25,7 +25,8 @@ The system is built on a modern web stack designed for performance, scalability,
 - **Styling**: Tailwind CSS with a custom dark theme.
 - **Challenge Pool System**: Features credit-based entries, wallet management, configurable challenge markets, automated resolution, and a transaction ledger. Includes anti-ghosting protection via pre-funding and a tiered service fee structure.
 - **AI Billiards Coach**: Integrates Dr. Dave's physics rules for shot analysis, provides insights on overdraw, spin bias, break accuracy, and other techniques. It includes a scoring formula for improvement and monthly leaderboards.
-- **Authentication**: A three-tier system with Creator/Owner, Operator, and Player roles, supporting password login and 2FA for Creator accounts.
+- **Authentication**: A multi-tier role system (OWNER, REGIONAL_OPERATOR, POOL_HALL_OWNER, LOCAL_OPERATOR, PLAYER, STAFF, TRUSTEE) with password login, 2FA for Creator accounts, and a secret Founder Login page at `/founder-login`.
+- **Revenue Split**: Configurable revenue distribution — 23% Founder, 33% Pool Hall Operators, 43% Player Prize Pool, 1% Platform Ops.
 - **Language Sanitization**: An automatic system replaces gambling terms with league-safe terminology across the application, enforced via middleware and a SafeText React component.
 - **Live Streaming**: Multi-platform integration (Twitch, YouTube, Facebook, TikTok, Kick) with geographic filtering and stream categories.
 

@@ -107,7 +107,7 @@ export default function TrusteeLogin() {
                         <Input
                           {...field}
                           type="email"
-                          placeholder="trustee@actionladder.com"
+                          placeholder="trustee@billiardsladder.com"
                           className="pl-10 bg-gray-900/50 border-gray-600 text-white focus:border-blue-400"
                           data-testid="input-email"
                         />

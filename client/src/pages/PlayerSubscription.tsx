@@ -57,7 +57,7 @@ export function PlayerSubscription() {
             </h1>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
               Join the modern billiards platform that saves you money while elevating your game. 
-              Action Ladder costs $21-$41+ less per month than traditional leagues.
+              Billiards Ladder costs $21-$41+ less per month than traditional leagues.
             </p>
           </div>
 

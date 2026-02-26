@@ -54,7 +54,7 @@ function AIInsightsSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           question:
-            "Analyze the current ladder trends, player activity, and provide insights about the overall state of competition in the ActionLadder billiards community.",
+            "Analyze the current ladder trends, player activity, and provide insights about the overall state of competition in the Billiards Ladder billiards community.",
         }),
       }).then((res) => res.json()),
     onSuccess: (data) => {
@@ -296,7 +296,7 @@ function QRCodeSection() {
         event: {
           title: "Friday Night Fights",
           date: "This Friday 8PM",
-          location: "ActionLadder",
+          location: "Billiards Ladder",
           stakes: "$150",
         },
       };
@@ -340,7 +340,7 @@ function QRCodeSection() {
           />
         </div>
         <div className="text-center text-sm text-gray-400 mb-4">
-          Scan to join ActionLadder instantly
+          Scan to join Billiards Ladder instantly
         </div>
 
         {/* Fight Night Poster Generator */}

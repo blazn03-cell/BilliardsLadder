@@ -30,10 +30,10 @@ export interface RevenueConfig {
   modifiedBy: string;
 }
 
-// Default configuration - current ActionLadder settings
+// Default configuration - current Billiards Ladder settings
 export const DEFAULT_REVENUE_CONFIG: RevenueConfig = {
   id: "default",
-  name: "ActionLadder Default Configuration", 
+  name: "Billiards Ladder Default Configuration", 
   splitPercentages: {
     actionLadder: 23,        // 23% to trustees/admin
     operator: 33,            // 33% to operators

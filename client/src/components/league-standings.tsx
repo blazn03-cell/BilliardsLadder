@@ -191,7 +191,7 @@ export default function LeagueStandings() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-white mb-2">ACTIONLADDER POOL LEAGUE</h1>
+        <h1 className="text-4xl font-bold text-white mb-2">BILLIARDS LADDER POOL LEAGUE</h1>
         <p className="text-gray-400">Official Hall vs Hall Competition</p>
         <div className="text-sm text-green-400 mt-1">Seguin • New Braunfels • San Marcos</div>
       </div>
@@ -202,7 +202,7 @@ export default function LeagueStandings() {
         <TabsList className="grid w-full grid-cols-2 bg-black/50">
           <TabsTrigger value="standings" className="flex items-center gap-2">
             <Trophy className="w-4 h-4" />
-            League Standings
+            League Ladder Standing
           </TabsTrigger>
           <TabsTrigger value="schedule" className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />

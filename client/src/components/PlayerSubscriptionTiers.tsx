@@ -370,7 +370,7 @@ export function PlayerSubscriptionTiers({ userId, currentUserRole }: PlayerSubsc
       <Card className="bg-gradient-to-r from-emerald-900/20 to-blue-900/20 border-emerald-500/30">
         <CardHeader>
           <CardTitle className="text-center text-2xl text-white">
-            Why Choose Action Ladder Over Traditional Leagues?
+            Why Choose Billiards Ladder Over Traditional Leagues?
           </CardTitle>
         </CardHeader>
         <CardContent>

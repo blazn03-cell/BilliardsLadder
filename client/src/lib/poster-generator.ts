@@ -210,7 +210,7 @@ export function generateFightNightPoster(data: PosterData): Promise<string> {
     // Footer branding
     ctx.fillStyle = colors.accent;
     ctx.font = 'bold 36px Inter';
-    ctx.fillText('ACTIONLADDER', 400, 1100);
+    ctx.fillText('BILLIARDS LADDER', 400, 1100);
     ctx.font = '20px Inter';
     ctx.fillStyle = colors.secondary;
     ctx.fillText('Pool. Points. Pride.', 400, 1130);
@@ -328,7 +328,7 @@ export function generateChampionshipPoster(data: PosterData): Promise<string> {
     // Footer
     ctx.fillStyle = colors.primary;
     ctx.font = 'bold 32px Inter';
-    ctx.fillText('ACTIONLADDER', 400, 1100);
+    ctx.fillText('BILLIARDS LADDER', 400, 1100);
     ctx.font = '18px Inter';
     ctx.fillText('Championship Series', 400, 1130);
     
@@ -444,7 +444,7 @@ export function generateClassicPoster(data: PosterData): Promise<string> {
     // Traditional footer
     ctx.fillStyle = colors.primary;
     ctx.font = 'bold 28px serif';
-    ctx.fillText('ActionLadder League', 400, 1080);
+    ctx.fillText('Billiards Ladder League', 400, 1080);
     ctx.font = '16px serif';
     ctx.fillText('Established Pool Hall Competition', 400, 1110);
     
@@ -619,7 +619,7 @@ export function generateNeonPoster(data: PosterData): Promise<string> {
     ctx.fillStyle = colors.primary;
     ctx.font = 'bold 32px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('ACTIONLADDER.NET', 400, 1080);
+    ctx.fillText('BILLIARDS LADDER.NET', 400, 1080);
     ctx.restore();
     
     ctx.fillStyle = colors.secondary;
@@ -703,7 +703,7 @@ export function generateBreakAndRunPoster(playerName: string, amount: number): P
     // Footer
     ctx.fillStyle = '#00ff41';
     ctx.font = 'bold 28px Inter';
-    ctx.fillText('ACTIONLADDER', 400, 700);
+    ctx.fillText('BILLIARDS LADDER', 400, 700);
     ctx.font = '18px Inter';
     ctx.fillText('Pool. Points. Pride.', 400, 730);
     

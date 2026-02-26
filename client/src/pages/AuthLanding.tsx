@@ -264,7 +264,7 @@ export default function AuthLanding() {
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-felt-green/10 p-4">
       {/* Header */}
       <div className="text-center py-8">
-        <h1 className="text-4xl font-bold text-white mb-4">Action Ladder</h1>
+        <h1 className="text-4xl font-bold text-white mb-4">Billiards Ladder</h1>
         <p className="text-gray-400 text-lg">"In here, respect is earned in racks, not words"</p>
       </div>
 
@@ -358,7 +358,7 @@ export default function AuthLanding() {
                 <Building2 className="mr-3 text-blue-400" />
                 Become an Operator
               </CardTitle>
-              <p className="text-gray-400">Set up your pool hall on Action Ladder</p>
+              <p className="text-gray-400">Set up your pool hall on Billiards Ladder</p>
             </CardHeader>
             <CardContent>
               <Form {...operatorForm}>

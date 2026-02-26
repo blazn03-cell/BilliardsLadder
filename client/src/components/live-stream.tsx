@@ -70,7 +70,7 @@ function CreateStreamDialog() {
       queryClient.invalidateQueries({ queryKey: ["/api/live-streams"] });
       toast({
         title: "Stream Created Successfully",
-        description: "Your live stream has been added to the ActionLadder network!",
+        description: "Your live stream has been added to the Billiards Ladder network!",
         duration: 5000,
       });
       setOpen(false);
@@ -318,7 +318,7 @@ export default function LiveStream() {
         <div>
           <h1 className="text-3xl font-bold text-emerald-400 flex items-center gap-3">
             <Video className="w-8 h-8" />
-            ActionLadder Live Streams
+            Billiards Ladder Live Streams
           </h1>
           <p className="text-gray-400 mt-1">
             Watch live pool action from halls across the country
@@ -366,7 +366,7 @@ export default function LiveStream() {
               No Streams Yet
             </h3>
             <p className="text-gray-400 mb-6">
-              Be the first to start streaming on the ActionLadder network!
+              Be the first to start streaming on the Billiards Ladder network!
             </p>
             <CreateStreamDialog />
           </CardContent>

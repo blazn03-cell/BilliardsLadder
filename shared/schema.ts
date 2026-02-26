@@ -15,13 +15,14 @@ export const sessions = pgTable(
 );
 
 // Global user roles for platform management
-export const globalRoles = ["OWNER", "STAFF", "OPERATOR", "CREATOR", "PLAYER", "TRUSTEE"] as const;
+export const globalRoles = ["OWNER", "STAFF", "OPERATOR", "CREATOR", "PLAYER", "TRUSTEE", "REGIONAL_OPERATOR", "POOL_HALL_OWNER", "LOCAL_OPERATOR"] as const;
 export type GlobalRole = typeof globalRoles[number];
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
   name: text("name"),
+  nickname: text("nickname"), // Display name on ladder/challenges
   // Enhanced authentication fields
   passwordHash: text("password_hash"), // For Creator/Owner email+password auth
   twoFactorEnabled: boolean("two_factor_enabled").default(false),
@@ -398,6 +399,7 @@ export const createPlayerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8, "Password must be at least 8 characters"),
   name: z.string().min(2),
+  nickname: z.string().min(2, "Nickname must be at least 2 characters").max(30, "Nickname too long"),
   city: z.string().min(2),
   state: z.string().min(2),
   tier: z.enum(["rookie", "barbox", "eight_foot", "nine_foot"]),

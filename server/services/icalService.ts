@@ -95,7 +95,7 @@ export class ICalService {
    */
   private generateICalFromChallenges(challenges: Challenge[]): string {
     const calendar = ical({
-      name: 'ActionLadder Challenge Calendar',
+      name: 'Billiards Ladder Challenge Calendar',
       description: 'Professional Billiards League - "In here, respect is earned in racks, not words"',
       timezone: 'America/New_York', // Default timezone, should be configurable
       url: `${process.env.REPLIT_DOMAINS || 'localhost:5000'}/api/ical/challenges`,
@@ -118,19 +118,19 @@ export class ICalService {
         ],
         status: this.mapChallengeStatusToIcal(challenge.status),
         organizer: {
-          name: 'ActionLadder League',
-          email: 'league@actionladder.com',
+          name: 'Billiards Ladder League',
+          email: 'league@billiardsladder.com',
         },
         attendees: [
           {
             name: challenge.aPlayerId,
-            email: `${challenge.aPlayerId}@actionladder.com`,
+            email: `${challenge.aPlayerId}@billiardsladder.com`,
             role: ICalAttendeeRole.REQ,
             status: this.getPlayerCheckInStatus(challenge, challenge.aPlayerId),
           },
           {
             name: challenge.bPlayerId,
-            email: `${challenge.bPlayerId}@actionladder.com`,
+            email: `${challenge.bPlayerId}@billiardsladder.com`,
             role: ICalAttendeeRole.REQ,
             status: this.getPlayerCheckInStatus(challenge, challenge.bPlayerId),
           }
@@ -149,10 +149,10 @@ export class ICalService {
         ],
       });
 
-      // Add custom properties for ActionLadder using description field
+      // Add custom properties for Billiards Ladder using description field
       // Note: Custom properties are not directly supported, so we add them to description
       const existingDescription = event.description();
-      const customProps = `\n\nActionLadder Properties:\nChallenge ID: ${challenge.id}\nStatus: ${challenge.status}${challenge.winnerId ? `\nWinner: ${challenge.winnerId}` : ''}`;
+      const customProps = `\n\nBilliards Ladder Properties:\nChallenge ID: ${challenge.id}\nStatus: ${challenge.status}${challenge.winnerId ? `\nWinner: ${challenge.winnerId}` : ''}`;
       event.description(existingDescription + customProps);
     });
 
@@ -170,7 +170,7 @@ export class ICalService {
    * Format challenge description for iCal
    */
   private formatChallengeDescription(challenge: Challenge): string {
-    let description = `ActionLadder Professional Billiards League\n\n`;
+    let description = `Billiards Ladder Professional Billiards League\n\n`;
     description += `Match: ${challenge.aPlayerId} vs ${challenge.bPlayerId}\n`;
     description += `Pool Hall: ${challenge.hallId}\n`;
     description += `Status: ${challenge.status.toUpperCase()}\n`;
@@ -200,7 +200,7 @@ export class ICalService {
   }
 
   /**
-   * Map ActionLadder status to iCal status
+   * Map Billiards Ladder status to iCal status
    */
   private mapChallengeStatusToIcal(status: string): ICalEventStatus {
     switch (status) {

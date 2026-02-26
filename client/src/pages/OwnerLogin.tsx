@@ -62,7 +62,7 @@ export default function OwnerLogin() {
           description: "Login successful.",
         });
         
-        window.location.href = "/owner-dashboard";
+        window.location.href = "/founder-dashboard";
       }
     },
     onError: (error: any) => {
@@ -107,7 +107,7 @@ export default function OwnerLogin() {
                         <Input
                           {...field}
                           type="email"
-                          placeholder="founder@actionladder.com"
+                          placeholder="founder@billiardsladder.com"
                           className="pl-10 bg-gray-900/50 border-gray-600 text-white focus:border-amber-400"
                           data-testid="input-email"
                         />

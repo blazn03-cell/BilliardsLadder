@@ -100,7 +100,7 @@ export default function SelectRole() {
             Choose Your Role
           </CardTitle>
           <p className="text-gray-400 text-sm">
-            Select how you'll be using ActionLadder
+            Select how you'll be using Billiards Ladder
           </p>
         </CardHeader>
         <CardContent className="space-y-6">

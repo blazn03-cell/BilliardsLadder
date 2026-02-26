@@ -48,7 +48,7 @@ export function createSetupIntent(storage: IStorage) {
           name: dbUser.name || undefined,
           metadata: {
             userId: userId,
-            platform: "ActionLadder"
+            platform: "Billiards Ladder"
           }
         });
         

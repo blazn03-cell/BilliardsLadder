@@ -260,7 +260,7 @@ export class TrainingRewardsScheduler {
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: linear-gradient(135deg, #065f46 0%, #047857 100%); color: white; padding: 20px; text-align: center;">
-            <h1 style="margin: 0;">ActionLadder Training Rewards</h1>
+            <h1 style="margin: 0;">Billiards Ladder Training Rewards</h1>
             <p style="margin: 10px 0 0 0; opacity: 0.9;">Monthly Reward Summary</p>
           </div>
           
@@ -319,19 +319,19 @@ export class TrainingRewardsScheduler {
             
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
               <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-                This is an automated notification from the ActionLadder training rewards system.
+                This is an automated notification from the Billiards Ladder training rewards system.
               </p>
             </div>
           </div>
           
           <div style="background: #374151; color: #9ca3af; padding: 20px; text-align: center; font-size: 12px;">
-            <p style="margin: 0;">© 2025 ActionLadder - In here, respect is earned in racks, not words</p>
+            <p style="margin: 0;">© 2025 Billiards Ladder - In here, respect is earned in racks, not words</p>
           </div>
         </div>
       `;
 
       const emailText = `
-ActionLadder Training Rewards - Monthly Summary
+Billiards Ladder Training Rewards - Monthly Summary
 
 Period: ${period}
 
@@ -351,7 +351,7 @@ Failed Rewards:
 ${failedRewards.map(r => `- ${r.playerName || r.playerId || 'Unknown'} at ${r.hallName}: ${r.error}`).join('\n')}
 ` : ''}
 
-This is an automated notification from the ActionLadder training rewards system.
+This is an automated notification from the Billiards Ladder training rewards system.
       `;
 
       // Check if SendGrid is configured
@@ -371,7 +371,7 @@ This is an automated notification from the ActionLadder training rewards system.
       try {
         await mailService.send({
           to: adminEmails,
-          from: process.env.SENDGRID_FROM_EMAIL || 'noreply@actionladder.com',
+          from: process.env.SENDGRID_FROM_EMAIL || 'noreply@billiardsladder.com',
           subject: `Monthly Training Rewards Applied - ${period}`,
           text: emailText,
           html: emailHtml,
