@@ -1,127 +1,130 @@
 import { useState, useEffect } from "react";
-import { apiRequest } from "@/lib/queryClient";
-import { SafeText, SafeHeading } from "@/components/SafeText";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign, Users, TrendingUp, PieChart, BarChart3, CreditCard } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, Minus, Trophy, Target, BarChart3, Calendar } from "lucide-react";
 
-interface StakeholderEarnings {
-  actionLadderTotal: number;
-  operatorTotal: number;
-  bonusFundTotal: number;
-  playerWinnings: number;
-  monthlyGrowth: number;
+interface PlayerGameRecord {
+  totalGames: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  winRate: number;
+  totalWinnings: number;
+  totalLosses: number;
+  netEarnings: number;
+  currentStreak: number;
+  streakType: "win" | "loss" | "none";
+  bestStreak: number;
 }
 
-interface CommissionBreakdown {
-  originalAmount: number;
-  commissionRate: number;
-  calculatedCommission: number;
-  roundedCommission: number;
-  actionLadderShare: number;
-  operatorShare: number;
-  bonusFundShare: number;
-  prizePool: number;
+interface RecentMatch {
+  id: string;
+  opponent: string;
+  result: "win" | "loss" | "draw";
+  amount: number;
+  date: string;
+  division: string;
 }
 
-interface MembershipTier {
-  name: string;
-  price: number;
-  commissionRate: number;
-  perks: string[];
-  description: string;
+interface MonthlyBreakdown {
+  month: string;
+  wins: number;
+  losses: number;
+  draws: number;
+  earnings: number;
+  spent: number;
+  net: number;
 }
 
 export default function MonetizationDashboard() {
-  // Mock user role - in production this would come from your auth system
-  // For demo: "OWNER", "TRUSTEE", "OPERATOR", "PLAYER"
-  const mockUser = { globalRole: "OWNER" }; // Change this to test different roles
-
-  const [earnings, setEarnings] = useState<StakeholderEarnings>({
-    actionLadderTotal: 0,
-    operatorTotal: 0,
-    bonusFundTotal: 0,
-    playerWinnings: 0,
-    monthlyGrowth: 0
-  });
-  const [tiers, setTiers] = useState<MembershipTier[]>([]);
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
 
-  // Commission Calculator
-  const [commissionAmount, setCommissionAmount] = useState(100);
-  const [commissionTier, setCommissionTier] = useState("none");
-  const [commission, setCommission] = useState<CommissionBreakdown | null>(null);
+  const [record, setRecord] = useState<PlayerGameRecord>({
+    totalGames: 0,
+    wins: 0,
+    losses: 0,
+    draws: 0,
+    winRate: 0,
+    totalWinnings: 0,
+    totalLosses: 0,
+    netEarnings: 0,
+    currentStreak: 0,
+    streakType: "none",
+    bestStreak: 0,
+  });
+
+  const [recentMatches, setRecentMatches] = useState<RecentMatch[]>([]);
+  const [monthlyData, setMonthlyData] = useState<MonthlyBreakdown[]>([]);
 
   useEffect(() => {
-    loadDashboardData();
+    loadPlayerData();
   }, []);
 
-  const loadDashboardData = async () => {
+  const loadPlayerData = async () => {
     try {
-      // Load membership tiers
-      const tierResponse = await fetch("/api/pricing/tiers");
-      const tierData = await tierResponse.json();
-      setTiers(tierData);
-
-      // NEW PLAYER-FRIENDLY DISTRIBUTION MODEL
-      setEarnings({
-        actionLadderTotal: 25000, // $250 total: $90 owner + $80 trustee A + $80 trustee B
-        operatorTotal: 45000,     // $450 total: 6 operators x $75 each = $4,500
-        bonusFundTotal: 100000,   // $1,000+ monthly player bonus fund (35% of commission)
-        playerWinnings: 120000,   // $1,200 monthly player winnings from matches
-        monthlyGrowth: 18.5
-      });
-
+      const res = await fetch("/api/player/earnings");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.record) setRecord(data.record);
+        if (data.recentMatches) setRecentMatches(data.recentMatches);
+        if (data.monthlyData) setMonthlyData(data.monthlyData);
+      } else {
+        setRecord({
+          totalGames: 0,
+          wins: 0,
+          losses: 0,
+          draws: 0,
+          winRate: 0,
+          totalWinnings: 0,
+          totalLosses: 0,
+          netEarnings: 0,
+          currentStreak: 0,
+          streakType: "none",
+          bestStreak: 0,
+        });
+        setRecentMatches([]);
+        setMonthlyData([]);
+      }
+    } catch {
+      // defaults already set
+    } finally {
       setLoading(false);
-    } catch (error) {
-      console.error("Failed to load dashboard data:", error);
-      setLoading(false);
-    }
-  };
-
-  const calculateCommissionBreakdown = async () => {
-    try {
-      const response = await fetch("/api/pricing/calculate-commission", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: commissionAmount * 100, // Convert to cents
-          membershipTier: commissionTier
-        })
-      });
-      const data = await response.json();
-      setCommission(data);
-    } catch (error) {
-      console.error("Failed to calculate commission:", error);
     }
   };
 
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD"
+      currency: "USD",
     }).format(cents / 100);
   };
 
-  const formatPercent = (value: number) => {
-    return `${value.toFixed(1)}%`;
+  const getNetColor = (net: number) => {
+    if (net > 0) return "text-green-400";
+    if (net < 0) return "text-red-400";
+    return "text-yellow-400";
   };
 
-  // Role-based access control - PRIVACY PROTECTION
-  const isOwnerOrTrustee = mockUser?.globalRole === "OWNER" || mockUser?.globalRole === "TRUSTEE";
-  const isOperator = mockUser?.globalRole === "OPERATOR";
-  const isPlayer = mockUser?.globalRole === "PLAYER";
+  const getNetLabel = (net: number) => {
+    if (net > 0) return "Profit";
+    if (net < 0) return "Down";
+    return "Break Even";
+  };
 
-  // STRICT PRIVACY: Only owner/trustee can see Billiards Ladder earnings
-  const canSeeBilliardsLadderEarnings = isOwnerOrTrustee;
-  const canSeeOperatorEarnings = isOwnerOrTrustee || isOperator;
-  const canSeeAllData = isOwnerOrTrustee;
+  const getResultBadge = (result: string) => {
+    switch (result) {
+      case "win":
+        return <Badge className="bg-green-600/20 text-green-400 border-green-500/30" data-testid="badge-result-win">W</Badge>;
+      case "loss":
+        return <Badge className="bg-red-600/20 text-red-400 border-red-500/30" data-testid="badge-result-loss">L</Badge>;
+      default:
+        return <Badge className="bg-yellow-600/20 text-yellow-400 border-yellow-500/30" data-testid="badge-result-draw">D</Badge>;
+    }
+  };
 
   if (loading) {
     return (
@@ -136,401 +139,301 @@ export default function MonetizationDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
+    <div className="min-h-screen bg-black text-white p-6" data-testid="page-player-earnings">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <SafeHeading className="text-3xl font-bold text-green-400">
-              {canSeeAllData ? "Complete Revenue Dashboard" : "Your Earnings Dashboard"}
-            </SafeHeading>
-            <SafeText className="text-gray-400 mt-2">
-              {canSeeAllData
-                ? "Complete financial overview - Owner/Trustee Access"
-                : `Financial overview for ${mockUser?.globalRole?.toLowerCase() || 'user'}`}
-            </SafeText>
+            <h1 className="text-3xl font-bold text-green-400">
+              Your Earnings
+            </h1>
+            <p className="text-gray-400 mt-2">
+              Track your wins, losses, and overall standing
+            </p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="outline" className="text-green-400 border-green-400">
-              Monthly Growth: +{formatPercent(earnings.monthlyGrowth)}
-            </Badge>
-            {canSeeBilliardsLadderEarnings && (
-              <Badge variant="outline" className="text-red-400 border-red-400">
-                PRIVATE VIEW
+            {record.currentStreak > 0 && (
+              <Badge
+                variant="outline"
+                className={record.streakType === "win" ? "text-green-400 border-green-400" : "text-red-400 border-red-400"}
+                data-testid="badge-current-streak"
+              >
+                {record.currentStreak} {record.streakType === "win" ? "W" : "L"} Streak
               </Badge>
             )}
+            <Badge variant="outline" className={`${getNetColor(record.netEarnings)} border-current`} data-testid="badge-net-status">
+              {getNetLabel(record.netEarnings)}
+            </Badge>
           </div>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="bg-gray-900 border-gray-700">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-green-600">
-              Stakeholder Overview
+            <TabsTrigger value="overview" className="data-[state=active]:bg-green-600" data-testid="tab-overview">
+              Overview
             </TabsTrigger>
-            <TabsTrigger value="calculator" className="data-[state=active]:bg-green-600">
-              Commission Calculator
+            <TabsTrigger value="history" className="data-[state=active]:bg-green-600" data-testid="tab-history">
+              Match History
             </TabsTrigger>
-            <TabsTrigger value="tiers" className="data-[state=active]:bg-green-600">
-              Membership Tiers
+            <TabsTrigger value="monthly" className="data-[state=active]:bg-green-600" data-testid="tab-monthly">
+              Monthly Breakdown
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            {/* Revenue Distribution Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Billiards Ladder (OWNER + TRUSTEE ONLY) */}
-              {canSeeBilliardsLadderEarnings && (
-                <Card className="bg-gray-900 border-green-500/30">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-green-400 flex items-center gap-2">
-                      <DollarSign className="h-5 w-5" />
-                      Billiards Ladder (50%)
-                    </CardTitle>
-                    <CardDescription className="text-gray-400">
-                      Platform Revenue - PRIVATE
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-white">
-                      {formatCurrency(earnings.actionLadderTotal)}
-                    </div>
-                    <SafeText className="text-sm text-gray-400 mt-2">
-                      Owner + Trustee Only
-                    </SafeText>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Operator Revenue */}
-              {canSeeOperatorEarnings && (
-                <Card className="bg-gray-900 border-blue-500/30">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-blue-400 flex items-center gap-2">
-                      <Users className="h-5 w-5" />
-                      {isOwnerOrTrustee ? "All Operators (30%)" : "Your Earnings (30%)"}
-                    </CardTitle>
-                    <CardDescription className="text-gray-400">
-                      {isOwnerOrTrustee ? "Pool Hall Partners" : "Your Share"}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-white">
-                      {formatCurrency(earnings.operatorTotal)}
-                    </div>
-                    <SafeText className="text-sm text-gray-400 mt-2">
-                      {isOwnerOrTrustee ? "Total Operator Payouts" : "Your Operator Share"}
-                    </SafeText>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Bonus Fund */}
-              <Card className="bg-gray-900 border-purple-500/30">
+              <Card className="bg-gray-900 border-green-500/30">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-purple-400 flex items-center gap-2">
-                    <PieChart className="h-5 w-5" />
-                    Bonus Fund (20%)
+                  <CardTitle className="text-green-400 flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Total Winnings
                   </CardTitle>
                   <CardDescription className="text-gray-400">
-                    Community Rewards
+                    From {record.wins} wins
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">
-                    {formatCurrency(earnings.bonusFundTotal)}
+                  <div className="text-2xl font-bold text-green-400" data-testid="text-total-winnings">
+                    {formatCurrency(record.totalWinnings)}
                   </div>
-                  <SafeText className="text-sm text-gray-400 mt-2">
-                    Player Incentives
-                  </SafeText>
                 </CardContent>
               </Card>
 
-              {/* Player Benefits - Always visible */}
-              <Card className="bg-gray-900 border-orange-500/30">
+              <Card className="bg-gray-900 border-red-500/30">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-orange-400 flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    Player Benefits
+                  <CardTitle className="text-red-400 flex items-center gap-2">
+                    <TrendingDown className="h-5 w-5" />
+                    Total Losses
                   </CardTitle>
                   <CardDescription className="text-gray-400">
-                    Total Monthly Player Value
+                    From {record.losses} losses
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">
-                    {formatCurrency(earnings.playerWinnings + earnings.bonusFundTotal)}
+                  <div className="text-2xl font-bold text-red-400" data-testid="text-total-losses">
+                    {formatCurrency(record.totalLosses)}
                   </div>
-                  <SafeText className="text-sm text-gray-400 mt-2">
-                    Prize Pools + Bonus Fund
-                  </SafeText>
-                  <SafeText className="text-xs text-green-400 mt-1">
-                    $20-30 cheaper than leagues!
-                  </SafeText>
+                </CardContent>
+              </Card>
+
+              <Card className={`bg-gray-900 ${record.netEarnings > 0 ? "border-green-500/30" : record.netEarnings < 0 ? "border-red-500/30" : "border-yellow-500/30"}`}>
+                <CardHeader className="pb-3">
+                  <CardTitle className={`flex items-center gap-2 ${getNetColor(record.netEarnings)}`}>
+                    {record.netEarnings > 0 ? <TrendingUp className="h-5 w-5" /> : record.netEarnings < 0 ? <TrendingDown className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+                    Net Earnings
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">
+                    {getNetLabel(record.netEarnings)}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${getNetColor(record.netEarnings)}`} data-testid="text-net-earnings">
+                    {record.netEarnings >= 0 ? "+" : ""}{formatCurrency(record.netEarnings)}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-blue-500/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-blue-400 flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Win Rate
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">
+                    {record.totalGames} total games
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-400" data-testid="text-win-rate">
+                    {record.winRate.toFixed(1)}%
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Revenue Split Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="bg-gray-900 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Game Record
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Wins</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-32 h-3 bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-500 rounded-full"
+                          style={{ width: `${record.totalGames ? (record.wins / record.totalGames) * 100 : 0}%` }}
+                        />
+                      </div>
+                      <span className="text-green-400 font-bold w-8 text-right" data-testid="text-wins-count">{record.wins}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Losses</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-32 h-3 bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-red-500 rounded-full"
+                          style={{ width: `${record.totalGames ? (record.losses / record.totalGames) * 100 : 0}%` }}
+                        />
+                      </div>
+                      <span className="text-red-400 font-bold w-8 text-right" data-testid="text-losses-count">{record.losses}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-400">Draws</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-32 h-3 bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-yellow-500 rounded-full"
+                          style={{ width: `${record.totalGames ? (record.draws / record.totalGames) * 100 : 0}%` }}
+                        />
+                      </div>
+                      <span className="text-yellow-400 font-bold w-8 text-right" data-testid="text-draws-count">{record.draws}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Trophy className="h-5 w-5" />
+                    Streaks
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-800">
+                    <span className="text-gray-400">Current Streak</span>
+                    <span className={`font-bold text-lg ${record.streakType === "win" ? "text-green-400" : record.streakType === "loss" ? "text-red-400" : "text-gray-400"}`} data-testid="text-current-streak">
+                      {record.currentStreak > 0 ? `${record.currentStreak} ${record.streakType === "win" ? "Wins" : "Losses"}` : "No active streak"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-800">
+                    <span className="text-gray-400">Best Win Streak</span>
+                    <span className="font-bold text-lg text-green-400" data-testid="text-best-streak">{record.bestStreak} Wins</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-800">
+                    <span className="text-gray-400">Total Games Played</span>
+                    <span className="font-bold text-lg text-white" data-testid="text-total-games">{record.totalGames}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {record.totalGames === 0 && (
+              <Card className="bg-gray-900 border-gray-700">
+                <CardContent className="py-12 text-center">
+                  <Trophy className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-400 mb-2">No Games Yet</h3>
+                  <p className="text-gray-500">Play your first match to start tracking your earnings and stats.</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-6">
+            <Card className="bg-gray-900 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Recent Matches
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  Your latest game results and earnings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {recentMatches.length > 0 ? (
+                  <div className="space-y-3">
+                    {recentMatches.map((match) => (
+                      <div
+                        key={match.id}
+                        className="flex items-center justify-between p-4 rounded-lg bg-gray-800 border border-gray-700"
+                        data-testid={`row-match-${match.id}`}
+                      >
+                        <div className="flex items-center gap-4">
+                          {getResultBadge(match.result)}
+                          <div>
+                            <p className="text-white font-medium">vs {match.opponent}</p>
+                            <p className="text-sm text-gray-400">{match.division} &middot; {match.date}</p>
+                          </div>
+                        </div>
+                        <div className={`text-lg font-bold ${match.result === "win" ? "text-green-400" : match.result === "loss" ? "text-red-400" : "text-yellow-400"}`}>
+                          {match.result === "win" ? "+" : match.result === "loss" ? "-" : ""}{formatCurrency(match.amount)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center">
+                    <Calendar className="h-10 w-10 text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-500">No matches recorded yet. Your history will appear here after your first game.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="monthly" className="space-y-6">
             <Card className="bg-gray-900 border-gray-700">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  Revenue Split Model
+                  Monthly Breakdown
                 </CardTitle>
-                <CardDescription>
-                  How every dollar is distributed across stakeholders
+                <CardDescription className="text-gray-400">
+                  Your earnings by month
                 </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Only show Billiards Ladder split to Owner/Trustee */}
-                  {canSeeBilliardsLadderEarnings && (
-                    <div className="p-4 rounded-lg bg-green-900/20 border border-green-500/30">
-                      <h4 className="text-green-400 font-semibold">Billiards Ladder Platform</h4>
-                      <p className="text-2xl font-bold text-white">35%</p>
-                      <SafeText className="text-sm text-gray-400">
-                        Reduced share - more money to players!
-                      </SafeText>
-                    </div>
-                  )}
-                  {canSeeOperatorEarnings && (
-                    <div className="p-4 rounded-lg bg-blue-900/20 border border-blue-500/30">
-                      <h4 className="text-blue-400 font-semibold">Pool Hall Operators</h4>
-                      <p className="text-2xl font-bold text-white">30%</p>
-                      <SafeText className="text-sm text-gray-400">
-                        Venue partnerships, local support
-                      </SafeText>
-                    </div>
-                  )}
-                  <div className="p-4 rounded-lg bg-purple-900/20 border border-purple-500/30">
-                    <h4 className="text-purple-400 font-semibold">Bonus Pool Fund</h4>
-                    <p className="text-2xl font-bold text-white">5-10%</p>
-                    <SafeText className="text-sm text-gray-400">
-                      King of the Hill, Hill-Hill Chaos, tournaments
-                    </SafeText>
-                  </div>
-                </div>
-
-                {/* Operator Revenue Examples */}
-                {canSeeOperatorEarnings && (
-                  <div className="mt-6">
-                    <h4 className="text-lg font-semibold text-white mb-4">Operator + Trustee Revenue — 4-Month Season</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="p-4 rounded-lg bg-blue-900/20 border border-blue-500/30">
-                        <h5 className="text-blue-400 font-semibold">15 Players @ $60</h5>
-                        <p className="text-sm text-gray-300 mb-2">30 matches/month</p>
-                        <p className="text-xl font-bold text-white">$3,600</p>
-                        <SafeText className="text-xs text-gray-400">
-                          Operator share per 4-month season
-                        </SafeText>
-                      </div>
-                      <div className="p-4 rounded-lg bg-purple-900/20 border border-purple-500/30">
-                        <h5 className="text-purple-400 font-semibold">30 Players @ $100</h5>
-                        <p className="text-sm text-gray-300 mb-2">60 matches/month</p>
-                        <p className="text-xl font-bold text-white">$12,000</p>
-                        <SafeText className="text-xs text-gray-400">
-                          Operator share per 4-month season
-                        </SafeText>
-                      </div>
-                      <div className="p-4 rounded-lg bg-yellow-900/20 border border-yellow-500/30">
-                        <h5 className="text-yellow-400 font-semibold">50 Players Mixed</h5>
-                        <p className="text-sm text-gray-300 mb-2">100+ matches/month</p>
-                        <p className="text-xl font-bold text-white">$17,000</p>
-                        <SafeText className="text-xs text-gray-400">
-                          Operator share per 4-month season
-                        </SafeText>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Challenge Pools Section */}
-            <Card className="bg-gray-900 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Challenge Pools
-                </CardTitle>
-                <CardDescription>
-                  Lock in before the break - winner takes the pool
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-lg bg-blue-900/20 border border-blue-500/30">
-                    <h4 className="text-blue-400 font-semibold">Individual Pools</h4>
-                    <p className="text-sm text-gray-300 mb-2">$5 - $100,000 per side</p>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span className="text-green-400 font-medium">Available Now</span>
-                    </div>
-                    <SafeText className="text-xs text-gray-400 mt-2">
-                      Lock funds before first break, winner takes pool minus service fee
-                    </SafeText>
-                  </div>
-                  <div className="p-4 rounded-lg bg-gray-700/20 border border-gray-500/30">
-                    <h4 className="text-gray-400 font-semibold">Team Challenge Pools</h4>
-                    <p className="text-sm text-gray-300 mb-2">2-man, 3-man, 5-man teams</p>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
-                      <span className="text-yellow-400 font-medium">Coming Soon</span>
-                    </div>
-                    <SafeText className="text-xs text-gray-400 mt-2">
-                      Team pools with Pro membership requirements
-                    </SafeText>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-green-900/10 rounded border border-green-500/20">
-                  <h5 className="text-green-400 font-semibold mb-2">How Challenge Pools Work</h5>
-                  <ul className="text-sm text-gray-300 space-y-1">
-                    <li>• Players lock credits before match starts</li>
-                    <li>• Winner receives pool minus small service fee (5-8.5%)</li>
-                    <li>• Disputes must be filed within 12 hours</li>
-                    <li>• Auto-resolution after dispute period expires</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Key Features */}
-            <Card className="bg-gray-900 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white">Key Features</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-gray-300">
-                  <p>Additional monetization features coming soon...</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="calculator" className="space-y-6">
-            <Card className="bg-gray-900 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white">Commission Calculator</CardTitle>
-                <CardDescription>
-                  Calculate revenue splits for any match amount
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Match Amount ($)</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      value={commissionAmount}
-                      onChange={(e) => setCommissionAmount(Number(e.target.value))}
-                      className="bg-gray-800 border-gray-600 text-white"
-                      placeholder="100"
-                    />
+                {monthlyData.length > 0 ? (
+                  <div className="space-y-3">
+                    {monthlyData.map((month) => (
+                      <div
+                        key={month.month}
+                        className="p-4 rounded-lg bg-gray-800 border border-gray-700"
+                        data-testid={`row-month-${month.month}`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-white font-semibold">{month.month}</h4>
+                          <span className={`text-lg font-bold ${getNetColor(month.net)}`}>
+                            {month.net >= 0 ? "+" : ""}{formatCurrency(month.net)}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-400">Record</p>
+                            <p className="text-white font-medium">
+                              <span className="text-green-400">{month.wins}W</span>
+                              {" - "}
+                              <span className="text-red-400">{month.losses}L</span>
+                              {month.draws > 0 && <span className="text-yellow-400"> - {month.draws}D</span>}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400">Won</p>
+                            <p className="text-green-400 font-medium">{formatCurrency(month.earnings)}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400">Lost</p>
+                            <p className="text-red-400 font-medium">{formatCurrency(month.spent)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="tier">Player Membership Tier</Label>
-                    <Select value={commissionTier} onValueChange={setCommissionTier}>
-                      <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
-                        <SelectValue placeholder="Select tier" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-gray-600">
-                        <SelectItem value="none">Non-Member (10%)</SelectItem>
-                        <SelectItem value="rookie">Rookie $50 (10%)</SelectItem>
-                        <SelectItem value="standard">Standard $70 (8%)</SelectItem>
-                        <SelectItem value="premium">Premium $90 (5%)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={calculateCommissionBreakdown}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  data-testid="button-calculate-commission"
-                >
-                  Calculate Commission Split
-                </Button>
-
-                {commission && (
-                  <div className="mt-6 p-4 rounded-lg bg-gray-800 border border-gray-600">
-                    <h4 className="text-lg font-semibold text-white mb-3">Commission Breakdown</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-400">Prize Pool</p>
-                        <p className="text-xl font-bold text-green-400">
-                          {formatCurrency(commission.prizePool)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Billiards Ladder</p>
-                        <p className="text-xl font-bold text-blue-400">
-                          {formatCurrency(commission.actionLadderShare)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Operator</p>
-                        <p className="text-xl font-bold text-purple-400">
-                          {formatCurrency(commission.operatorShare)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Bonus Fund</p>
-                        <p className="text-xl font-bold text-orange-400">
-                          {formatCurrency(commission.bonusFundShare)}
-                        </p>
-                      </div>
-                    </div>
-                    <Separator className="my-3 bg-gray-600" />
-                    <div className="text-sm text-gray-400">
-                      <p>Commission Rate: {(commission.commissionRate / 100).toFixed(1)}%</p>
-                      <p>Total Commission: {formatCurrency(commission.roundedCommission)} (rounded up)</p>
-                    </div>
+                ) : (
+                  <div className="py-12 text-center">
+                    <BarChart3 className="h-10 w-10 text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-500">Monthly data will appear here once you start playing matches.</p>
                   </div>
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="tiers" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {(Array.isArray(tiers) ? tiers : []).map((tier) => (
-                <Card key={tier.name} className="bg-gray-900 border-gray-700">
-                  <CardHeader>
-                    <CardTitle className="text-green-400 flex items-center gap-2">
-                      <CreditCard className="h-5 w-5" />
-                      {tier.name}
-                    </CardTitle>
-                    <CardDescription className="text-gray-400">
-                      {tier.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-2xl font-bold text-white">
-                        {formatCurrency(tier.price)}
-                        <span className="text-sm font-normal text-gray-400">/month</span>
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        Commission: {(tier.commissionRate / 100).toFixed(1)}%
-                      </p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-white mb-2">Perks</h4>
-                      <ul className="space-y-1">
-                        {tier.perks.map((perk, index) => (
-                          <li key={index} className="text-sm text-gray-400 flex items-start gap-2">
-                            <span className="text-green-400 mt-1">•</span>
-                            <SafeText>{perk.replace(/_/g, ' ')}</SafeText>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
           </TabsContent>
         </Tabs>
       </div>

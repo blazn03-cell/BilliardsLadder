@@ -208,7 +208,7 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
       items: [
         { id: "player-subscription", label: "💳 Subscription Plans", requiresAuth: true },
         { id: "checkout", label: "💰 Billing & Payments", requiresAuth: true },
-        { id: "monetization", label: "📊 Revenue Dashboard", roles: ["OWNER", "OPERATOR", "TRUSTEE"] as GlobalRole[], requiresAuth: true },
+        { id: "monetization", label: "📊 Your Earnings", requiresAuth: true },
       ]
     },
     {
