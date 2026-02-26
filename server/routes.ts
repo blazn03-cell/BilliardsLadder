@@ -27,6 +27,7 @@ import { setupCheckinRoutes } from "./routes/checkin.routes";
 import { initializeFeeScheduler } from "./services/feeScheduler";
 import { initializeSocketManager } from "./services/challengeSocketEvents";
 import { registerAdminRoutes, registerOperatorRoutes } from "./routes/admin.routes";
+import { registerMissingRoutes } from "./routes/missing.routes";
 import { registerAuthRoutes } from "./routes/auth.routes";
 import { registerHallRoutes } from "./routes/hall.routes";
 import { registerPlayerBillingRoutes } from "./services/playerBilling";
@@ -97,6 +98,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register authentication routes
   registerAuthRoutes(app);
+  
+  // Fill all missing frontend→backend route gaps + addictiveness endpoints
+  registerMissingRoutes(app);
   
   // Register admin routes for staff management and payouts
   registerAdminRoutes(app);

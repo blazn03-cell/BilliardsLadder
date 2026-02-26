@@ -8,6 +8,7 @@ import { ChevronDown, Trophy, Camera, DollarSign, Users, Settings } from "lucide
 import type { GlobalRole } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/components/dashboard";
+import EngagementBar from "@/components/AddictoEngine";
 import Ladder from "@/components/ladder";
 import Tournaments from "@/components/tournaments";
 import Players from "@/components/players";

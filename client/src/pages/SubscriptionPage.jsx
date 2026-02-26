@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
-// ─── Stripe Payment Links (from uploaded SubscriptionPage) ────────────────────
+// ── Stripe Payment Links (TEST MODE) ─────────────────────────────────────────
 export const PAYMENT_LINKS = {
   rookie:   "https://buy.stripe.com/test_aFacN56p6b3A35FflP1Jm0a",
   standard: "https://buy.stripe.com/test_fZu9AT5l2efM5dN3D71Jm0b",
@@ -10,38 +8,63 @@ export const PAYMENT_LINKS = {
   family:   "https://buy.stripe.com/test_bJe9AT8xe4FcfSrgpT1Jm0d",
 };
 
+// ── Price IDs — paste these into your backend checkout handler ────────────────
 export const PRICE_IDS = {
-  rookie:        "price_1T50oRDc2BliYufwrfHeSzfg",
-  standard:      "price_1T50oUDc2BliYufwltyeKc3v",
-  premium:       "price_1T50oYDc2BliYufw6h8lK7x9",
-  family:        "price_1T50uBDc2BliYufwQ6hMnDSp",
-  deposit_flat:  "price_1T50geDc2BliYufwadeCDY0p",
-  deposit_10pct: "price_1T50u0Dc2BliYufwZyNxLfBc",
-  deposit_7pct:  "price_1T50u2Dc2BliYufwL3u2vZGi",
-  deposit_5pct:  "price_1T50u5Dc2BliYufwBztjlQtg",
+  // Memberships
+  rookie:        "price_1T50oRDc2BliYufwrfHeSzfg",  // $25.99/mo
+  standard:      "price_1T50oUDc2BliYufwltyeKc3v",  // $35.99/mo
+  premium:       "price_1T50oYDc2BliYufw6h8lK7x9",  // $59.99/mo
+  family:        "price_1T50uBDc2BliYufwQ6hMnDSp",  // $45.00/mo
+  // Flat commitment deposit (all matches)
+  deposit_flat:  "price_1T50geDc2BliYufwadeCDY0p",  // $20 one-time
+  // Stake deposits (backend must calculate exact amount & use payment_intent)
+  deposit_10pct: "price_1T50u0Dc2BliYufwZyNxLfBc",  // 10% — stakes $301–$1,000
+  deposit_7pct:  "price_1T50u2Dc2BliYufwL3u2vZGi",  // 7%  — stakes $1,001–$5,000
+  deposit_5pct:  "price_1T50u5Dc2BliYufwBztjlQtg",  // 5%  — stakes $5,001+
 };
 
-export function calcStakeDeposit(stakeAmountCents: number) {
-  if (stakeAmountCents <= 30000)
-    return { depositAmount: 2000, depositPercent: null, priceId: PRICE_IDS.deposit_flat, tier: "flat" };
+/**
+ * DEPOSIT CALCULATOR UTILITY
+ * Use this on your backend when a match is scheduled.
+ *
+ * Returns: { depositAmount (cents), depositPercent, priceId, tier }
+ *
+ * Usage:
+ *   const dep = calcStakeDeposit(50000); // $500 stake
+ *   // => { depositAmount: 5000, depositPercent: 10, priceId: "price_...", tier: "10pct" }
+ */
+export function calcStakeDeposit(stakeAmountCents) {
+  // Always charge flat $20 commitment deposit
+  const flat = { depositAmount: 2000, depositPercent: null, priceId: PRICE_IDS.deposit_flat, tier: "flat" };
+  if (stakeAmountCents <= 30000) return flat; // $300 or under → flat only
+
   if (stakeAmountCents <= 100000) {
+    // $301–$1,000 → 10%
     const amt = Math.round(stakeAmountCents * 0.10);
     return { depositAmount: amt, depositPercent: 10, priceId: PRICE_IDS.deposit_10pct, tier: "10pct" };
   }
   if (stakeAmountCents <= 500000) {
+    // $1,001–$5,000 → 7%
     const amt = Math.round(stakeAmountCents * 0.07);
     return { depositAmount: amt, depositPercent: 7, priceId: PRICE_IDS.deposit_7pct, tier: "7pct" };
   }
+  // $5,001+ → 5%
   const amt = Math.round(stakeAmountCents * 0.05);
   return { depositAmount: amt, depositPercent: 5, priceId: PRICE_IDS.deposit_5pct, tier: "5pct" };
 }
 
-// ─── Plan definitions ─────────────────────────────────────────────────────────
+// ── Plan definitions ──────────────────────────────────────────────────────────
 const plans = [
   {
-    id: "rookie", name: "Rookie", icon: "👤", price: 25.99, color: "#22c55e",
-    glow: "rgba(34,197,94,0.2)", tagline: "Perfect for new players entering competitive billiards",
-    commission: "10%", badge: null,
+    id: "rookie",
+    name: "Rookie",
+    icon: "👤",
+    price: 25.99,
+    color: "#22c55e",
+    glow: "rgba(34,197,94,0.2)",
+    tagline: "Perfect for new players entering competitive billiards",
+    commission: "10%",
+    badge: null,
     features: [
       { label: "10% commission rate on all challenges", highlight: true },
       { label: "Access to all ladder divisions (7ft / 8ft / 9ft)" },
@@ -62,9 +85,15 @@ const plans = [
     ],
   },
   {
-    id: "standard", name: "Standard", icon: "⭐", price: 35.99, color: "#a855f7",
-    glow: "rgba(168,85,247,0.25)", tagline: "For serious players who want every competitive edge",
-    commission: "8%", badge: "Most Popular",
+    id: "standard",
+    name: "Standard",
+    icon: "⭐",
+    price: 35.99,
+    color: "#a855f7",
+    glow: "rgba(168,85,247,0.25)",
+    tagline: "For serious players who want every competitive edge",
+    commission: "8%",
+    badge: "Most Popular",
     features: [
       { label: "8% commission rate on all challenges", highlight: true },
       { label: "Everything in Rookie" },
@@ -86,9 +115,15 @@ const plans = [
     ],
   },
   {
-    id: "premium", name: "Premium", icon: "👑", price: 59.99, color: "#f59e0b",
-    glow: "rgba(245,158,11,0.25)", tagline: "Elite tier for top competitors and content creators",
-    commission: "5%", badge: "Elite",
+    id: "premium",
+    name: "Premium",
+    icon: "👑",
+    price: 59.99,
+    color: "#f59e0b",
+    glow: "rgba(245,158,11,0.25)",
+    tagline: "Elite tier for top competitors and content creators",
+    commission: "5%",
+    badge: "Elite",
     features: [
       { label: "5% commission rate on all challenges", highlight: true },
       { label: "Everything in Standard" },
@@ -109,12 +144,19 @@ const plans = [
     ],
   },
   {
-    id: "family", name: "Family", icon: "🏠", price: 45.00, color: "#38bdf8",
-    glow: "rgba(56,189,248,0.2)", tagline: "2 guardians + up to 2 kids. Upgrade kids anytime.",
-    commission: "10%", badge: "Family Plan",
+    id: "family",
+    name: "Family",
+    icon: "🏠",
+    price: 45.00,
+    color: "#38bdf8",
+    glow: "rgba(56,189,248,0.2)",
+    tagline: "2 guardians + up to 2 kids. Upgrade kids anytime.",
+    commission: "10%",
+    badge: "Family Plan",
     features: [
       { label: "2 guardian accounts included", highlight: true },
       { label: "Up to 2 kid accounts included", highlight: true },
+      { label: "Add more kids — upgrade available in-app" },
       { label: "Each guardian gets full Rookie-level access" },
       { label: "Guardians control all kid permissions" },
       { label: "Kids have zero access to adult cash challenges" },
@@ -122,6 +164,8 @@ const plans = [
       { label: "Age groups: Under 10 / 11–13 / 14–17" },
       { label: "Monthly prizes: 1st–3rd big reward; all others get credits/badges" },
       { label: "Monthly season loop with leaderboard reset" },
+      { label: "Kiddie Box King dedicated kids section" },
+      { label: "Safe entry for kids: smaller rank swings first 3 matches" },
       { label: "Guardian dashboard: view all kid activity & stats" },
       { label: "Family pause bank: 7 days/month per account" },
       { label: "Kids earn badges & discount credits (no cash prizes)" },
@@ -130,6 +174,7 @@ const plans = [
   },
 ];
 
+// ── Deposit tiers data for the info section ───────────────────────────────────
 const depositTiers = [
   { range: "$0 – $300", rule: "Flat $20 deposit each player", pct: null, color: "#22c55e", example: "$20 deposit on a $150 match" },
   { range: "$301 – $1,000", rule: "10% of stake", pct: "10%", color: "#a855f7", example: "$50 deposit on a $500 match" },
@@ -137,26 +182,12 @@ const depositTiers = [
   { range: "$5,001+", rule: "5% of stake", pct: "5%", color: "#38bdf8", example: "$500 deposit on a $10,000 match" },
 ];
 
-const th: React.CSSProperties = {
-  padding: "9px 12px", color: "#444", fontSize: 11, fontWeight: 700,
-  textAlign: "center", borderBottom: "1px solid rgba(255,255,255,0.05)",
-  fontFamily: "monospace", letterSpacing: 1,
-};
-const td: React.CSSProperties = {
-  padding: "8px 12px", textAlign: "center",
-  borderBottom: "1px solid rgba(255,255,255,0.035)",
-};
-
-export function PlayerSubscription() {
-  const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
-  const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
+// ── Component ─────────────────────────────────────────────────────────────────
+export default function SubscriptionPage() {
+  const [hoveredPlan, setHoveredPlan] = useState(null);
+  const [expandedPlan, setExpandedPlan] = useState(null);
   const [stakeInput, setStakeInput] = useState("");
-  const [calcResult, setCalcResult] = useState<any>(null);
-
-  const { data: user, isLoading } = useQuery<any>({
-    queryKey: ["/api/auth/me"],
-    retry: false,
-  });
+  const [calcResult, setCalcResult] = useState(null);
 
   function handleCalc() {
     const dollars = parseFloat(stakeInput);
@@ -171,14 +202,6 @@ export function PlayerSubscription() {
     });
   }
 
-  if (isLoading) {
-    return (
-      <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
   return (
     <div style={{
       minHeight: "100vh",
@@ -186,15 +209,16 @@ export function PlayerSubscription() {
       fontFamily: "'Georgia', serif",
       padding: "60px 20px 80px",
       position: "relative",
+      overflowX: "hidden",
     }}>
-      {/* Grid bg */}
+      {/* subtle grid bg */}
       <div style={{
         position: "fixed", inset: 0, opacity: 0.025, pointerEvents: "none",
         backgroundImage: "linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px)",
         backgroundSize: "40px 40px",
       }} />
 
-      {/* Header */}
+      {/* ── Header ── */}
       <div style={{ textAlign: "center", marginBottom: 64 }}>
         <div style={{
           display: "inline-block", fontSize: 11, fontFamily: "monospace",
@@ -221,22 +245,9 @@ export function PlayerSubscription() {
         }}>
           ⚡ All plans include a <strong style={{ margin: "0 4px" }}>$20 match commitment deposit</strong> per scheduled match — refunded unless you no-show
         </div>
-        {user && (
-          <div style={{ marginTop: 16, color: "#888", fontSize: 13 }}>
-            Signed in as <strong style={{ color: "#fff" }}>{user.name || user.email}</strong>
-            {user.subscriptionTier && (
-              <span style={{
-                marginLeft: 10, background: "rgba(34,197,94,0.15)", color: "#22c55e",
-                border: "1px solid rgba(34,197,94,0.3)", borderRadius: 6, padding: "2px 8px", fontSize: 12,
-              }}>
-                ✓ Current plan: {user.subscriptionTier}
-              </span>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Plan Cards */}
+      {/* ── Plan Cards ── */}
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(268px, 1fr))",
@@ -245,7 +256,6 @@ export function PlayerSubscription() {
         {plans.map((plan) => {
           const isHov = hoveredPlan === plan.id;
           const isExp = expandedPlan === plan.id;
-          const isCurrentPlan = user?.subscriptionTier === plan.id;
           const shown = isExp ? plan.features : plan.features.slice(0, 8);
 
           return (
@@ -262,7 +272,6 @@ export function PlayerSubscription() {
                 boxShadow: isHov ? `0 0 50px ${plan.glow}, 0 24px 60px rgba(0,0,0,0.5)` : "0 4px 24px rgba(0,0,0,0.35)",
                 transform: isHov ? "translateY(-8px)" : "none",
                 display: "flex", flexDirection: "column",
-                outline: isCurrentPlan ? `2px solid ${plan.color}` : "none",
               }}
             >
               {plan.badge && (
@@ -278,13 +287,6 @@ export function PlayerSubscription() {
                 }}>
                   {plan.badge}
                 </div>
-              )}
-              {isCurrentPlan && (
-                <div style={{
-                  position: "absolute", top: -13, right: 16,
-                  background: plan.color, color: "#000", fontSize: 10, fontWeight: 800,
-                  padding: "4px 12px", borderRadius: 20,
-                }}>✓ YOUR PLAN</div>
               )}
 
               <div style={{ fontSize: 38, marginBottom: 10 }}>{plan.icon}</div>
@@ -307,13 +309,14 @@ export function PlayerSubscription() {
                 💰 {plan.commission} commission rate
               </div>
 
-              {(plan as any).upgradeNote && (
+              {/* Family upgrade note */}
+              {plan.upgradeNote && (
                 <div style={{
                   background: "rgba(56,189,248,0.08)", border: "1px solid rgba(56,189,248,0.2)",
                   borderRadius: 8, padding: "8px 12px", marginBottom: 16,
                   color: "#38bdf8", fontSize: 12, lineHeight: 1.5,
                 }}>
-                  🔼 {(plan as any).upgradeNote}
+                  🔼 {plan.upgradeNote}
                 </div>
               )}
 
@@ -344,28 +347,27 @@ export function PlayerSubscription() {
               )}
 
               <a
-                href={isCurrentPlan ? "#" : PAYMENT_LINKS[plan.id as keyof typeof PAYMENT_LINKS]}
-                target={isCurrentPlan ? undefined : "_blank"}
+                href={PAYMENT_LINKS[plan.id]}
+                target="_blank"
                 rel="noopener noreferrer"
-                onClick={isCurrentPlan ? (e) => e.preventDefault() : undefined}
                 style={{
                   display: "block", padding: "13px 0",
-                  background: isCurrentPlan ? plan.color : isHov ? plan.color : "transparent",
+                  background: isHov ? plan.color : "transparent",
                   border: `2px solid ${plan.color}`,
-                  borderRadius: 10, color: (isCurrentPlan || isHov) ? "#000" : plan.color,
+                  borderRadius: 10, color: isHov ? "#000" : plan.color,
                   fontSize: 14, fontWeight: 800, textAlign: "center",
                   textDecoration: "none", transition: "all 0.2s ease",
-                  letterSpacing: 0.5, cursor: isCurrentPlan ? "default" : "pointer",
+                  letterSpacing: 0.5,
                 }}
               >
-                {isCurrentPlan ? "✓ Current Plan" : `Choose ${plan.name}`}
+                Choose {plan.name}
               </a>
             </div>
           );
         })}
       </div>
 
-      {/* Stake Deposit Rules */}
+      {/* ── Stake Deposit Rules ── */}
       <div style={{ maxWidth: 900, margin: "80px auto 0" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <h2 style={{ color: "#fff", fontSize: 28, fontWeight: 800, margin: "0 0 10px" }}>
@@ -399,7 +401,7 @@ export function PlayerSubscription() {
           ))}
         </div>
 
-        {/* Deposit Calculator */}
+        {/* ── Deposit Calculator ── */}
         <div style={{
           background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: 16, padding: "32px 28px",
@@ -460,7 +462,7 @@ export function PlayerSubscription() {
                   <div style={{ color: "#666", fontSize: 12, marginTop: 4 }}>
                     {calcResult.tier === "flat"
                       ? "Flat $20 commitment deposit (stake ≤ $300)"
-                      : `${calcResult.pct}% of stake`}
+                      : `${calcResult.pct}% of stake (${calcResult.tier === "10pct" ? "$301–$1,000" : calcResult.tier === "7pct" ? "$1,001–$5,000" : "$5,001+"} tier)`}
                     {" · "}Refunded after confirmed match result
                   </div>
                 </div>
@@ -469,12 +471,16 @@ export function PlayerSubscription() {
           )}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14, marginTop: 20 }}>
+        {/* Additional deposit rules */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: 14, marginTop: 20,
+        }}>
           {[
             { icon: "🚫", title: "No-Show Rule", desc: "If one player no-shows, the player who showed up keeps the opponent's deposit automatically." },
             { icon: "⏰", title: "Late Penalty", desc: "30–60 min late = $10 penalty deducted. Both late = no penalty. Check-in window: 15 min before to 30 min after start." },
-            { icon: "✅", title: "Stake Verification", desc: "Stakes over $300 require admin-verified stake mode OR the % deposit collected immediately at scheduling." },
-            { icon: "🔒", title: "Deposits Stacked", desc: "For stakes over $300, the $20 flat deposit AND the % deposit are both collected before scheduling is confirmed." },
+            { icon: "✅", title: "Stake Verification", desc: "Stakes over $300 require admin-verified stake mode OR the % deposit collected immediately at scheduling. No exceptions." },
+            { icon: "🔒", title: "Deposits Stacked", desc: "For stakes over $300, the $20 flat deposit AND the % deposit are both collected and clearly shown before payment." },
           ].map((r) => (
             <div key={r.title} style={{
               background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
@@ -488,7 +494,132 @@ export function PlayerSubscription() {
         </div>
       </div>
 
-      {/* Footer */}
+      {/* ── Full Feature Comparison Table ── */}
+      <div style={{ maxWidth: 960, margin: "80px auto 0" }}>
+        <h2 style={{ color: "#fff", textAlign: "center", fontSize: 26, fontWeight: 800, marginBottom: 40 }}>
+          Full Feature Comparison
+        </h2>
+        {[
+          {
+            category: "💰 Pricing",
+            rows: [
+              ["Monthly Price", "$25.99", "$35.99", "$59.99", "$45.00"],
+              ["Commission Rate", "10%", "8%", "5%", "10%"],
+              ["Stakes Range", "$60–$1M", "$60–$1M", "$60–$1M", "$60–$1M"],
+              ["Match Deposit (≤$300)", "$20 flat", "$20 flat", "$20 flat", "$20 flat"],
+              ["Stake Deposit ($301–1k)", "10%", "10%", "10%", "10%"],
+              ["Stake Deposit ($1k–5k)", "7%", "7%", "7%", "7%"],
+              ["Stake Deposit ($5k+)", "5%", "5%", "5%", "5%"],
+            ],
+          },
+          {
+            category: "🏆 Ladder & Challenges",
+            rows: [
+              ["All divisions (7ft/8ft/9ft)", "✓", "✓", "✓", "✓"],
+              ["Ranked challenges", "✓", "✓", "✓", "✓"],
+              ["Cross-tier challenges", "✓", "✓", "✓", "✓"],
+              ["Guaranteed matches/week", "—", "2", "2", "—"],
+              ["Pause bank (rank protected)", "—", "7 days", "7 days", "7 days"],
+              ["Fast-track promotion", "—", "✓", "✓", "—"],
+            ],
+          },
+          {
+            category: "🎯 Safety & Rules",
+            rows: [
+              ["48h expiry + countdown", "✓", "✓", "✓", "✓"],
+              ["Pre-match swing preview", "✓", "✓", "✓", "✓"],
+              ["Loss streak popup", "✓", "✓", "✓", "✓"],
+              ["Anti-ghosting deposits", "✓", "✓", "✓", "✓"],
+              ["Anti-farming caps", "✓", "✓", "✓", "✓"],
+            ],
+          },
+          {
+            category: "📊 Analytics",
+            rows: [
+              ["Match history & stats", "✓", "✓", "✓", "✓"],
+              ["Streak engine", "✓", "✓", "✓", "✓"],
+              ["Progress bar to next band", "✓", "✓", "✓", "✓"],
+              ["Rival tracking", "—", "✓", "✓", "—"],
+              ["Advanced analytics", "—", "✓", "✓", "—"],
+            ],
+          },
+          {
+            category: "🎪 Tournaments",
+            rows: [
+              ["Basic tournament entries", "✓", "✓", "✓", "✓"],
+              ["Premium tournament access", "—", "✓", "✓", "—"],
+              ["VIP seeding", "—", "—", "✓", "—"],
+              ["Calcutta organizer", "—", "—", "✓", "—"],
+            ],
+          },
+          {
+            category: "👨‍👩‍👧 Family",
+            rows: [
+              ["Guardian accounts", "1", "1", "1", "2"],
+              ["Kid accounts included", "—", "—", "—", "Up to 2"],
+              ["Kids Drill League", "—", "—", "—", "✓"],
+              ["Monthly kids prizes", "—", "—", "—", "✓"],
+              ["Guardian controls", "—", "—", "—", "✓"],
+              ["Upgrade available", "—", "—", "—", "✓"],
+            ],
+          },
+          {
+            category: "⭐ Premium Perks",
+            rows: [
+              ["AI coaching tips", "—", "✓", "✓", "—"],
+              ["Personal coaching sessions", "—", "—", "✓", "—"],
+              ["Coach others for credits", "—", "—", "✓", "—"],
+              ["Fan tip collection", "—", "—", "✓", "—"],
+              ["Revenue sharing", "—", "—", "✓", "—"],
+              ["AI standoff profile pic", "—", "—", "✓", "—"],
+              ["Loyalty discount (6mo+)", "—", "—", "10% off", "—"],
+              ["Referral bonus", "—", "—", "$10 credit", "—"],
+            ],
+          },
+        ].map((section) => (
+          <div key={section.category} style={{ marginBottom: 36 }}>
+            <div style={{
+              color: "#666", fontSize: 11, letterSpacing: 3,
+              textTransform: "uppercase", marginBottom: 10, paddingLeft: 4,
+              fontFamily: "monospace",
+            }}>
+              {section.category}
+            </div>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={{ ...th, textAlign: "left", width: "38%" }}>Feature</th>
+                  {[["Rookie","#22c55e"],["Standard","#a855f7"],["Premium","#f59e0b"],["Family","#38bdf8"]].map(([label, col]) => (
+                    <th key={label} style={{ ...th, color: col }}>{label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {section.rows.map(([feat, ...vals], ri) => (
+                  <tr key={ri} style={{ background: ri % 2 === 0 ? "rgba(255,255,255,0.018)" : "transparent" }}>
+                    <td style={{ ...td, color: "#bbb", textAlign: "left" }}>{feat}</td>
+                    {vals.map((v, vi) => {
+                      const cols = ["#22c55e","#a855f7","#f59e0b","#38bdf8"];
+                      return (
+                        <td key={vi} style={{
+                          ...td,
+                          color: v === "✓" ? cols[vi] : v === "—" ? "#2a2a2a" : "#e5e5e5",
+                          fontWeight: v !== "—" && v !== "✓" ? 600 : 400,
+                          fontSize: v === "✓" || v === "—" ? 16 : 12,
+                        }}>
+                          {v}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Footer note ── */}
       <div style={{ maxWidth: 680, margin: "60px auto 0", textAlign: "center" }}>
         <p style={{ color: "#444", fontSize: 12, lineHeight: 1.9 }}>
           All plans billed monthly. Cancel anytime. Deposits refunded after confirmed results.
@@ -502,3 +633,13 @@ export function PlayerSubscription() {
     </div>
   );
 }
+
+const th = {
+  padding: "9px 12px", color: "#444", fontSize: 11, fontWeight: 700,
+  textAlign: "center", borderBottom: "1px solid rgba(255,255,255,0.05)",
+  fontFamily: "monospace", letterSpacing: 1,
+};
+const td = {
+  padding: "8px 12px", textAlign: "center",
+  borderBottom: "1px solid rgba(255,255,255,0.035)",
+};

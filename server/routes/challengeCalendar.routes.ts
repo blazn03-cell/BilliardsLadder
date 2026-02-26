@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { IStorage } from "../storage";
 import stripe from "stripe";
 import { QRCodeService } from "../services/qrCodeService";
-import { requireStaffOrOwner } from "../replitAuth";
+import { requireStaffOrOwner } from "../middleware/auth";
 import * as challengeController from "../controllers/challengeCalendar.controller";
 
 const router = Router();
