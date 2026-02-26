@@ -99,124 +99,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register authentication routes
   registerAuthRoutes(app);
   
-  app.get("/api/player/earnings", async (req, res) => {
-    try {
-      if (!req.isAuthenticated || !req.isAuthenticated()) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      const userId = (req.user as any)?.claims?.sub;
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      const matches = await storage.getMatchesByPlayer(userId).catch(() => []);
-      let wins = 0, losses = 0, draws = 0, totalWinnings = 0, totalLosses = 0;
-      let currentStreak = 0, streakType: "win" | "loss" | "none" = "none", bestStreak = 0, tempStreak = 0;
-
-      const recentMatches: any[] = [];
-      const monthlyMap = new Map<string, { wins: number; losses: number; draws: number; earnings: number; spent: number }>();
-
-      const sortedMatches = (matches || []).sort((a: any, b: any) =>
-        new Date(b.createdAt || b.date || 0).getTime() - new Date(a.createdAt || a.date || 0).getTime()
-      );
-
-      for (const match of sortedMatches) {
-        const isWinner = match.winnerId === userId;
-        const isDraw = !match.winnerId;
-        const amount = (match.challengeAmount || match.entryFee || 0) * 100;
-        const matchDate = new Date(match.createdAt || match.date || Date.now());
-        const monthKey = matchDate.toLocaleDateString("en-US", { year: "numeric", month: "long" });
-
-        if (!monthlyMap.has(monthKey)) {
-          monthlyMap.set(monthKey, { wins: 0, losses: 0, draws: 0, earnings: 0, spent: 0 });
-        }
-        const monthly = monthlyMap.get(monthKey)!;
-
-        if (isDraw) {
-          draws++;
-          monthly.draws++;
-        } else if (isWinner) {
-          wins++;
-          totalWinnings += amount;
-          monthly.wins++;
-          monthly.earnings += amount;
-        } else {
-          losses++;
-          totalLosses += amount;
-          monthly.losses++;
-          monthly.spent += amount;
-        }
-
-        if (recentMatches.length < 20) {
-          const opponentId = match.player1Id === userId ? match.player2Id : match.player1Id;
-          const opponent = opponentId ? await storage.getPlayer(opponentId).catch(() => null) : null;
-          recentMatches.push({
-            id: match.id?.toString() || String(recentMatches.length),
-            opponent: (opponent as any)?.name || (opponent as any)?.nickname || "Unknown",
-            result: isDraw ? "draw" : isWinner ? "win" : "loss",
-            amount,
-            date: matchDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-            division: match.division || "Open",
-          });
-        }
-      }
-
-      let lastResult: string | null = null;
-      for (const match of sortedMatches) {
-        const result = !match.winnerId ? "draw" : match.winnerId === userId ? "win" : "loss";
-        if (lastResult === null) {
-          lastResult = result;
-          currentStreak = 1;
-          streakType = result === "draw" ? "none" : result as "win" | "loss";
-        } else if (result === lastResult && result !== "draw") {
-          currentStreak++;
-        } else {
-          break;
-        }
-      }
-
-      for (const match of sortedMatches) {
-        if (match.winnerId === userId) {
-          tempStreak++;
-          bestStreak = Math.max(bestStreak, tempStreak);
-        } else {
-          tempStreak = 0;
-        }
-      }
-
-      const totalGames = wins + losses + draws;
-      const winRate = totalGames > 0 ? (wins / totalGames) * 100 : 0;
-      const netEarnings = totalWinnings - totalLosses;
-
-      const monthlyData = Array.from(monthlyMap.entries()).map(([month, data]) => ({
-        month,
-        ...data,
-        net: data.earnings - data.spent,
-      }));
-
-      res.json({
-        record: {
-          totalGames, wins, losses, draws, winRate,
-          totalWinnings, totalLosses, netEarnings,
-          currentStreak, streakType, bestStreak,
-        },
-        recentMatches,
-        monthlyData,
-      });
-    } catch (error) {
-      console.error("Player earnings error:", error);
-      res.json({
-        record: {
-          totalGames: 0, wins: 0, losses: 0, draws: 0, winRate: 0,
-          totalWinnings: 0, totalLosses: 0, netEarnings: 0,
-          currentStreak: 0, streakType: "none", bestStreak: 0,
-        },
-        recentMatches: [],
-        monthlyData: [],
-      });
-    }
-  });
-
   // Fill all missing frontend→backend route gaps + addictiveness endpoints
   registerMissingRoutes(app);
   
@@ -299,6 +181,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Forgot Password Routes
   setupForgotPasswordRoutes(app);
   
+  app.get("/api/player/earnings", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const userId = (req.user as any).id;
+      const allMatches = await storage.getMatches();
+      const playerMatches = allMatches.filter(
+        (m: any) => (m.player1Id === userId || m.player2Id === userId) && m.status === "completed"
+      );
+
+      let wins = 0, losses = 0, draws = 0;
+      let totalWinnings = 0, totalLosses = 0;
+      let currentStreak = 0, bestStreak = 0;
+      let streakType: "win" | "loss" | "none" = "none";
+      const recentMatches: any[] = [];
+      const monthlyMap = new Map<string, any>();
+
+      const sorted = playerMatches.sort((a: any, b: any) =>
+        new Date(a.completedAt || a.createdAt).getTime() - new Date(b.completedAt || b.createdAt).getTime()
+      );
+
+      let tempStreak = 0;
+      let tempStreakType: "win" | "loss" | "none" = "none";
+
+      for (const match of sorted) {
+        const isPlayer1 = match.player1Id === userId;
+        let result: "win" | "loss" | "draw";
+        const amount = match.entryFee || 0;
+
+        if (match.winnerId === userId) {
+          result = "win";
+          wins++;
+          totalWinnings += amount;
+          if (tempStreakType === "win") { tempStreak++; } else { tempStreak = 1; tempStreakType = "win"; }
+        } else if (match.winnerId) {
+          result = "loss";
+          losses++;
+          totalLosses += amount;
+          if (tempStreakType === "loss") { tempStreak++; } else { tempStreak = 1; tempStreakType = "loss"; }
+        } else {
+          result = "draw";
+          draws++;
+          tempStreak = 0;
+          tempStreakType = "none";
+        }
+
+        if (tempStreakType === "win" && tempStreak > bestStreak) bestStreak = tempStreak;
+
+        const matchDate = new Date(match.completedAt || match.createdAt);
+        const monthKey = matchDate.toLocaleString("en-US", { month: "long", year: "numeric" });
+
+        if (!monthlyMap.has(monthKey)) {
+          monthlyMap.set(monthKey, { month: monthKey, wins: 0, losses: 0, draws: 0, earnings: 0, spent: 0, net: 0 });
+        }
+        const m = monthlyMap.get(monthKey);
+        if (result === "win") { m.wins++; m.earnings += amount; }
+        else if (result === "loss") { m.losses++; m.spent += amount; }
+        else { m.draws++; }
+        m.net = m.earnings - m.spent;
+
+        const players = await storage.getPlayers();
+        const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
+        const opponent = players.find((p: any) => p.id === opponentId);
+
+        recentMatches.push({
+          id: match.id,
+          opponent: opponent?.nickname || opponent?.username || "Unknown",
+          result,
+          amount,
+          date: matchDate.toLocaleDateString(),
+          division: match.division || "Open",
+        });
+      }
+
+      currentStreak = tempStreak;
+      streakType = tempStreakType;
+      const totalGames = wins + losses + draws;
+      const winRate = totalGames > 0 ? (wins / totalGames) * 100 : 0;
+      const netEarnings = totalWinnings - totalLosses;
+
+      res.json({
+        record: {
+          totalGames, wins, losses, draws, winRate,
+          totalWinnings, totalLosses, netEarnings,
+          currentStreak, streakType, bestStreak,
+        },
+        recentMatches: recentMatches.reverse().slice(0, 20),
+        monthlyData: Array.from(monthlyMap.values()).reverse(),
+      });
+    } catch (error) {
+      console.error("Error fetching player earnings:", error);
+      res.status(500).json({ message: "Failed to fetch earnings data" });
+    }
+  });
+
   // Initialize auto fee evaluation scheduler
   initializeFeeScheduler(storage, stripe);
 

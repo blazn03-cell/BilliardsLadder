@@ -24,6 +24,7 @@ export function MobileNav({ navigationGroups, activeTab, setActiveTab, userRole 
   const [isOpen, setIsOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<string[]>([]);
 
+  // Filter groups based on user role
   const visibleGroups = navigationGroups.filter(group => 
     !group.roles || userRole === "OWNER" || group.roles.includes(userRole)
   );
@@ -43,14 +44,16 @@ export function MobileNav({ navigationGroups, activeTab, setActiveTab, userRole 
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      {/* No asChild: SheetTrigger renders directly as button — avoids React.Children.only Slot error */}
-      <SheetTrigger
-        className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-emerald-200 hover:text-white hover:bg-emerald-500/20 transition-colors focus-visible:outline-none"
-        data-testid="button-mobile-menu"
-        aria-label="Open navigation menu"
-      >
-        <Menu className="h-5 w-5" />
-        <span className="sr-only">Open navigation menu</span>
+      <SheetTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="md:hidden p-2 text-emerald-200 hover:text-white hover:bg-emerald-500/20"
+          data-testid="button-mobile-menu"
+        >
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Open navigation menu</span>
+        </Button>
       </SheetTrigger>
 
       <SheetContent 
@@ -69,7 +72,7 @@ export function MobileNav({ navigationGroups, activeTab, setActiveTab, userRole 
             >
               <img 
                 src="/billiards-logo.svg"
-                alt="Billiards Ladder Logo"
+                alt="Billiards Ladder Billiards Logo"
                 className="h-8 w-8 rounded-lg object-cover border border-emerald-400/30"
               />
               <span className="font-bold text-emerald-300 text-sm">BILLIARDS LADDER</span>
@@ -84,31 +87,33 @@ export function MobileNav({ navigationGroups, activeTab, setActiveTab, userRole 
             </Button>
           </div>
 
-          {/* Navigation Groups */}
+          {/* Navigation */}
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
             {visibleGroups.map((group) => {
               const Icon = group.icon;
-              const groupIsOpen = openGroups.includes(group.id);
+              const isOpen = openGroups.includes(group.id);
               const hasActiveItem = group.items.some(item => item.id === activeTab);
 
               return (
                 <Collapsible
                   key={group.id}
-                  open={groupIsOpen}
+                  open={isOpen}
                   onOpenChange={() => toggleGroup(group.id)}
                 >
-                  {/* No asChild: CollapsibleTrigger renders as button — avoids React.Children.only Slot error */}
-                  <CollapsibleTrigger
-                    className={`w-full flex items-center justify-between p-3 rounded-md text-left hover:bg-emerald-500/10 transition-colors focus-visible:outline-none ${
-                      hasActiveItem ? "bg-emerald-500/20 text-white" : "text-emerald-100/90"
-                    }`}
-                    data-testid={`mobile-nav-group-${group.id}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon className="h-5 w-5" />
-                      <span className="font-medium">{group.label}</span>
-                    </div>
-                    <ChevronDown className={`h-4 w-4 transition-transform ${groupIsOpen ? 'rotate-180' : ''}`} />
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-between p-3 h-auto hover:bg-emerald-500/10 ${
+                        hasActiveItem ? "bg-emerald-500/20 text-white" : "text-emerald-100/90"
+                      }`}
+                      data-testid={`mobile-nav-group-${group.id}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="h-5 w-5" />
+                        <span className="font-medium">{group.label}</span>
+                      </div>
+                      <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    </Button>
                   </CollapsibleTrigger>
 
                   <CollapsibleContent className="space-y-1 mt-1">

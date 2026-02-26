@@ -62,7 +62,8 @@ export default function Landing() {
             </h1>
             
             <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed font-light">
-              In here, respect is earned in racks, not words
+              The ultimate pool hall management system where players climb the ladder, 
+              operators run their halls, and respect is earned one rack at a time.
             </p>
             
             <div className="flex flex-wrap justify-center gap-3 text-sm">

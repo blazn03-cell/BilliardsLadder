@@ -57,8 +57,6 @@ import { PlayerSubscription } from "@/pages/PlayerSubscription";
 import { ChallengeCalendar } from "@/pages/ChallengeCalendar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MobileNav } from "@/components/MobileNav";
-import DivisionSelectPage from "@/pages/DivisionSelectPage";
-import CommunityWagersPage from "@/pages/CommunityWagersPage";
 import { WebVitals } from "@/components/WebVitals";
 import RevenueAdmin from "@/pages/RevenueAdmin";
 import HallLeaderboard from "@/pages/HallLeaderboard";
@@ -208,7 +206,7 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
       items: [
         { id: "player-subscription", label: "💳 Subscription Plans", requiresAuth: true },
         { id: "checkout", label: "💰 Billing & Payments", requiresAuth: true },
-        { id: "monetization", label: "📊 Your Earnings", requiresAuth: true },
+        { id: "monetization", label: "📊 Revenue Dashboard", roles: ["OWNER", "OPERATOR", "TRUSTEE"] as GlobalRole[], requiresAuth: true },
       ]
     },
     {
@@ -461,12 +459,6 @@ function App() {
             </Route>
             <Route path="/regional-dashboard">
               <RegionalOperatorDashboard />
-            </Route>
-            <Route path="/divisions">
-              <DivisionSelectPage />
-            </Route>
-            <Route path="/community-wagers">
-              <CommunityWagersPage />
             </Route>
             <Route path="/app">
               <AppContent activeTab={activeTab} />
