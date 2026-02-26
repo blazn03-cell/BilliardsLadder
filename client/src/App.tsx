@@ -57,6 +57,8 @@ import { PlayerSubscription } from "@/pages/PlayerSubscription";
 import { ChallengeCalendar } from "@/pages/ChallengeCalendar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MobileNav } from "@/components/MobileNav";
+import DivisionSelectPage from "@/pages/DivisionSelectPage";
+import CommunityWagersPage from "@/pages/CommunityWagersPage";
 import { WebVitals } from "@/components/WebVitals";
 import RevenueAdmin from "@/pages/RevenueAdmin";
 import HallLeaderboard from "@/pages/HallLeaderboard";
@@ -459,6 +461,12 @@ function App() {
             </Route>
             <Route path="/regional-dashboard">
               <RegionalOperatorDashboard />
+            </Route>
+            <Route path="/divisions">
+              <DivisionSelectPage />
+            </Route>
+            <Route path="/community-wagers">
+              <CommunityWagersPage />
             </Route>
             <Route path="/app">
               <AppContent activeTab={activeTab} />
