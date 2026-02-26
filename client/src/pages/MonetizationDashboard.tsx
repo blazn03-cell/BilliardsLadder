@@ -494,7 +494,7 @@ export default function MonetizationDashboard() {
 
           <TabsContent value="tiers" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {tiers.map((tier) => (
+              {(Array.isArray(tiers) ? tiers : []).map((tier) => (
                 <Card key={tier.name} className="bg-gray-900 border-gray-700">
                   <CardHeader>
                     <CardTitle className="text-green-400 flex items-center gap-2">
