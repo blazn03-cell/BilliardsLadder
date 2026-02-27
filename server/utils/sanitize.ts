@@ -76,7 +76,7 @@ export function sanitizeBody(fieldsToSanitize: string[] = []) {
   return (req: any, res: any, next: any) => {
     if (req.body && typeof req.body === 'object') {
       for (const field of fieldsToSanitize) {
-        if (req.body[field] && typeof req.body[field] === 'string') {
+        if (Object.prototype.hasOwnProperty.call(req.body, field) && typeof req.body[field] === 'string') {
           req.body[field] = sanitizeCopy(req.body[field]);
         }
       }
