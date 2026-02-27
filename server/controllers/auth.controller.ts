@@ -510,5 +510,3 @@ export async function changePassword(req: Request, res: Response) {
 
 // Alias
 export const createOperator = signupOperator;
-cat shared/schema.ts | grep -n "nickname"
-cat server/storage.ts | grep -n "getPlayerByUserId"
