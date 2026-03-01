@@ -70,7 +70,7 @@ function CreateStreamDialog() {
       queryClient.invalidateQueries({ queryKey: ["/api/live-streams"] });
       toast({
         title: "Stream Created Successfully",
-        description: "Your live stream has been added to the Billiards Ladder network!",
+        description: "Your live stream has been added to the ActionLadder network!",
         duration: 5000,
       });
       setOpen(false);
@@ -91,7 +91,6 @@ function CreateStreamDialog() {
       ...data,
       isLive: true,
       viewerCount: Math.floor(Math.random() * 50) + 10,
-      embedUrl: data.url,
       thumbnailUrl: `https://images.unsplash.com/photo-1574847187621-916885951c64?w=400&h=225&fit=crop&crop=center&q=80`,
       tags: [],
     };
@@ -222,7 +221,7 @@ function StreamCard({ stream }: { stream: LiveStream }) {
       <CardContent className="p-4">
         <div className="aspect-video bg-gray-900 rounded-lg mb-4 relative overflow-hidden">
           {stream.thumbnailUrl && (
-            <img src={stream.thumbnailUrl} alt={stream.title} className="w-full h-full object-cover" />
+            <img src={stream.thumbnailUrl ?? undefined} alt={stream.title ?? undefined} className="w-full h-full object-cover" />
           )}
           <div className="absolute top-2 left-2">
             {stream.isLive ? (
@@ -318,7 +317,7 @@ export default function LiveStream() {
         <div>
           <h1 className="text-3xl font-bold text-emerald-400 flex items-center gap-3">
             <Video className="w-8 h-8" />
-            Billiards Ladder Live Streams
+            ActionLadder Live Streams
           </h1>
           <p className="text-gray-400 mt-1">
             Watch live pool action from halls across the country
@@ -366,7 +365,7 @@ export default function LiveStream() {
               No Streams Yet
             </h3>
             <p className="text-gray-400 mb-6">
-              Be the first to start streaming on the Billiards Ladder network!
+              Be the first to start streaming on the ActionLadder network!
             </p>
             <CreateStreamDialog />
           </CardContent>

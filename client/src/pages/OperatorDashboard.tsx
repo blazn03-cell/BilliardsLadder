@@ -249,7 +249,7 @@ const OperatorDashboard: React.FC = () => {
 
         {/* Legal Notice */}
         <div className="bg-green-900/10 border border-green-700/30 rounded-lg p-6 text-center">
-          <h3 className="text-lg font-bold text-green-400 mb-2">Billiards Ladder - Legal Framework</h3>
+          <h3 className="text-lg font-bold text-green-400 mb-2">Action Ladder - Legal Framework</h3>
           <p className="text-sm text-green-600 mb-2">
             SaaS platform for skill-based competition management. All fees are subscription charges for software access.
           </p>

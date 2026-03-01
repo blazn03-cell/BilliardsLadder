@@ -4,7 +4,7 @@ import { storage } from "../storage";
 import type { User, InsertUser } from "../storage";
 
 const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-12-18.acacia" })
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2025-08-27.basil" })
   : (null as unknown as Stripe);
 
 // Invite a trusted friend to receive payouts
@@ -121,7 +121,7 @@ export async function getPayouts(req: Request, res: Response) {
     
     // Enhance with user details
     const enhancedTransfers = await Promise.all(
-      transfers.map(async (transfer) => {
+      transfers.map(async (transfer: any) => {
         const user = await storage.getUser(transfer.recipientUserId);
         return {
           ...transfer,
@@ -340,7 +340,7 @@ export async function getAllOperators(req: Request, res: Response) {
     const operators = await storage.getAllOperatorSettings();
     // Get user details for each operator
     const operatorsWithDetails = await Promise.all(
-      operators.map(async (settings) => {
+      operators.map(async (settings: any) => {
         const user = await storage.getUser(settings.operatorUserId);
         return {
           ...settings,
@@ -359,7 +359,7 @@ export async function toggleFreeMonths(req: Request, res: Response) {
   try {
     const { operatorUserId } = req.params;
     const { hasFreeMonths, freeMonthsCount } = req.body;
-    const trusteeId = req.user.id;
+    const trusteeId = (req.user as any)?.id;
 
     let settings = await storage.getOperatorSettings(operatorUserId);
     
@@ -476,8 +476,8 @@ export async function getOrganizationSeats(req: Request, res: Response) {
 
     res.json({
       seatLimit: org.seatLimit,
-      seatsUsed: org.seatsUsed || 0,
-      seatsAvailable: (org.seatLimit || 0) - (org.seatsUsed || 0)
+      seatsUsed: (org as any).seatsUsed || 0,
+      seatsAvailable: (org.seatLimit || 0) - ((org as any).seatsUsed || 0)
     });
   } catch (error: any) {
     console.error("Get organization seats error:", error);

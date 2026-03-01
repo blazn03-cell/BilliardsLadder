@@ -1,6 +1,6 @@
 // Weight Rules implementation for consecutive losses
 
-import { storage } from "./storage";
+import { storage } from '../storage';
 
 export interface WeightRule {
   playerId: string;

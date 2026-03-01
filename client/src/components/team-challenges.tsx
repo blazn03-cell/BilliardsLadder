@@ -40,7 +40,7 @@ export default function TeamChallenges() {
   const queryClient = useQueryClient();
 
   // Fetch team challenges
-  const { data: challenges, isLoading } = useQuery({
+  const { data: challenges, isLoading } = useQuery<TeamChallenge[]>({
     queryKey: ["/api/team-challenges"],
   });
 

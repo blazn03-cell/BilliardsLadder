@@ -14,7 +14,7 @@ const MOCK_SESSION = {
   venueId: "venue-actionladder-main",
   userId: "user-current",
   userName: "Current User",
-  role: "player" as const, // player, attendee, operator
+  role: "player" as string, // player, attendee, operator
   operatorId: "operator-main",
 };
 
@@ -22,8 +22,16 @@ export default function SportsmanshipSystem() {
   const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
   const [activeVoteId, setActiveVoteId] = useState<string | null>(null);
 
+  interface ActiveVote {
+    id: string;
+    targetUserId: string;
+    status: string;
+    remainingSeconds: number;
+    youVoted?: boolean;
+  }
+
   // Fetch active votes for this session/venue
-  const { data: activeVotes = [] } = useQuery({
+  const { data: activeVotes = [] } = useQuery<ActiveVote[]>({
     queryKey: [`/api/attitude-votes/active/${MOCK_SESSION.sessionId}/${MOCK_SESSION.venueId}`],
     refetchInterval: 3000, // Poll every 3 seconds for live updates
   });

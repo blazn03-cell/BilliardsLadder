@@ -73,7 +73,7 @@ export const MONTHLY_TARGETS = {
 /**
  * Calculate commission with round-up profit margin
  * Example: $100 challenge → $90 Prize Pool + $10 fee
- * Split: $5 Billiards Ladder + $3 operator + $2 bonus fund
+ * Split: $5 Action Ladder + $3 operator + $2 bonus fund
  */
 export function calculateCommission(amount: number, membershipTier: string = "none"): {
   originalAmount: number;

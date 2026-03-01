@@ -16,7 +16,7 @@ function getTemplateDescription(template: string): string {
 
 function getThemeDescription(theme: string): string {
   const descriptions = {
-    'dark': 'Dark background with green accents - signature Billiards Ladder style',
+    'dark': 'Dark background with green accents - signature ActionLadder style',
     'green': 'Pool table green theme with gold highlights',
     'gold': 'Luxury gold and black championship theme',
     'neon': 'Electric neon colors with cyberpunk aesthetics',

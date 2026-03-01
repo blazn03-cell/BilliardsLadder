@@ -15,14 +15,13 @@ export const sessions = pgTable(
 );
 
 // Global user roles for platform management
-export const globalRoles = ["OWNER", "STAFF", "OPERATOR", "CREATOR", "PLAYER", "TRUSTEE", "REGIONAL_OPERATOR", "POOL_HALL_OWNER", "LOCAL_OPERATOR"] as const;
+export const globalRoles = ["OWNER", "STAFF", "OPERATOR", "CREATOR", "PLAYER", "TRUSTEE"] as const;
 export type GlobalRole = typeof globalRoles[number];
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
   name: text("name"),
-  nickname: text("nickname"), // Display name on ladder/challenges
   // Enhanced authentication fields
   passwordHash: text("password_hash"), // For Creator/Owner email+password auth
   twoFactorEnabled: boolean("two_factor_enabled").default(false),
@@ -399,7 +398,6 @@ export const createPlayerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8, "Password must be at least 8 characters"),
   name: z.string().min(2),
-  nickname: z.string().min(2, "Nickname must be at least 2 characters").max(30, "Nickname too long"),
   city: z.string().min(2),
   state: z.string().min(2),
   tier: z.enum(["rookie", "barbox", "eight_foot", "nine_foot"]),
@@ -2579,16 +2577,122 @@ export type PrizePoolDistribution = typeof prizePoolDistributions.$inferSelect;
 export type InsertPrizePoolDistribution = z.infer<typeof insertPrizePoolDistributionSchema>;
 export type SelectPrizePoolDistribution = PrizePoolDistribution;
 
-export interface PlayerQueue {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  city: string;
-  experience: "beginner" | "intermediate" | "advanced" | "pro";
-  preferredGames: string[];
-  status: "pending" | "approved" | "rejected";
-  createdAt: string;
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// PLAYER CAREER / SERVICE MARKETPLACE TABLES
+// ─────────────────────────────────────────────────────────────────────────────
 
-export type InsertPlayerQueue = Omit<PlayerQueue, "id" | "status" | "createdAt">;
+export const serviceTypes = [
+  "COACHING",
+  "EXHIBITION",
+  "CLINIC",
+  "CONTENT_SUB",
+  "APPEARANCE",
+  "TIP",
+] as const;
+export type ServiceType = typeof serviceTypes[number];
+
+export const serviceStatuses = ["draft", "active", "paused"] as const;
+export type ServiceStatus = typeof serviceStatuses[number];
+
+export const serviceListings = pgTable(
+  "service_listings",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    sellerUserId: text("seller_user_id").notNull(),
+    sellerRole: text("seller_role").notNull(),
+    serviceType: text("service_type").notNull(),
+    title: text("title").notNull(),
+    description: text("description"),
+    priceCents: integer("price_cents").notNull(),
+    currency: text("currency").notNull().default("USD"),
+    durationMinutes: integer("duration_minutes"),
+    status: text("status").notNull().default("draft"),
+    stripeProductId: text("stripe_product_id").unique(),
+    stripePriceId: text("stripe_price_id").unique(),
+    bookingsCount: integer("bookings_count").notNull().default(0),
+    totalEarnedCents: integer("total_earned_cents").notNull().default(0),
+    isRecurring: boolean("is_recurring").default(false),
+    recurringInterval: text("recurring_interval"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("idx_service_listings_seller").on(table.sellerUserId, table.status),
+    index("idx_service_listings_type").on(table.serviceType, table.status),
+  ]
+);
+
+export const serviceBookings = pgTable(
+  "service_bookings",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    listingId: text("listing_id").notNull(),
+    buyerUserId: text("buyer_user_id").notNull(),
+    sellerUserId: text("seller_user_id").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    currency: text("currency").notNull().default("USD"),
+    platformFeeBps: integer("platform_fee_bps").notNull().default(1000),
+    platformFeeCents: integer("platform_fee_cents").notNull(),
+    operatorFacilitationBps: integer("operator_facilitation_bps").default(0),
+    operatorFacilitationCents: integer("operator_facilitation_cents").default(0),
+    netToSellerCents: integer("net_to_seller_cents").notNull(),
+    stripePaymentIntentId: text("stripe_payment_intent_id").unique(),
+    stripeCheckoutSessionId: text("stripe_checkout_session_id").unique(),
+    status: text("status").notNull().default("pending"),
+    scheduledAt: timestamp("scheduled_at"),
+    deliveredAt: timestamp("delivered_at"),
+    availableAt: timestamp("available_at"),
+    transferredAt: timestamp("transferred_at"),
+    hallId: text("hall_id"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => [
+    index("idx_service_bookings_seller").on(table.sellerUserId, table.status),
+    index("idx_service_bookings_buyer").on(table.buyerUserId),
+    index("idx_service_bookings_listing").on(table.listingId),
+    index("idx_service_bookings_available_at").on(table.availableAt, table.status),
+  ]
+);
+
+export const playerEarningLedger = pgTable(
+  "player_earning_ledger",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    playerUserId: text("player_user_id").notNull(),
+    entryType: text("entry_type").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    currency: text("currency").notNull().default("USD"),
+    bookingId: text("booking_id"),
+    stripeTransferId: text("stripe_transfer_id"),
+    description: text("description"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    index("idx_earning_ledger_player").on(table.playerUserId, table.createdAt),
+    index("idx_earning_ledger_booking").on(table.bookingId),
+  ]
+);
+
+export const insertServiceListingSchema = createInsertSchema(serviceListings).omit({
+  id: true,
+  bookingsCount: true,
+  totalEarnedCents: true,
+  stripeProductId: true,
+  stripePriceId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertServiceBookingSchema = createInsertSchema(serviceBookings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ServiceListing = typeof serviceListings.$inferSelect;
+export type InsertServiceListing = z.infer<typeof insertServiceListingSchema>;
+export type ServiceBooking = typeof serviceBookings.$inferSelect;
+export type InsertServiceBooking = z.infer<typeof insertServiceBookingSchema>;
+export type PlayerEarningLedger = typeof playerEarningLedger.$inferSelect;

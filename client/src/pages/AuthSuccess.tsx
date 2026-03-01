@@ -4,7 +4,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 
 export default function AuthSuccess() {
-  const { data: authData, isLoading } = useQuery({
+  const { data: authData, isLoading } = useQuery<{ role: string; redirectUrl?: string }>({
     queryKey: ["/api/auth/success"],
     refetchInterval: false,
   });

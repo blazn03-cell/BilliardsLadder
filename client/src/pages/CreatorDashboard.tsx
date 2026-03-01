@@ -5,17 +5,17 @@ import { Crown, Users, DollarSign, AlertTriangle, Settings, BarChart3, Shield } 
 import SafeText from "@/components/SafeText";
 
 export default function CreatorDashboard() {
-  const { data: globalStats } = useQuery({
+  const { data: globalStats } = useQuery<any>({
     queryKey: ["/api/admin/global-stats"],
     retry: false,
   });
 
-  const { data: operators } = useQuery({
+  const { data: operators } = useQuery<any>({
     queryKey: ["/api/admin/operators"],
     retry: false,
   });
 
-  const { data: disputes } = useQuery({
+  const { data: disputes } = useQuery<any>({
     queryKey: ["/api/admin/disputes"],
     retry: false,
   });

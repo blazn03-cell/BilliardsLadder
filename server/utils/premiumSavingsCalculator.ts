@@ -1,4 +1,4 @@
-import { storage } from "./storage";
+import { storage } from "../storage";
 
 /**
  * Premium Subscription Savings Calculator
@@ -104,26 +104,26 @@ export class PremiumSavingsCalculator {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     // Get real side betting activity
-    const sideBets = await storage.getSideBetsByUser(userId);
-    const recentSideBets = sideBets.filter(bet => 
+    const sideBets = await (storage as any).getSideBetsByUser(userId);
+    const recentSideBets = sideBets.filter((bet: any) => 
       bet.createdAt && new Date(bet.createdAt) >= thirtyDaysAgo
     );
-    const monthlySideBetAmount = recentSideBets.reduce((total, bet) => total + (bet.amount || 0), 0);
+    const monthlySideBetAmount = recentSideBets.reduce((total: any, bet: any) => total + (bet.amount || 0), 0);
 
     // Get real tutoring session usage
-    const tutoringSessions = await storage.getTutoringSessionsByRookie(userId);
-    const recentTutoringSessions = tutoringSessions.filter(session => 
+    const tutoringSessions = await (storage as any).getTutoringSessions(userId);
+    const recentTutoringSessions = tutoringSessions.filter((session: any) => 
       session.createdAt && new Date(session.createdAt) >= thirtyDaysAgo
     );
     const monthlyTutoringSessions = recentTutoringSessions.length;
 
     // Get real tournament winnings (we'll need to calculate from match wins)
-    const matches = await storage.getAllMatches();
-    const userWinningMatches = matches.filter(match => 
+    const matches = await (storage as any).getMatches();
+    const userWinningMatches = matches.filter((match: any) => 
       match.winner === userId &&
       match.createdAt && new Date(match.createdAt) >= thirtyDaysAgo
     );
-    const monthlyTournamentWinnings = userWinningMatches.reduce((total, match) => 
+    const monthlyTournamentWinnings = userWinningMatches.reduce((total: any, match: any) => 
       total + (match.prizePoolAmount || match.stake || 0), 0
     );
 
@@ -276,31 +276,31 @@ export class PremiumSavingsCalculator {
     totalSavings: number;
   }> {
     // Get side betting activity for the month
-    const sideBets = await storage.getSideBetsByUser(userId);
-    const monthSideBets = sideBets.filter(bet => 
+    const sideBets = await (storage as any).getSideBetsByUser(userId);
+    const monthSideBets = sideBets.filter((bet: any) => 
       bet.createdAt && 
       new Date(bet.createdAt) >= startDate && 
       new Date(bet.createdAt) <= endDate
     );
-    const sideBetAmount = monthSideBets.reduce((total, bet) => total + (bet.amount || 0), 0);
+    const sideBetAmount = monthSideBets.reduce((total: any, bet: any) => total + (bet.amount || 0), 0);
 
     // Get tutoring sessions for the month
-    const tutoringSessions = await storage.getTutoringSessionsByRookie(userId);
-    const monthSessions = tutoringSessions.filter(session => 
+    const tutoringSessions = await (storage as any).getTutoringSessions(userId);
+    const monthSessions = tutoringSessions.filter((session: any) => 
       session.createdAt && 
       new Date(session.createdAt) >= startDate && 
       new Date(session.createdAt) <= endDate
     );
 
     // Get tournament winnings for the month
-    const matches = await storage.getAllMatches();
-    const monthWinningMatches = matches.filter(match => 
+    const matches = await (storage as any).getMatches();
+    const monthWinningMatches = matches.filter((match: any) => 
       match.winner === userId &&
       match.createdAt && 
       new Date(match.createdAt) >= startDate && 
       new Date(match.createdAt) <= endDate
     );
-    const tournamentWinnings = monthWinningMatches.reduce((total, match) => 
+    const tournamentWinnings = monthWinningMatches.reduce((total: any, match: any) => 
       total + (match.prizePoolAmount || match.stake || 0), 0
     );
 

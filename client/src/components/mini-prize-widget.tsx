@@ -82,9 +82,9 @@ export function MiniPrizeWidget({ playerId }: { playerId: string }) {
         {/* Participants Count */}
         {weeklyPrize && (
           <div className="text-center">
-            <SafeText className="text-sm text-purple-300">
+            <span className="text-sm text-purple-300">
               {weeklyPrize.participants.length} players entered
-            </SafeText>
+            </span>
           </div>
         )}
 

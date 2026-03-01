@@ -15,7 +15,7 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : (null as unknown as Stripe);
 
-// Stripe Price IDs for Billiards Ladder Commission System
+// Stripe Price IDs for ActionLadder Commission System
 const prices = {
   rookie_monthly: "price_1S36UcDc2BliYufwVpgpOph9",
   basic_monthly: "price_1S36UcDc2BliYufwF8R8w5BY",
@@ -182,10 +182,10 @@ export function refundDepositController(storage: IStorage) {
         return res.status(400).json({ message: "Payment Intent ID required" });
       }
 
-      const refund = await refundDeposit(paymentIntentId, {
+      const refund = await refundDeposit({
+        paymentIntentId,
         amountCents,
         reason,
-        userId,
         metadata
       });
 
@@ -511,7 +511,7 @@ async function handleCheckoutCompleted(storage: IStorage, session: any): Promise
       const kellyPool = await storage.getKellyPool(kellyPoolId);
       if (kellyPool) {
         await storage.updateKellyPool(kellyPoolId, {
-          playerCount: (kellyPool.playerCount || 0) + 1
+          currentPlayers: (kellyPool.currentPlayers || 0) + 1
         });
       }
     }
@@ -648,7 +648,7 @@ async function handleInvoicePaid(storage: IStorage, invoice: any): Promise<void>
       const amountCents = invoice.amount_paid;
       
       const operator = await storage.getUser(operatorId);
-      const trusteeId = operator?.trusteeId;
+      const trusteeId = (operator as any)?.trusteeId;
       
       const split = calculateOperatorSubscriptionSplit(amountCents);
       

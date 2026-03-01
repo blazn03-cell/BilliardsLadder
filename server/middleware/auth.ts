@@ -17,7 +17,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 
 // 2FA utilities
 export function generateTwoFactorSecret(): string {
-  return speakeasy.generateSecret({ name: "Billiards Ladder" }).base32;
+  return speakeasy.generateSecret({ name: "Action Ladder" }).base32;
 }
 
 export function verifyTwoFactor(token: string, secret: string): boolean {

@@ -13,7 +13,7 @@ interface StreakDisplayProps {
 }
 
 const STREAK_MILESTONES = [5, 10, 15, 20];
-const STREAK_REWARDS = {
+const STREAK_REWARDS: Record<number, number> = {
   5: 50,   // $50
   10: 100, // $100
   15: 150, // $150
@@ -46,21 +46,21 @@ export function StreakDisplay({
             matches without missing
           </SafeText>
           {longestStreak > currentStreak && (
-            <SafeText className="text-xs text-yellow-400 mt-1">
+            <span className="text-xs text-yellow-400 mt-1">
               Personal best: {longestStreak}
-            </SafeText>
+            </span>
           )}
         </div>
 
         {/* Progress to Next Reward */}
         <div>
           <div className="flex justify-between items-center mb-2">
-            <SafeText className="text-sm text-gray-400">
+            <span className="text-sm text-gray-400">
               Progress to ${STREAK_REWARDS[nextRewardStreak] || 300}
-            </SafeText>
-            <SafeText className="text-sm text-green-400">
+            </span>
+            <span className="text-sm text-green-400">
               {nextRewardStreak - currentStreak} matches away
-            </SafeText>
+            </span>
           </div>
           <Progress value={progressToNext} className="h-2" />
         </div>

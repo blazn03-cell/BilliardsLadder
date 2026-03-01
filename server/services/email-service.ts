@@ -42,7 +42,7 @@ class EmailService {
   async sendEmail(options: EmailOptions): Promise<void> {
     try {
       const mailOptions = {
-        from: options.from || '"Billiards Ladder" <noreply@actionladder.net>',
+        from: options.from || '"Action Ladder" <noreply@actionladder.net>',
         to: options.to,
         subject: options.subject,
         html: options.html,
@@ -229,7 +229,7 @@ class EmailService {
           </div>
 
           <div class="footer">
-            <p><strong>Powered by Billiards Ladder</strong></p>
+            <p><strong>Powered by Action Ladder</strong></p>
             <p>The premier billiards competition platform where legends are made.</p>
             <p>Questions? Contact support@actionladder.net</p>
           </div>
@@ -246,7 +246,7 @@ class EmailService {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Welcome to Billiards Ladder! 🎱</title>
+        <title>Welcome to Action Ladder! 🎱</title>
         <style>
           body {
             margin: 0;
@@ -317,7 +317,7 @@ class EmailService {
 
           <div class="setup-complete">
             <h2 style="color: #00ff00; margin-top: 0;">✅ Setup Complete</h2>
-            <p><strong>${data.teamName}</strong> is now fully connected to Billiards Ladder's payout system.</p>
+            <p><strong>${data.teamName}</strong> is now fully connected to Action Ladder's payout system.</p>
             <ul style="color: #888888;">
               <li>✅ Stripe account verified and active</li>
               <li>✅ Bank account connected for payouts</li>
@@ -349,7 +349,7 @@ class EmailService {
           </div>
 
           <div class="footer">
-            <p><strong>Powered by Billiards Ladder</strong></p>
+            <p><strong>Powered by Action Ladder</strong></p>
             <p>The premier billiards competition platform where legends are made.</p>
             <p>Questions? Contact support@actionladder.net</p>
           </div>
@@ -363,7 +363,7 @@ class EmailService {
     const html = this.generatePayoutEmail(data);
     await this.sendEmail({
       to: recipientEmail,
-      subject: `🎱 You Just Got Paid! ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(data.amount / 100)} from Billiards Ladder 💸`,
+      subject: `🎱 You Just Got Paid! ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(data.amount / 100)} from Action Ladder 💸`,
       html,
     });
   }
@@ -372,7 +372,7 @@ class EmailService {
     const html = this.generateOnboardingCompleteEmail(data);
     await this.sendEmail({
       to: recipientEmail,
-      subject: `🏆 Welcome to Billiards Ladder! Your team ${data.teamName} is ready to compete`,
+      subject: `🏆 Welcome to Action Ladder! Your team ${data.teamName} is ready to compete`,
       html,
     });
   }
@@ -422,7 +422,7 @@ class EmailService {
             </a>
           </div>
           <div class="footer">
-            <p><strong>Powered by Billiards Ladder</strong></p>
+            <p><strong>Powered by Action Ladder</strong></p>
           </div>
         </div>
       </body>
@@ -446,7 +446,7 @@ class EmailService {
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #065f46 0%, #047857 100%); color: white; padding: 20px; text-align: center;">
-          <h1 style="margin: 0;">Billiards Ladder</h1>
+          <h1 style="margin: 0;">ActionLadder</h1>
           <p style="margin: 10px 0 0 0; opacity: 0.9;">Pool • Points • Pride</p>
         </div>
         
@@ -454,7 +454,7 @@ class EmailService {
           <h2 style="color: #374151; margin-bottom: 20px;">Password Reset Request</h2>
           
           <p style="color: #6b7280; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
-            We received a request to reset your password for your Billiards Ladder account. 
+            We received a request to reset your password for your ActionLadder account. 
             Click the button below to reset your password:
           </p>
           
@@ -482,7 +482,7 @@ class EmailService {
         </div>
         
         <div style="background: #374151; color: #9ca3af; padding: 20px; text-align: center; font-size: 12px;">
-          <p style="margin: 0;">© 2025 Billiards Ladder - In here, respect is earned in racks, not words</p>
+          <p style="margin: 0;">© 2025 ActionLadder - In here, respect is earned in racks, not words</p>
         </div>
       </div>
     `;
@@ -490,7 +490,7 @@ class EmailService {
     try {
       await this.sendEmail({
         to: email,
-        subject: "Billiards Ladder - Password Reset Request",
+        subject: "ActionLadder - Password Reset Request",
         html,
       });
       return true;

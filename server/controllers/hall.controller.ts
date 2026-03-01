@@ -11,7 +11,7 @@ export async function getAllHalls(req: Request, res: Response) {
     const filteredHalls = halls.filter(hall => hall.battlesUnlocked || req.query.admin === "true");
     
     // Sort by points (descending) then by wins
-    const sortedHalls = filteredHalls.sort((a, b) => {
+    const sortedHalls = filteredHalls.sort((a: any, b: any) => {
       if (b.points !== a.points) return b.points - a.points;
       return b.wins - a.wins;
     });
@@ -37,7 +37,7 @@ export async function getHallDetails(req: Request, res: Response) {
     }
     
     const matches = await storage.getHallMatchesByHall(hallId);
-    const roster = await storage.getRosterByHall(hallId);
+    const roster = await (storage as any).getRosterByHall(hallId);
     
     res.json({ hall, matches, roster });
   } catch (error: any) {
@@ -49,18 +49,18 @@ export async function getHallDetails(req: Request, res: Response) {
 // Get all hall matches (only for unlocked halls)
 export async function getAllHallMatches(req: Request, res: Response) {
   try {
-    const matches = await storage.getAllHallMatches();
+    const matches = await (storage as any).getAllHallMatches();
     const halls = await storage.getAllPoolHalls();
     
     // Filter matches to only include those between unlocked halls
     const unlockedHallIds = halls.filter(h => h.battlesUnlocked).map(h => h.id);
-    const filteredMatches = matches.filter(match => 
+    const filteredMatches = matches.filter((match: any) => 
       unlockedHallIds.includes(match.homeHallId) && 
       unlockedHallIds.includes(match.awayHallId)
     );
     
     // Sort by scheduled date (most recent first)
-    const sortedMatches = filteredMatches.sort((a, b) => {
+    const sortedMatches = filteredMatches.sort((a: any, b: any) => {
       const dateA = a.scheduledDate || a.createdAt;
       const dateB = b.scheduledDate || b.createdAt;
       return new Date(dateB).getTime() - new Date(dateA).getTime();
@@ -137,10 +137,10 @@ export async function updateHallMatch(req: Request, res: Response) {
 export async function getHallRoster(req: Request, res: Response) {
   try {
     const { hallId } = req.params;
-    const roster = await storage.getRosterByHall(hallId);
+    const roster = await (storage as any).getRosterByHall(hallId);
     
     // Get player details for each roster entry
-    const playersPromises = roster.map(async (rosterEntry) => {
+    const playersPromises = roster.map(async (rosterEntry: any) => {
       const players = await storage.getAllPlayers();
       const player = players.find(p => p.id === rosterEntry.playerId);
       return {
@@ -258,7 +258,7 @@ export async function getHallStats(req: Request, res: Response) {
 
     // Recent form (last 5 matches)
     const recentMatches = completedMatches
-      .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime())
+      .sort((a: any, b: any) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime())
       .slice(0, 5);
     
     const recentForm = recentMatches.map(match => ({

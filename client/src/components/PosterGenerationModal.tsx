@@ -145,7 +145,7 @@ export function PosterGenerationModal({
         await navigator.share({
           files: [file],
           title: 'Challenge Poster',
-          text: `Check out this Billiards Ladder challenge: ${challenge.title}`,
+          text: `Check out this ActionLadder challenge: ${challenge.title}`,
         });
       } else {
         // Fallback: copy to clipboard

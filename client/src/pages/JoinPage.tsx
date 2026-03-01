@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../lib/queryClient';
-import type { PlayerQueue, InsertPlayerQueue } from '@shared/schema';
+// Local types since PlayerQueue is not in shared schema
+type PlayerQueue = { id: string; name: string; email?: string; phone?: string; city?: string; experience?: string; preferredGames?: string[]; status?: string; createdAt?: Date | null; };
+type InsertPlayerQueue = Omit<PlayerQueue, 'id' | 'createdAt'>;
 
 const JoinPage: React.FC = () => {
   const [formData, setFormData] = useState({

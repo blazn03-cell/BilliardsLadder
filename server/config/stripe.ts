@@ -8,7 +8,7 @@ export function getStripe(): Stripe {
       throw new Error("STRIPE_SECRET_KEY is required");
     }
     _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2024-12-18.acacia",
+      apiVersion: "2025-08-27.basil",
       typescript: true,
     });
   }
@@ -17,7 +17,7 @@ export function getStripe(): Stripe {
 
 export const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2024-12-18.acacia",
+      apiVersion: "2025-08-27.basil",
       typescript: true,
     })
   : (null as unknown as Stripe);

@@ -6,6 +6,9 @@ import { WeightRulesDisplay } from '@/components/weight-rules-display';
 
 interface PlayerWithRank extends Player {
   rank: number;
+  wins?: number;
+  specialStatus?: string;
+  achievements?: string[];
 }
 
 const LadderPage: React.FC = () => {
@@ -24,7 +27,7 @@ const LadderPage: React.FC = () => {
   const rankedPlayers = React.useMemo(() => {
     return players
       .sort((a, b) => b.points - a.points)
-      .map((player, index) => ({ ...player, rank: index + 1 }));
+      .map((player, index) => ({ ...player, rank: index + 1 } as PlayerWithRank));
   }, [players]);
 
   const topPlayers = rankedPlayers.slice(0, 3);
@@ -107,9 +110,9 @@ const LadderPage: React.FC = () => {
             <div className="text-sm text-green-500 mb-2">{player.city}</div>
             <div className="text-3xl font-bold cash-glow">${player.points}</div>
             <div className="text-xs mt-2">
-              {player.wins}W - {player.rating} Rating
+              {player.wins ?? 0}W - {player.rating} Rating
             </div>
-            {player.respectPoints > 0 && (
+            {(player.respectPoints ?? 0) > 0 && (
               <div className="badge-respect mt-2">
                 {player.respectPoints} Respect
               </div>
@@ -158,12 +161,12 @@ const LadderPage: React.FC = () => {
                   ${player.points.toLocaleString()}
                 </td>
                 <td>
-                  <span className="text-green-400">{player.wins}</span>
+                  <span className="text-green-400">{player.wins ?? 0}</span>
                   -
-                  <span className="text-red-400">{player.rating - player.wins}</span>
+                  <span className="text-red-400">{player.rating - (player.wins ?? 0)}</span>
                 </td>
                 <td>
-                  {player.streak > 0 ? (
+                  {(player.streak ?? 0) > 0 ? (
                     <span className="text-green-400">🔥 {player.streak}</span>
                   ) : (
                     <span className="text-gray-500">-</span>
@@ -180,7 +183,7 @@ const LadderPage: React.FC = () => {
                     {player.specialStatus === 'free_pass' && (
                       <span className="badge-support">🛑 Free Pass</span>
                     )}
-                    {player.achievements.includes('break_run_master') && (
+                    {(player.achievements ?? []).includes('break_run_master') && (
                       <span className="text-xs bg-purple-800/30 text-purple-300 px-2 py-1 rounded">
                         🎯 Break & Run
                       </span>
@@ -188,7 +191,7 @@ const LadderPage: React.FC = () => {
                   </div>
                 </td>
                 <td>
-                  {player.respectPoints > 0 ? (
+                  {(player.respectPoints ?? 0) > 0 ? (
                     <span className="badge-respect">⭐ {player.respectPoints}</span>
                   ) : (
                     <span className="text-gray-600">0</span>
@@ -208,9 +211,9 @@ const LadderPage: React.FC = () => {
         </h3>
         <div className="space-y-3">
           {matches.slice(0, 5).map((match) => {
-            const winner = players.find(p => p.id === match.winnerId);
-            const p1 = players.find(p => p.id === match.p1Id);
-            const p2 = players.find(p => p.id === match.p2Id);
+            const winner = players.find(p => p.id === match.winner);
+            const p1 = players.find(p => p.id === match.challenger);
+            const p2 = players.find(p => p.id === match.opponent);
             const loser = winner?.id === p1?.id ? p2 : p1;
             
             return (
@@ -235,7 +238,7 @@ const LadderPage: React.FC = () => {
       {/* Games in Rotation */}
       <div className="felt-bg rounded-lg border border-green-700/30 p-6">
         <h2 className="text-3xl font-bold text-green-400 mb-6 text-center">
-          🎮 Main 9-Foot Table Games (Billiards Ladder Core)
+          🎮 Main 9-Foot Table Games (Action Ladder Core)
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

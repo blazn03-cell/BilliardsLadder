@@ -67,18 +67,10 @@ export function WebVitals() {
   useEffect(() => {
     async function initWebVitals() {
       try {
-        const { onCLS, onFID, onFCP, onLCP, onTTFB, onINP } = await import('web-vitals');
+        const { onCLS, onFCP, onLCP, onTTFB, onINP } = await import('web-vitals');
 
         // Core Web Vitals
         onCLS((vitals: Metric) => {
-          const data: VitalsData = {
-            ...vitals,
-            rating: getRating(vitals.name, vitals.value)
-          };
-          sendToAnalytics(data);
-        });
-
-        onFID((vitals: Metric) => {
           const data: VitalsData = {
             ...vitals,
             rating: getRating(vitals.name, vitals.value)

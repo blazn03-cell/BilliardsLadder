@@ -141,7 +141,8 @@ export function useAppPreferences() {
 
 // Hook for managing recent activity cache
 export function useRecentActivity() {
-  const [recentActivity, setRecentActivity] = useLocalStorage('recent-activity', []);
+  type ActivityItem = { id: string; type: 'match' | 'tournament' | 'bounty' | 'kelly-pool' | 'charity'; description: string; timestamp: number; data?: any; };
+  const [recentActivity, setRecentActivity] = useLocalStorage<ActivityItem[]>('recent-activity', []);
   
   const addActivity = (activity: {
     id: string;

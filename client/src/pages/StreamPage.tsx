@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { StreamStatus } from '../../../shared/schema';
+type StreamStatusData = { isLive?: boolean; viewers?: number; embedUrl?: string; };
 
 const StreamPage: React.FC = () => {
   const [embedUrl, setEmbedUrl] = useState('');
-  
-  const { data: streamStatus } = useQuery<StreamStatus>({
+
+  const { data: streamStatus } = useQuery<StreamStatusData>({
     queryKey: ['/api/stream-status'],
     refetchInterval: 30000, // Refresh every 30 seconds
   });

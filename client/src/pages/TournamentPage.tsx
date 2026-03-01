@@ -281,7 +281,7 @@ const TournamentPage: React.FC = () => {
 
         {/* Legal Notice */}
         <div className="bg-green-900/10 border border-green-700/30 rounded-lg p-6 text-center mt-8">
-          <h3 className="text-lg font-bold text-green-400 mb-2">Billiards Ladder - Skill-Based Competition</h3>
+          <h3 className="text-lg font-bold text-green-400 mb-2">Action Ladder - Skill-Based Competition</h3>
           <p className="text-sm text-green-600 mb-2">
             Entry fees for skill-based tournaments. All prizes distributed from collected entry fees.
           </p>

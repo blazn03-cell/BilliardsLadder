@@ -18,7 +18,7 @@ const deactivatePaymentMethodSchema = z.object({
 });
 
 const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-06-20" })
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2025-08-27.basil" })
   : (null as unknown as Stripe);
 
 // Create SetupIntent for collecting default payment method
@@ -48,7 +48,7 @@ export function createSetupIntent(storage: IStorage) {
           name: dbUser.name || undefined,
           metadata: {
             userId: userId,
-            platform: "Billiards Ladder"
+            platform: "ActionLadder"
           }
         });
         
@@ -342,7 +342,6 @@ export function handlePaymentWebhook(storage: IStorage) {
 
       // Record that we're processing this event (idempotency tracking)
       await storage.createSystemMetric({
-        metricName: "webhook_event_processed",
         metricType: "webhook_processed",
         timeWindow: "hour",
         windowStart: new Date(),
@@ -365,7 +364,6 @@ export function handlePaymentWebhook(storage: IStorage) {
           if (setupIntent.metadata?.userId) {
             // Log successful setup for analytics
             await storage.createSystemMetric({
-              metricName: "payment_onboarding_success",
               metricType: "payment_onboarding_success",
               timeWindow: "hour",
               windowStart: new Date(),
@@ -388,7 +386,6 @@ export function handlePaymentWebhook(storage: IStorage) {
           
           // Log successful attachment for analytics
           await storage.createSystemMetric({
-            metricName: "payment_method_attached",
             metricType: "payment_method_attached",
             timeWindow: "hour", 
             windowStart: new Date(),

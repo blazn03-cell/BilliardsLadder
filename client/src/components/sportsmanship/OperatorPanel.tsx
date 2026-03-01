@@ -40,20 +40,40 @@ export default function OperatorPanel({ sessionId, venueId, operatorId }: Operat
   
   const queryClient = useQueryClient();
 
+  interface ActiveVoteItem {
+    id: string;
+    targetUserId?: string;
+    remainingSeconds?: number;
+    quorumRequired: number;
+    thresholdRequired: number;
+  }
+
+  interface Incident {
+    id: string;
+    type: string;
+    details: string;
+    createdAt: string;
+  }
+
+  interface CheckIn {
+    id: string;
+    role: string;
+  }
+
   // Fetch active votes
-  const { data: activeVotes = [], refetch: refetchVotes } = useQuery({
+  const { data: activeVotes = [], refetch: refetchVotes } = useQuery<ActiveVoteItem[]>({
     queryKey: [`/api/attitude-votes/active/${sessionId}/${venueId}`],
     refetchInterval: 2000, // Poll every 2 seconds for live updates
   });
 
   // Fetch recent incidents
-  const { data: recentIncidents = [] } = useQuery({
+  const { data: recentIncidents = [] } = useQuery<Incident[]>({
     queryKey: [`/api/incidents/recent/${venueId}?hours=24`],
     refetchInterval: 10000, // Poll every 10 seconds
   });
 
   // Fetch active check-ins for eligible voters
-  const { data: activeCheckins = [] } = useQuery({
+  const { data: activeCheckins = [] } = useQuery<CheckIn[]>({
     queryKey: [`/api/checkins/session/${sessionId}`],
     refetchInterval: 30000, // Poll every 30 seconds
   });

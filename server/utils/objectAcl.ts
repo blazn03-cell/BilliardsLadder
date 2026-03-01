@@ -4,7 +4,7 @@ import type { GlobalRole } from "@shared/schema";
 
 const ACL_POLICY_METADATA_KEY = "custom:aclPolicy";
 
-// Billiards Ladder specific access group types
+// Action Ladder specific access group types
 export enum ObjectAccessGroupType {
   USER_LIST = "USER_LIST",           // Specific list of user IDs
   EMAIL_DOMAIN = "EMAIL_DOMAIN",     // Users with email in specific domain
@@ -120,7 +120,7 @@ class HallMembersAccessGroup extends BaseObjectAccessGroup {
       }
       
       // For players, check roster membership
-      const rosters = await storage.getAllHallRosters();
+      const rosters = await (storage as any).getAllHallRosters();
       return rosters.some(roster => 
         roster.hallId === this.id && 
         roster.playerId === userId && 
@@ -138,7 +138,7 @@ class TournamentParticipantsAccessGroup extends BaseObjectAccessGroup {
   async hasMember(userId: string): Promise<boolean> {
     try {
       // Check if user is registered for the tournament
-      const tournaments = await storage.getAllTournaments();
+      const tournaments = await (storage as any).getAllTournaments();
       const tournament = tournaments.find(t => t.id === this.id);
       
       if (!tournament) {
@@ -206,7 +206,7 @@ export async function getObjectAclPolicy(
   return JSON.parse(aclPolicy as string);
 }
 
-// Checks if the user can access the object based on Billiards Ladder rules.
+// Checks if the user can access the object based on Action Ladder rules.
 export async function canAccessObject({
   userId,
   objectFile,
@@ -264,7 +264,7 @@ export async function canAccessObject({
   return false;
 }
 
-// Helper function to create common ACL policies for Billiards Ladder use cases
+// Helper function to create common ACL policies for Action Ladder use cases
 export function createStandardAclPolicy(
   ownerId: string,
   visibility: "public" | "private",

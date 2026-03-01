@@ -183,7 +183,7 @@ function ObjectBallCarom() {
   const { toast } = useToast();
   const [isCreateGameOpen, setIsCreateGameOpen] = useState(false);
 
-  const { data: caromGames, isLoading } = useQuery({
+  const { data: caromGames, isLoading } = useQuery<any>({
     queryKey: ["/api/object-carom-games"],
   });
 
@@ -379,7 +379,7 @@ function PoolhallMatches() {
   const { toast } = useToast();
   const [isCreateMatchOpen, setIsCreateMatchOpen] = useState(false);
 
-  const { data: hallMatches, isLoading } = useQuery({
+  const { data: hallMatches, isLoading } = useQuery<any>({
     queryKey: ["/api/poolhall-matches"],
   });
 
@@ -613,11 +613,11 @@ function GameOfTheMonthVoting() {
   const queryClient = useQueryClient();
   const [isCreateVoteOpen, setIsCreateVoteOpen] = useState(false);
 
-  const { data: currentVoting, isLoading } = useQuery({
+  const { data: currentVoting, isLoading } = useQuery<any>({
     queryKey: ["/api/game-voting/current"],
   });
 
-  const { data: votingHistory } = useQuery({
+  const { data: votingHistory } = useQuery<any>({
     queryKey: ["/api/game-voting/history"],
   });
 
@@ -1001,18 +1001,18 @@ function TournamentCalcutta() {
   const [bidAmount, setBidAmount] = useState<string>("");
 
   // Fetch tournaments with calcutta enabled
-  const { data: tournaments, isLoading: tournamentsLoading } = useQuery({
+  const { data: tournaments, isLoading: tournamentsLoading } = useQuery<any>({
     queryKey: ["/api/tournaments"],
   });
 
   // Fetch calcuttas for selected tournament
-  const { data: calcuttas, isLoading: calcuttasLoading } = useQuery({
+  const { data: calcuttas, isLoading: calcuttasLoading } = useQuery<any>({
     queryKey: ["/api/tournaments", selectedTournament, "calcuttas"],
     enabled: !!selectedTournament,
   });
 
   // Fetch bids for selected calcuttas
-  const { data: allBids } = useQuery({
+  const { data: allBids } = useQuery<any>({
     queryKey: ["/api/calcutta-bids"],
   });
 
@@ -1179,17 +1179,17 @@ function SeasonPredictions() {
   const [thirdPlace, setThirdPlace] = useState<string>("");
 
   // Fetch season predictions
-  const { data: predictions, isLoading: predictionsLoading } = useQuery({
+  const { data: predictions, isLoading: predictionsLoading } = useQuery<any>({
     queryKey: ["/api/season-predictions"],
   });
 
   // Fetch players for prediction selection
-  const { data: players } = useQuery({
+  const { data: players } = useQuery<any>({
     queryKey: ["/api/players"],
   });
 
   // Fetch prediction entries
-  const { data: entries } = useQuery({
+  const { data: entries } = useQuery<any>({
     queryKey: ["/api/prediction-entries"],
   });
 

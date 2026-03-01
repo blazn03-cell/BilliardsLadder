@@ -877,7 +877,7 @@ export interface IStorage {
   createSystemAlert(alert: InsertSystemAlert): Promise<SystemAlert>;
   updateSystemAlert(id: string, updates: Partial<SystemAlert>): Promise<SystemAlert | undefined>;
   triggerAlert(id: string, currentValue: number): Promise<SystemAlert | undefined>;
-  resolveAlert(id: string): Promise<SystemAlert | undefined>;
+  resolveAlert(id: string, resolvedBy?: string): Promise<SystemAlert | undefined>;
   
   // === AI COACH TRAINING ANALYTICS ===
   
@@ -928,6 +928,47 @@ export interface IStorage {
   updatePrizePoolDistribution(id: string, updates: Partial<PrizePoolDistribution>): Promise<PrizePoolDistribution | undefined>;
   markDistributionCompleted(id: string, stripeTransferId: string): Promise<PrizePoolDistribution | undefined>;
   markDistributionFailed(id: string, failureReason: string): Promise<PrizePoolDistribution | undefined>;
+  // Match Divisions
+  getMatchDivisions(): Promise<MatchDivision[]>;
+  getMatchDivision(id: string): Promise<MatchDivision | undefined>;
+  createMatchDivision(division: InsertMatchDivision): Promise<MatchDivision>;
+  updateMatchDivision(id: string, updates: Partial<InsertMatchDivision>): Promise<MatchDivision | undefined>;
+  deleteMatchDivision(id: string): Promise<boolean>;
+  // Operator Tiers
+  getOperatorTiers(): Promise<OperatorTier[]>;
+  getOperatorTier(id: string): Promise<OperatorTier | undefined>;
+  createOperatorTier(tier: InsertOperatorTier): Promise<OperatorTier>;
+  updateOperatorTier(id: string, updates: Partial<InsertOperatorTier>): Promise<OperatorTier | undefined>;
+  // Match Entries
+  getMatchEntries(): Promise<MatchEntry[]>;
+  getMatchEntry(id: string): Promise<MatchEntry | undefined>;
+  createMatchEntry(entry: InsertMatchEntry): Promise<MatchEntry>;
+  updateMatchEntry(id: string, updates: Partial<MatchEntry>): Promise<MatchEntry | undefined>;
+  deleteMatchEntry(id: string): Promise<boolean>;
+  // Payout Distributions
+  getPayoutDistributions(): Promise<PayoutDistribution[]>;
+  getPayoutDistribution(id: string): Promise<PayoutDistribution | undefined>;
+  createPayoutDistribution(data: InsertPayoutDistribution): Promise<PayoutDistribution>;
+  updatePayoutDistribution(id: string, updates: Partial<PayoutDistribution>): Promise<PayoutDistribution | undefined>;
+  deletePayoutDistribution(id: string): Promise<boolean>;
+  // Operator Settings
+  getAllOperatorSettings(): Promise<OperatorSettings[]>;
+  // Organizations
+  getOrganization(id: string): Promise<Organization | undefined>;
+  getAllOrganizations(): Promise<Organization[]>;
+  createOrganization(org: InsertOrganization): Promise<Organization>;
+  updateOrganization(id: string, updates: Partial<Organization>): Promise<Organization | undefined>;
+  // Payout Transfers
+  getAllPayoutTransfers(): Promise<PayoutTransfer[]>;
+  getPayoutTransfer(id: string): Promise<PayoutTransfer | undefined>;
+  createPayoutTransfer(transfer: InsertPayoutTransfer): Promise<PayoutTransfer>;
+  // Hall methods
+  getAllHallMatches(): Promise<HallMatch[]>;
+  getRosterByHall(hallId: string): Promise<HallRoster[]>;
+  getRosterByPlayer(playerId: string): Promise<HallRoster[]>;
+  unlockHallBattles(hallId: string, unlockedBy: string): Promise<PoolHall | undefined>;
+  lockHallBattles(hallId: string): Promise<PoolHall | undefined>;
+
 }
 
 export class MemStorage implements IStorage {
@@ -1224,7 +1265,7 @@ export class MemStorage implements IStorage {
     const ownerId = randomUUID();
     const ownerUser: User = {
       id: ownerId,
-      email: "owner@billiardsladder.com",
+      email: "owner@actionladder.com",
       name: "Platform Owner",
       globalRole: "OWNER",
       payoutShareBps: 4000, // 40% share
@@ -1774,7 +1815,7 @@ export class MemStorage implements IStorage {
       name: "rookie_hall",
       displayName: "Rookie Hall",
       monthlyFee: 9900, // $99
-      revenueSplitPercent: 5, // 5% to Billiards Ladder
+      revenueSplitPercent: 5, // 5% to Action Ladder
       maxTeams: 1,
       hasPromoTools: false,
       hasLiveStreamBonus: false,
@@ -1790,7 +1831,7 @@ export class MemStorage implements IStorage {
       name: "basic_hall",
       displayName: "Basic Hall",
       monthlyFee: 19900, // $199
-      revenueSplitPercent: 10, // 10% to Billiards Ladder
+      revenueSplitPercent: 10, // 10% to Action Ladder
       maxTeams: 1,
       hasPromoTools: false,
       hasLiveStreamBonus: false,
@@ -1806,7 +1847,7 @@ export class MemStorage implements IStorage {
       name: "elite_operator",
       displayName: "Elite Operator",
       monthlyFee: 39900, // $399
-      revenueSplitPercent: 10, // 10% to Billiards Ladder
+      revenueSplitPercent: 10, // 10% to Action Ladder
       maxTeams: 2,
       hasPromoTools: true,
       hasLiveStreamBonus: true,
@@ -1822,7 +1863,7 @@ export class MemStorage implements IStorage {
       name: "franchise",
       displayName: "Franchise",
       monthlyFee: 79900, // $799
-      revenueSplitPercent: 10, // 10% to Billiards Ladder
+      revenueSplitPercent: 10, // 10% to Action Ladder
       maxTeams: null, // Unlimited
       hasPromoTools: true,
       hasLiveStreamBonus: true,
@@ -5768,7 +5809,8 @@ export class DatabaseStorage implements IStorage {
   async updateHallRoster(id: string, updates: Partial<InsertHallRoster>): Promise<HallRoster | undefined> { return this.memStorage.updateHallRoster(id, updates); }
   async deleteHallRoster(id: string): Promise<boolean> { return this.memStorage.deleteHallRoster(id); }
   
-  async getOperatorSettings(): Promise<OperatorSettings[]> { return this.memStorage.getOperatorSettings(); }
+  async getOperatorSettings(operatorUserId: string): Promise<OperatorSettings | undefined> { return this.memStorage.getOperatorSettings(operatorUserId); }
+  async getAllOperatorSettings(): Promise<OperatorSettings[]> { return this.memStorage.getAllOperatorSettings(); }
   async getOperatorSetting(id: string): Promise<OperatorSettings | undefined> { return this.memStorage.getOperatorSetting(id); }
   async createOperatorSettings(settings: InsertOperatorSettings): Promise<OperatorSettings> { return this.memStorage.createOperatorSettings(settings); }
   async updateOperatorSettings(id: string, updates: Partial<InsertOperatorSettings>): Promise<OperatorSettings | undefined> { return this.memStorage.updateOperatorSettings(id, updates); }
@@ -6107,114 +6149,114 @@ export class DatabaseStorage implements IStorage {
   async getLiveStreamsByPlatform(platform: string): Promise<LiveStream[]> { return this.memStorage.getLiveStreamsByPlatform(platform); }
   async getLiveStreamsByCity(city: string): Promise<LiveStream[]> { return this.memStorage.getLiveStreamsByCity(city); }
   async getWebhookEventsByType(eventType: string): Promise<WebhookEvent[]> { return this.memStorage.getWebhookEventsByType(eventType); }
-  async getRecentWebhookEvents(hours: number): Promise<WebhookEvent[]> { return this.memStorage.getRecentWebhookEvents(hours); }
-  async getPoolHallsByCity(city: string): Promise<PoolHall[]> { return this.memStorage.getPoolHallsByCity(city); }
-  async getActivePoolHalls(): Promise<PoolHall[]> { return this.memStorage.getActivePoolHalls(); }
+  async getRecentWebhookEvents(hours: number): Promise<WebhookEvent[]> { return (this.memStorage as any).getRecentWebhookEvents(hours); }
+  async getPoolHallsByCity(city: string): Promise<PoolHall[]> { return (this.memStorage as any).getPoolHallsByCity(city); }
+  async getActivePoolHalls(): Promise<PoolHall[]> { return (this.memStorage as any).getActivePoolHalls(); }
   async getHallMatchesByHall(hallId: string): Promise<HallMatch[]> { return this.memStorage.getHallMatchesByHall(hallId); }
-  async getActiveHallMatches(): Promise<HallMatch[]> { return this.memStorage.getActiveHallMatches(); }
-  async getHallRostersByHall(hallId: string): Promise<HallRoster[]> { return this.memStorage.getHallRostersByHall(hallId); }
-  async getOperatorSettingsByOperator(operatorId: string): Promise<OperatorSettings | undefined> { return this.memStorage.getOperatorSettingsByOperator(operatorId); }
+  async getActiveHallMatches(): Promise<HallMatch[]> { return (this.memStorage as any).getActiveHallMatches(); }
+  async getHallRostersByHall(hallId: string): Promise<HallRoster[]> { return (this.memStorage as any).getHallRostersByHall(hallId); }
+  async getOperatorSettingsByOperator(operatorId: string): Promise<OperatorSettings | undefined> { return (this.memStorage as any).getOperatorSettingsByOperator(operatorId); }
   async getRookieMatchesByPlayer(playerId: string): Promise<RookieMatch[]> { return this.memStorage.getRookieMatchesByPlayer(playerId); }
-  async getActiveRookieMatches(): Promise<RookieMatch[]> { return this.memStorage.getActiveRookieMatches(); }
-  async getUpcomingRookieEvents(): Promise<RookieEvent[]> { return this.memStorage.getUpcomingRookieEvents(); }
+  async getActiveRookieMatches(): Promise<RookieMatch[]> { return (this.memStorage as any).getActiveRookieMatches(); }
+  async getUpcomingRookieEvents(): Promise<RookieEvent[]> { return (this.memStorage as any).getUpcomingRookieEvents(); }
   async getRookieAchievementsByPlayer(playerId: string): Promise<RookieAchievement[]> { return this.memStorage.getRookieAchievementsByPlayer(playerId); }
-  async getActiveRookieSubscriptions(): Promise<RookieSubscription[]> { return this.memStorage.getActiveRookieSubscriptions(); }
-  async getRookieSubscriptionsByPlayer(playerId: string): Promise<RookieSubscription[]> { return this.memStorage.getRookieSubscriptionsByPlayer(playerId); }
-  async getActiveOperatorSubscriptions(): Promise<OperatorSubscription[]> { return this.memStorage.getActiveOperatorSubscriptions(); }
-  async getOperatorSubscriptionsByOperator(operatorId: string): Promise<OperatorSubscription[]> { return this.memStorage.getOperatorSubscriptionsByOperator(operatorId); }
-  async getTeamsByPlayer(playerId: string): Promise<Team[]> { return this.memStorage.getTeamsByPlayer(playerId); }
-  async getActiveTeams(): Promise<Team[]> { return this.memStorage.getActiveTeams(); }
+  async getActiveRookieSubscriptions(): Promise<RookieSubscription[]> { return (this.memStorage as any).getActiveRookieSubscriptions(); }
+  async getRookieSubscriptionsByPlayer(playerId: string): Promise<RookieSubscription[]> { return (this.memStorage as any).getRookieSubscriptionsByPlayer(playerId); }
+  async getActiveOperatorSubscriptions(): Promise<OperatorSubscription[]> { return (this.memStorage as any).getActiveOperatorSubscriptions(); }
+  async getOperatorSubscriptionsByOperator(operatorId: string): Promise<OperatorSubscription[]> { return (this.memStorage as any).getOperatorSubscriptionsByOperator(operatorId); }
+  async getTeamsByPlayer(playerId: string): Promise<Team[]> { return (this.memStorage as any).getTeamsByPlayer(playerId); }
+  async getActiveTeams(): Promise<Team[]> { return (this.memStorage as any).getActiveTeams(); }
   async getTeamPlayersByTeam(teamId: string): Promise<TeamPlayer[]> { return this.memStorage.getTeamPlayersByTeam(teamId); }
   async getTeamPlayersByPlayer(playerId: string): Promise<TeamPlayer[]> { return this.memStorage.getTeamPlayersByPlayer(playerId); }
   async getTeamMatchesByTeam(teamId: string): Promise<TeamMatch[]> { return this.memStorage.getTeamMatchesByTeam(teamId); }
-  async getActiveTeamMatches(): Promise<TeamMatch[]> { return this.memStorage.getActiveTeamMatches(); }
+  async getActiveTeamMatches(): Promise<TeamMatch[]> { return (this.memStorage as any).getActiveTeamMatches(); }
   async getTeamSetsByMatch(matchId: string): Promise<TeamSet[]> { return this.memStorage.getTeamSetsByMatch(matchId); }
-  async getActiveTeamChallenges(): Promise<TeamChallenge[]> { return this.memStorage.getActiveTeamChallenges(); }
-  async getTeamChallengesByTeam(teamId: string): Promise<TeamChallenge[]> { return this.memStorage.getTeamChallengesByTeam(teamId); }
+  async getActiveTeamChallenges(): Promise<TeamChallenge[]> { return (this.memStorage as any).getActiveTeamChallenges(); }
+  async getTeamChallengesByTeam(teamId: string): Promise<TeamChallenge[]> { return (this.memStorage as any).getTeamChallengesByTeam(teamId); }
   async getTeamChallengeParticipantsByChallenge(challengeId: string): Promise<TeamChallengeParticipant[]> { return this.memStorage.getTeamChallengeParticipantsByChallenge(challengeId); }
-  async getTeamChallengeParticipantsByTeam(teamId: string): Promise<TeamChallengeParticipant[]> { return this.memStorage.getTeamChallengeParticipantsByTeam(teamId); }
-  async getCheckinsByPlayer(playerId: string): Promise<Checkin[]> { return this.memStorage.getCheckinsByPlayer(playerId); }
-  async getRecentCheckins(hours: number): Promise<Checkin[]> { return this.memStorage.getRecentCheckins(hours); }
-  async getAttitudeVotesByPlayer(playerId: string): Promise<AttitudeVote[]> { return this.memStorage.getAttitudeVotesByPlayer(playerId); }
-  async getAttitudeVotesByBallot(ballotId: string): Promise<AttitudeVote[]> { return this.memStorage.getAttitudeVotesByBallot(ballotId); }
-  async getActiveAttitudeBallots(): Promise<AttitudeBallot[]> { return this.memStorage.getActiveAttitudeBallots(); }
-  async getIncidentsByPlayer(playerId: string): Promise<Incident[]> { return this.memStorage.getIncidentsByPlayer(playerId); }
-  async getIncidentsByType(incidentType: string): Promise<Incident[]> { return this.memStorage.getIncidentsByType(incidentType); }
-  async getOpenIncidents(): Promise<Incident[]> { return this.memStorage.getOpenIncidents(); }
+  async getTeamChallengeParticipantsByTeam(teamId: string): Promise<TeamChallengeParticipant[]> { return (this.memStorage as any).getTeamChallengeParticipantsByTeam(teamId); }
+  async getCheckinsByPlayer(playerId: string): Promise<Checkin[]> { return (this.memStorage as any).getCheckinsByPlayer(playerId); }
+  async getRecentCheckins(hours: number): Promise<Checkin[]> { return (this.memStorage as any).getRecentCheckins(hours); }
+  async getAttitudeVotesByPlayer(playerId: string): Promise<AttitudeVote[]> { return (this.memStorage as any).getAttitudeVotesByPlayer(playerId); }
+  async getAttitudeVotesByBallot(ballotId: string): Promise<AttitudeVote[]> { return (this.memStorage as any).getAttitudeVotesByBallot(ballotId); }
+  async getActiveAttitudeBallots(): Promise<AttitudeBallot[]> { return (this.memStorage as any).getActiveAttitudeBallots(); }
+  async getIncidentsByPlayer(playerId: string): Promise<Incident[]> { return (this.memStorage as any).getIncidentsByPlayer(playerId); }
+  async getIncidentsByType(incidentType: string): Promise<Incident[]> { return (this.memStorage as any).getIncidentsByType(incidentType); }
+  async getOpenIncidents(): Promise<Incident[]> { return (this.memStorage as any).getOpenIncidents(); }
   async getChallengeEntriesByPool(poolId: string): Promise<ChallengeEntry[]> { return this.memStorage.getChallengeEntriesByPool(poolId); }
-  async getChallengeEntriesByPlayer(playerId: string): Promise<ChallengeEntry[]> { return this.memStorage.getChallengeEntriesByPlayer(playerId); }
-  async getLedgerEntriesByWallet(walletId: string): Promise<LedgerEntry[]> { return this.memStorage.getLedgerEntriesByWallet(walletId); }
-  async getLedgerEntriesByType(entryType: string): Promise<LedgerEntry[]> { return this.memStorage.getLedgerEntriesByType(entryType); }
-  async getResolutionsByPool(poolId: string): Promise<Resolution[]> { return this.memStorage.getResolutionsByPool(poolId); }
-  async getPendingResolutions(): Promise<Resolution[]> { return this.memStorage.getPendingResolutions(); }
-  async getMatchDivisionsByType(divisionType: string): Promise<MatchDivision[]> { return this.memStorage.getMatchDivisionsByType(divisionType); }
-  async getActiveMatchDivisions(): Promise<MatchDivision[]> { return this.memStorage.getActiveMatchDivisions(); }
-  async getOperatorTiersByLevel(level: number): Promise<OperatorTier[]> { return this.memStorage.getOperatorTiersByLevel(level); }
-  async getTeamStripeAccountsByTeam(teamId: string): Promise<TeamStripeAccount[]> { return this.memStorage.getTeamStripeAccountsByTeam(teamId); }
+  async getChallengeEntriesByPlayer(playerId: string): Promise<ChallengeEntry[]> { return (this.memStorage as any).getChallengeEntriesByPlayer(playerId); }
+  async getLedgerEntriesByWallet(walletId: string): Promise<LedgerEntry[]> { return (this.memStorage as any).getLedgerEntriesByWallet(walletId); }
+  async getLedgerEntriesByType(entryType: string): Promise<LedgerEntry[]> { return (this.memStorage as any).getLedgerEntriesByType(entryType); }
+  async getResolutionsByPool(poolId: string): Promise<Resolution[]> { return (this.memStorage as any).getResolutionsByPool(poolId); }
+  async getPendingResolutions(): Promise<Resolution[]> { return (this.memStorage as any).getPendingResolutions(); }
+  async getMatchDivisionsByType(divisionType: string): Promise<MatchDivision[]> { return (this.memStorage as any).getMatchDivisionsByType(divisionType); }
+  async getActiveMatchDivisions(): Promise<MatchDivision[]> { return (this.memStorage as any).getActiveMatchDivisions(); }
+  async getOperatorTiersByLevel(level: number): Promise<OperatorTier[]> { return (this.memStorage as any).getOperatorTiersByLevel(level); }
+  async getTeamStripeAccountsByTeam(teamId: string): Promise<TeamStripeAccount[]> { return (this.memStorage as any).getTeamStripeAccountsByTeam(teamId); }
   async getMatchEntryByMatchId(matchId: string): Promise<MatchEntry | undefined> { return this.memStorage.getMatchEntryByMatchId(matchId); }
-  async getMatchEntriesByMatch(matchId: string): Promise<MatchEntry[]> { return this.memStorage.getMatchEntriesByMatch(matchId); }
-  async getMatchEntriesByPlayer(playerId: string): Promise<MatchEntry[]> { return this.memStorage.getMatchEntriesByPlayer(playerId); }
-  async getPayoutDistributionsByPool(poolId: string): Promise<PayoutDistribution[]> { return this.memStorage.getPayoutDistributionsByPool(poolId); }
-  async getPayoutDistributionsByPlayer(playerId: string): Promise<PayoutDistribution[]> { return this.memStorage.getPayoutDistributionsByPlayer(playerId); }
-  async getTeamRegistrationsByTeam(teamId: string): Promise<TeamRegistration[]> { return this.memStorage.getTeamRegistrationsByTeam(teamId); }
-  async getActiveTeamRegistrations(): Promise<TeamRegistration[]> { return this.memStorage.getActiveTeamRegistrations(); }
-  async getUploadedFilesByUploader(uploaderId: string): Promise<UploadedFile[]> { return this.memStorage.getUploadedFilesByUploader(uploaderId); }
-  async getUploadedFilesByType(fileType: string): Promise<UploadedFile[]> { return this.memStorage.getUploadedFilesByType(fileType); }
-  async getFileSharesByFile(fileId: string): Promise<FileShare[]> { return this.memStorage.getFileSharesByFile(fileId); }
-  async getFileSharesBySharedWith(sharedWithId: string): Promise<FileShare[]> { return this.memStorage.getFileSharesBySharedWith(sharedWithId); }
-  async getActiveFileShares(): Promise<FileShare[]> { return this.memStorage.getActiveFileShares(); }
-  async getWeightRulesByDivision(divisionId: string): Promise<WeightRule[]> { return this.memStorage.getWeightRulesByDivision(divisionId); }
-  async getActiveWeightRules(): Promise<WeightRule[]> { return this.memStorage.getActiveWeightRules(); }
-  async getTutoringSessionsByStudent(studentId: string): Promise<TutoringSession[]> { return this.memStorage.getTutoringSessionsByStudent(studentId); }
+  async getMatchEntriesByMatch(matchId: string): Promise<MatchEntry[]> { return (this.memStorage as any).getMatchEntriesByMatch(matchId); }
+  async getMatchEntriesByPlayer(playerId: string): Promise<MatchEntry[]> { return (this.memStorage as any).getMatchEntriesByPlayer(playerId); }
+  async getPayoutDistributionsByPool(poolId: string): Promise<PayoutDistribution[]> { return (this.memStorage as any).getPayoutDistributionsByPool(poolId); }
+  async getPayoutDistributionsByPlayer(playerId: string): Promise<PayoutDistribution[]> { return (this.memStorage as any).getPayoutDistributionsByPlayer(playerId); }
+  async getTeamRegistrationsByTeam(teamId: string): Promise<TeamRegistration[]> { return (this.memStorage as any).getTeamRegistrationsByTeam(teamId); }
+  async getActiveTeamRegistrations(): Promise<TeamRegistration[]> { return (this.memStorage as any).getActiveTeamRegistrations(); }
+  async getUploadedFilesByUploader(uploaderId: string): Promise<UploadedFile[]> { return (this.memStorage as any).getUploadedFilesByUploader(uploaderId); }
+  async getUploadedFilesByType(fileType: string): Promise<UploadedFile[]> { return (this.memStorage as any).getUploadedFilesByType(fileType); }
+  async getFileSharesByFile(fileId: string): Promise<FileShare[]> { return (this.memStorage as any).getFileSharesByFile(fileId); }
+  async getFileSharesBySharedWith(sharedWithId: string): Promise<FileShare[]> { return (this.memStorage as any).getFileSharesBySharedWith(sharedWithId); }
+  async getActiveFileShares(): Promise<FileShare[]> { return (this.memStorage as any).getActiveFileShares(); }
+  async getWeightRulesByDivision(divisionId: string): Promise<WeightRule[]> { return (this.memStorage as any).getWeightRulesByDivision(divisionId); }
+  async getActiveWeightRules(): Promise<WeightRule[]> { return (this.memStorage as any).getActiveWeightRules(); }
+  async getTutoringSessionsByStudent(studentId: string): Promise<TutoringSession[]> { return (this.memStorage as any).getTutoringSessionsByStudent(studentId); }
   async getTutoringSessionsByTutor(tutorId: string): Promise<TutoringSession[]> { return this.memStorage.getTutoringSessionsByTutor(tutorId); }
-  async getUpcomingTutoringSessions(): Promise<TutoringSession[]> { return this.memStorage.getUpcomingTutoringSessions(); }
-  async getTutoringCreditsByPlayer(playerId: string): Promise<TutoringCredits[]> { return this.memStorage.getTutoringCreditsByPlayer(playerId); }
-  async getActiveTutoringCredits(): Promise<TutoringCredits[]> { return this.memStorage.getActiveTutoringCredits(); }
+  async getUpcomingTutoringSessions(): Promise<TutoringSession[]> { return (this.memStorage as any).getUpcomingTutoringSessions(); }
+  async getTutoringCreditsByPlayer(playerId: string): Promise<TutoringCredits[]> { return (this.memStorage as any).getTutoringCreditsByPlayer(playerId); }
+  async getActiveTutoringCredits(): Promise<TutoringCredits[]> { return (this.memStorage as any).getActiveTutoringCredits(); }
   async getCommissionRatesByOperator(operatorId: string): Promise<CommissionRate[]> { return this.memStorage.getCommissionRatesByOperator(operatorId); }
-  async getActiveCommissionRates(): Promise<CommissionRate[]> { return this.memStorage.getActiveCommissionRates(); }
-  async getPlatformEarningsByPeriod(startDate: Date, endDate: Date): Promise<PlatformEarnings[]> { return this.memStorage.getPlatformEarningsByPeriod(startDate, endDate); }
-  async getRecentPlatformEarnings(days: number): Promise<PlatformEarnings[]> { return this.memStorage.getRecentPlatformEarnings(days); }
-  async getMembershipEarningsByPeriod(startDate: Date, endDate: Date): Promise<MembershipEarnings[]> { return this.memStorage.getMembershipEarningsByPeriod(startDate, endDate); }
-  async getRecentMembershipEarnings(days: number): Promise<MembershipEarnings[]> { return this.memStorage.getRecentMembershipEarnings(days); }
+  async getActiveCommissionRates(): Promise<CommissionRate[]> { return (this.memStorage as any).getActiveCommissionRates(); }
+  async getPlatformEarningsByPeriod(startDate: Date, endDate: Date): Promise<PlatformEarnings[]> { return (this.memStorage as any).getPlatformEarningsByPeriod(startDate, endDate); }
+  async getRecentPlatformEarnings(days: number): Promise<PlatformEarnings[]> { return (this.memStorage as any).getRecentPlatformEarnings(days); }
+  async getMembershipEarningsByPeriod(startDate: Date, endDate: Date): Promise<MembershipEarnings[]> { return (this.memStorage as any).getMembershipEarningsByPeriod(startDate, endDate); }
+  async getRecentMembershipEarnings(days: number): Promise<MembershipEarnings[]> { return (this.memStorage as any).getRecentMembershipEarnings(days); }
   async getOperatorPayoutsByOperator(operatorId: string): Promise<OperatorPayout[]> { return this.memStorage.getOperatorPayoutsByOperator(operatorId); }
-  async getPendingOperatorPayouts(): Promise<OperatorPayout[]> { return this.memStorage.getPendingOperatorPayouts(); }
+  async getPendingOperatorPayouts(): Promise<OperatorPayout[]> { return (this.memStorage as any).getPendingOperatorPayouts(); }
   async getMembershipSubscriptionByPlayerId(playerId: string): Promise<MembershipSubscription | undefined> { return this.memStorage.getMembershipSubscriptionByPlayerId(playerId); }
-  async getMembershipSubscriptionsByPlayer(playerId: string): Promise<MembershipSubscription[]> { return this.memStorage.getMembershipSubscriptionsByPlayer(playerId); }
-  async getActiveMembershipSubscriptions(): Promise<MembershipSubscription[]> { return this.memStorage.getActiveMembershipSubscriptions(); }
-  async getChallengesByStatus(status: string): Promise<Challenge[]> { return this.memStorage.getChallengesByStatus(status); }
+  async getMembershipSubscriptionsByPlayer(playerId: string): Promise<MembershipSubscription[]> { return (this.memStorage as any).getMembershipSubscriptionsByPlayer(playerId); }
+  async getActiveMembershipSubscriptions(): Promise<MembershipSubscription[]> { return (this.memStorage as any).getActiveMembershipSubscriptions(); }
+  async getChallengesByStatus(status: string): Promise<Challenge[]> { return (this.memStorage as any).getChallengesByStatus(status); }
   async getChallengesByPlayer(playerId: string): Promise<Challenge[]> { return this.memStorage.getChallengesByPlayer(playerId); }
   async getChallengesByHall(hallId: string): Promise<Challenge[]> { return this.memStorage.getChallengesByHall(hallId); }
   async getUpcomingChallenges(limit?: number): Promise<Challenge[]> { return this.memStorage.getUpcomingChallenges(limit); }
-  async getActiveChallenges(): Promise<Challenge[]> { return this.memStorage.getActiveChallenges(); }
+  async getActiveChallenges(): Promise<Challenge[]> { return (this.memStorage as any).getActiveChallenges(); }
   async getChallengeFeesByChallenge(challengeId: string): Promise<ChallengeFee[]> { return this.memStorage.getChallengeFeesByChallenge(challengeId); }
-  async getUnpaidChallengeFees(): Promise<ChallengeFee[]> { return this.memStorage.getUnpaidChallengeFees(); }
+  async getUnpaidChallengeFees(): Promise<ChallengeFee[]> { return (this.memStorage as any).getUnpaidChallengeFees(); }
   async getChallengeCheckInsByChallenge(challengeId: string): Promise<ChallengeCheckIn[]> { return this.memStorage.getChallengeCheckInsByChallenge(challengeId); }
-  async getChallengeCheckInsByPlayer(playerId: string): Promise<ChallengeCheckIn[]> { return this.memStorage.getChallengeCheckInsByPlayer(playerId); }
+  async getChallengeCheckInsByPlayer(playerId: string): Promise<ChallengeCheckIn[]> { return (this.memStorage as any).getChallengeCheckInsByPlayer(playerId); }
   async getChallengesPolicyByHall(hallId: string): Promise<ChallengePolicy | undefined> { return this.memStorage.getChallengesPolicyByHall(hallId); }
-  async getActiveChallengePolicies(): Promise<ChallengePolicy[]> { return this.memStorage.getActiveChallengePolicies(); }
-  async getChallengePoliciesByType(policyType: string): Promise<ChallengePolicy[]> { return this.memStorage.getChallengePoliciesByType(policyType); }
-  async getActiveQrCodeNonces(): Promise<QrCodeNonce[]> { return this.memStorage.getActiveQrCodeNonces(); }
-  async getQrCodeNoncesByType(nonceType: string): Promise<QrCodeNonce[]> { return this.memStorage.getQrCodeNoncesByType(nonceType); }
+  async getActiveChallengePolicies(): Promise<ChallengePolicy[]> { return (this.memStorage as any).getActiveChallengePolicies(); }
+  async getChallengePoliciesByType(policyType: string): Promise<ChallengePolicy[]> { return (this.memStorage as any).getChallengePoliciesByType(policyType); }
+  async getActiveQrCodeNonces(): Promise<QrCodeNonce[]> { return (this.memStorage as any).getActiveQrCodeNonces(); }
+  async getQrCodeNoncesByType(nonceType: string): Promise<QrCodeNonce[]> { return (this.memStorage as any).getQrCodeNoncesByType(nonceType); }
   async getIcalFeedTokensByPlayer(playerId: string): Promise<IcalFeedToken[]> { return this.memStorage.getIcalFeedTokensByPlayer(playerId); }
-  async getActiveIcalFeedTokens(): Promise<IcalFeedToken[]> { return this.memStorage.getActiveIcalFeedTokens(); }
-  async getPaymentMethodsByPlayer(playerId: string): Promise<PaymentMethod[]> { return this.memStorage.getPaymentMethodsByPlayer(playerId); }
-  async getActivePaymentMethods(): Promise<PaymentMethod[]> { return this.memStorage.getActivePaymentMethods(); }
+  async getActiveIcalFeedTokens(): Promise<IcalFeedToken[]> { return (this.memStorage as any).getActiveIcalFeedTokens(); }
+  async getPaymentMethodsByPlayer(playerId: string): Promise<PaymentMethod[]> { return (this.memStorage as any).getPaymentMethodsByPlayer(playerId); }
+  async getActivePaymentMethods(): Promise<PaymentMethod[]> { return (this.memStorage as any).getActivePaymentMethods(); }
   async getStakesHoldsByPlayer(playerId: string): Promise<StakesHold[]> { return this.memStorage.getStakesHoldsByPlayer(playerId); }
-  async getActiveStakesHolds(): Promise<StakesHold[]> { return this.memStorage.getActiveStakesHolds(); }
-  async getNotificationSettingsByPlayer(playerId: string): Promise<NotificationSettings[]> { return this.memStorage.getNotificationSettingsByPlayer(playerId); }
-  async getNotificationDeliveriesByPlayer(playerId: string): Promise<NotificationDelivery[]> { return this.memStorage.getNotificationDeliveriesByPlayer(playerId); }
-  async getPendingNotificationDeliveries(): Promise<NotificationDelivery[]> { return this.memStorage.getPendingNotificationDeliveries(); }
-  async getDisputeResolutionsByDispute(disputeId: string): Promise<DisputeResolution[]> { return this.memStorage.getDisputeResolutionsByDispute(disputeId); }
-  async getPendingDisputeResolutions(): Promise<DisputeResolution[]> { return this.memStorage.getPendingDisputeResolutions(); }
+  async getActiveStakesHolds(): Promise<StakesHold[]> { return (this.memStorage as any).getActiveStakesHolds(); }
+  async getNotificationSettingsByPlayer(playerId: string): Promise<NotificationSettings[]> { return (this.memStorage as any).getNotificationSettingsByPlayer(playerId); }
+  async getNotificationDeliveriesByPlayer(playerId: string): Promise<NotificationDelivery[]> { return (this.memStorage as any).getNotificationDeliveriesByPlayer(playerId); }
+  async getPendingNotificationDeliveries(): Promise<NotificationDelivery[]> { return (this.memStorage as any).getPendingNotificationDeliveries(); }
+  async getDisputeResolutionsByDispute(disputeId: string): Promise<DisputeResolution[]> { return (this.memStorage as any).getDisputeResolutionsByDispute(disputeId); }
+  async getPendingDisputeResolutions(): Promise<DisputeResolution[]> { return (this.memStorage as any).getPendingDisputeResolutions(); }
   async getPlayerCooldownsByPlayer(playerId: string): Promise<PlayerCooldown[]> { return this.memStorage.getPlayerCooldownsByPlayer(playerId); }
-  async getActivePlayerCooldowns(): Promise<PlayerCooldown[]> { return this.memStorage.getActivePlayerCooldowns(); }
-  async getDeviceAttestationsByDevice(deviceId: string): Promise<DeviceAttestation[]> { return this.memStorage.getDeviceAttestationsByDevice(deviceId); }
-  async getValidDeviceAttestations(): Promise<DeviceAttestation[]> { return this.memStorage.getValidDeviceAttestations(); }
-  async getPendingJobQueues(): Promise<JobQueue[]> { return this.memStorage.getPendingJobQueues(); }
-  async getJobQueuesByType(jobType: string): Promise<JobQueue[]> { return this.memStorage.getJobQueuesByType(jobType); }
-  async getFailedJobQueues(): Promise<JobQueue[]> { return this.memStorage.getFailedJobQueues(); }
+  async getActivePlayerCooldowns(): Promise<PlayerCooldown[]> { return (this.memStorage as any).getActivePlayerCooldowns(); }
+  async getDeviceAttestationsByDevice(deviceId: string): Promise<DeviceAttestation[]> { return (this.memStorage as any).getDeviceAttestationsByDevice(deviceId); }
+  async getValidDeviceAttestations(): Promise<DeviceAttestation[]> { return (this.memStorage as any).getValidDeviceAttestations(); }
+  async getPendingJobQueues(): Promise<JobQueue[]> { return (this.memStorage as any).getPendingJobQueues(); }
+  async getJobQueuesByType(jobType: string): Promise<JobQueue[]> { return (this.memStorage as any).getJobQueuesByType(jobType); }
+  async getFailedJobQueues(): Promise<JobQueue[]> { return (this.memStorage as any).getFailedJobQueues(); }
   async getSystemMetricsByType(metricType: string): Promise<SystemMetric[]> { return this.memStorage.getSystemMetricsByType(metricType); }
-  async getRecentSystemMetrics(hours: number): Promise<SystemMetric[]> { return this.memStorage.getRecentSystemMetrics(hours); }
+  async getRecentSystemMetrics(hours: number): Promise<SystemMetric[]> { return (this.memStorage as any).getRecentSystemMetrics(hours); }
   async getSystemAlertsByType(alertType: string): Promise<SystemAlert[]> { return this.memStorage.getSystemAlertsByType(alertType); }
   async getActiveAlerts(): Promise<SystemAlert[]> { return this.memStorage.getActiveAlerts(); }
   async getFiringAlerts(): Promise<SystemAlert[]> { return this.memStorage.getFiringAlerts(); }
@@ -6301,6 +6343,158 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(subscriptionRewards.id, rewardId));
   }
+
+  // ── Missing methods delegated to memStorage ──────────────────────────────
+  async getOrganization(id: string) { return this.memStorage.getOrganization(id); }
+  async getAllOrganizations() { return this.memStorage.getAllOrganizations(); }
+  async createOrganization(org: any) { return this.memStorage.createOrganization(org); }
+  async updateOrganization(id: string, updates: any) { return this.memStorage.updateOrganization(id, updates); }
+  async getAllPayoutTransfers() { return this.memStorage.getAllPayoutTransfers(); }
+  async getPayoutTransfer(id: string) { return this.memStorage.getPayoutTransfer(id); }
+  async createPayoutTransfer(transfer: any) { return this.memStorage.createPayoutTransfer(transfer); }
+  async getAllHallMatches() { return this.memStorage.getAllHallMatches(); }
+  async getRosterByHall(hallId: string) { return this.memStorage.getRosterByHall(hallId); }
+  async getRosterByPlayer(playerId: string) { return this.memStorage.getRosterByPlayer(playerId); }
+  async unlockHallBattles(hallId: string, unlockedBy: string) { return this.memStorage.unlockHallBattles(hallId, unlockedBy); }
+  async lockHallBattles(hallId: string) { return this.memStorage.lockHallBattles(hallId); }
+  // ── Auto-generated delegation stubs for IStorage compliance ──
+  async getPayoutTransfersByInvoice(invoiceId: string): Promise<any> { return (this.memStorage as any).getPayoutTransfersByInvoice(invoiceId); }
+  async getAllMatches(): Promise<any> { return (this.memStorage as any).getAllMatches(); }
+  async getAllTournaments(): Promise<any> { return (this.memStorage as any).getAllTournaments(); }
+  async getAllKellyPools(): Promise<any> { return (this.memStorage as any).getAllKellyPools(); }
+  async getAllBounties(): Promise<any> { return (this.memStorage as any).getAllBounties(); }
+  async getAllCharityEvents(): Promise<any> { return (this.memStorage as any).getAllCharityEvents(); }
+  async getAllSupportRequests(): Promise<any> { return (this.memStorage as any).getAllSupportRequests(); }
+  async getAllLiveStreams(): Promise<any> { return (this.memStorage as any).getAllLiveStreams(); }
+  async getLiveStreamsByLocation(city?: string, state?: string): Promise<any> { return (this.memStorage as any).getLiveStreamsByLocation(city, state); }
+  async getLiveStreamStats(): Promise<any> { return (this.memStorage as any).getLiveStreamStats(); }
+  async getAllHallRosters(): Promise<any> { return (this.memStorage as any).getAllHallRosters(); }
+  async getAllRookieMatches(): Promise<any> { return (this.memStorage as any).getAllRookieMatches(); }
+  async getAllRookieEvents(): Promise<any> { return (this.memStorage as any).getAllRookieEvents(); }
+  async getAllRookieSubscriptions(): Promise<any> { return (this.memStorage as any).getAllRookieSubscriptions(); }
+  async getRookieLeaderboard(): Promise<any> { return (this.memStorage as any).getRookieLeaderboard(); }
+  async promoteRookieToMainLadder(playerId: string): Promise<any> { return (this.memStorage as any).promoteRookieToMainLadder(playerId); }
+  async creditWallet(userId: string, amount: number): Promise<any> { return (this.memStorage as any).creditWallet(userId, amount); }
+  async lockCredits(userId: string, amount: number): Promise<any> { return (this.memStorage as any).lockCredits(userId, amount); }
+  async unlockCredits(userId: string, amount: number): Promise<any> { return (this.memStorage as any).unlockCredits(userId, amount); }
+  async addCredits(userId: string, amount: number): Promise<any> { return (this.memStorage as any).addCredits(userId, amount); }
+  async processDelayedPayouts(potId: string, winningSide: string): Promise<any> { return (this.memStorage as any).processDelayedPayouts(potId, winningSide); }
+  async getAllChallengePools(): Promise<any> { return (this.memStorage as any).getAllChallengePools(); }
+  async getSideBet(id: string): Promise<any> { return (this.memStorage as any).getSideBet(id); }
+  async getSideBetsByPot(challengePoolId: string): Promise<any> { return (this.memStorage as any).getSideBetsByPot(challengePoolId); }
+  async getSideBetsByUser(userId: string): Promise<any> { return (this.memStorage as any).getSideBetsByUser(userId); }
+  async createSideBet(insertBet: InsertSideBet): Promise<any> { return (this.memStorage as any).createSideBet(insertBet); }
+  async updateSideBet(id: string, updates: Partial<SideBet>): Promise<any> { return (this.memStorage as any).updateSideBet(id, updates); }
+  async getLedgerByUser(userId: string): Promise<any> { return (this.memStorage as any).getLedgerByUser(userId); }
+  async getResolutionByPot(challengePoolId: string): Promise<any> { return (this.memStorage as any).getResolutionByPot(challengePoolId); }
+  async getTeamsByOperator(operatorId: string): Promise<any> { return (this.memStorage as any).getTeamsByOperator(operatorId); }
+  async getTeamsByHall(hallId: string): Promise<any> { return (this.memStorage as any).getTeamsByHall(hallId); }
+  async removeTeamPlayer(id: string): Promise<any> { return (this.memStorage as any).removeTeamPlayer(id); }
+  async getTeamMatchesByOperator(operatorId: string): Promise<any> { return (this.memStorage as any).getTeamMatchesByOperator(operatorId); }
+  async getAllTeamChallenges(): Promise<any> { return (this.memStorage as any).getAllTeamChallenges(); }
+  async getTeamChallengesByOperator(operatorId: string): Promise<any> { return (this.memStorage as any).getTeamChallengesByOperator(operatorId); }
+  async getTeamChallengesByType(challengeType: string): Promise<any> { return (this.memStorage as any).getTeamChallengesByType(challengeType); }
+  async getTeamChallengesByStatus(status: string): Promise<any> { return (this.memStorage as any).getTeamChallengesByStatus(status); }
+  async acceptTeamChallenge(challengeId: string, acceptingTeamId: string): Promise<any> { return (this.memStorage as any).acceptTeamChallenge(challengeId, acceptingTeamId); }
+  async calculateTeamChallengeStake(...args: any[]): Promise<any> { return (this.memStorage as any).calculateTeamChallengeStake(...args); }
+  async validateProMembership(playerId: string): Promise<any> { return (this.memStorage as any).validateProMembership(playerId); }
+  async createTeamChallengeWithParticipants(
+    challengeData: InsertTeamChallenge, 
+    teamPlayers: string[]
+  ): Promise<any> { return (this.memStorage as any).createTeamChallengeWithParticipants(
+    challengeData, teamPlayers); }
+  async getTeamRegistrationsByDivision(divisionId: string): Promise<any> { return (this.memStorage as any).getTeamRegistrationsByDivision(divisionId); }
+  async checkinUser(data: InsertCheckin): Promise<any> { return (this.memStorage as any).checkinUser(data); }
+  async getCheckinsBySession(sessionId: string): Promise<any> { return (this.memStorage as any).getCheckinsBySession(sessionId); }
+  async getCheckinsByVenue(venueId: string): Promise<any> { return (this.memStorage as any).getCheckinsByVenue(venueId); }
+  async getActiveCheckins(sessionId: string, venueId: string): Promise<any> { return (this.memStorage as any).getActiveCheckins(sessionId, venueId); }
+  async getActiveVotes(sessionId: string, venueId: string): Promise<any> { return (this.memStorage as any).getActiveVotes(sessionId, venueId); }
+  async closeAttitudeVote(id: string, result: string): Promise<any> { return (this.memStorage as any).closeAttitudeVote(id, result); }
+  async getBallotsByVote(voteId: string): Promise<any> { return (this.memStorage as any).getBallotsByVote(voteId); }
+  async hasUserVoted(voteId: string, userId: string): Promise<any> { return (this.memStorage as any).hasUserVoted(voteId, userId); }
+  async calculateVoteWeights(voteId: string): Promise<any> { return (this.memStorage as any).calculateVoteWeights(voteId); }
+  async checkVoteQuorum(voteId: string): Promise<any> { return (this.memStorage as any).checkVoteQuorum(voteId); }
+  async getIncidentsByUser(userId: string): Promise<any> { return (this.memStorage as any).getIncidentsByUser(userId); }
+  async getRecentIncidents(venueId: string, hours: number): Promise<any> { return (this.memStorage as any).getRecentIncidents(venueId, hours); }
+  async canUserBeVotedOn(userId: string, sessionId: string): Promise<any> { return (this.memStorage as any).canUserBeVotedOn(userId, sessionId); }
+  async getLastVoteForUser(userId: string, sessionId: string): Promise<any> { return (this.memStorage as any).getLastVoteForUser(userId, sessionId); }
+  async isUserImmune(userId: string, sessionId: string): Promise<any> { return (this.memStorage as any).isUserImmune(userId, sessionId); }
+  async getUploadedFileByPath(objectPath: string): Promise<any> { return (this.memStorage as any).getUploadedFileByPath(objectPath); }
+  async getUserUploadedFiles(userId: string, category?: string): Promise<any> { return (this.memStorage as any).getUserUploadedFiles(userId, category); }
+  async getAllUploadedFiles(): Promise<any> { return (this.memStorage as any).getAllUploadedFiles(); }
+  async incrementFileDownloadCount(id: string): Promise<any> { return (this.memStorage as any).incrementFileDownloadCount(id); }
+  async getUserSharedFiles(userId: string): Promise<any> { return (this.memStorage as any).getUserSharedFiles(userId); }
+  async getWeightRulesByPlayer(playerId: string): Promise<any> { return (this.memStorage as any).getWeightRulesByPlayer(playerId); }
+  async getTutoringSessionsByRookie(rookieId: string): Promise<any> { return (this.memStorage as any).getTutoringSessionsByRookie(rookieId); }
+  async getTutoringCreditsByTutor(tutorId: string): Promise<any> { return (this.memStorage as any).getTutoringCreditsByTutor(tutorId); }
+  async getPlatformEarningsByOperator(operatorId: string): Promise<any> { return (this.memStorage as any).getPlatformEarningsByOperator(operatorId); }
+  async getMembershipEarningsByOperator(operatorId: string): Promise<any> { return (this.memStorage as any).getMembershipEarningsByOperator(operatorId); }
+  async getIcalFeedTokenByToken(token: string): Promise<any> { return (this.memStorage as any).getIcalFeedTokenByToken(token); }
+  async revokeIcalFeedToken(id: string, revokedBy: string, reason?: string): Promise<any> { return (this.memStorage as any).revokeIcalFeedToken(id, revokedBy, reason); }
+  async markTokenUsed(token: string): Promise<any> { return (this.memStorage as any).markTokenUsed(token); }
+  async cleanupExpiredTokens(): Promise<any> { return (this.memStorage as any).cleanupExpiredTokens(); }
+  async getPaymentMethodsByUser(userId: string): Promise<any> { return (this.memStorage as any).getPaymentMethodsByUser(userId); }
+  async getDefaultPaymentMethod(userId: string): Promise<any> { return (this.memStorage as any).getDefaultPaymentMethod(userId); }
+  async setDefaultPaymentMethod(userId: string, paymentMethodId: string): Promise<any> { return (this.memStorage as any).setDefaultPaymentMethod(userId, paymentMethodId); }
+  async deactivatePaymentMethod(id: string): Promise<any> { return (this.memStorage as any).deactivatePaymentMethod(id); }
+  async getStakesHoldsByChallenge(challengeId: string): Promise<any> { return (this.memStorage as any).getStakesHoldsByChallenge(challengeId); }
+  async getStakesHoldsByStatus(status: string): Promise<any> { return (this.memStorage as any).getStakesHoldsByStatus(status); }
+  async getExpiringStakesHolds(hours: number = 24): Promise<any> { return (this.memStorage as any).getExpiringStakesHolds(hours); }
+  async captureStakesHold(id: string, reason?: string): Promise<any> { return (this.memStorage as any).captureStakesHold(id, reason); }
+  async releaseStakesHold(id: string, reason?: string): Promise<any> { return (this.memStorage as any).releaseStakesHold(id, reason); }
+  async getNotificationDeliveriesByUser(userId: string): Promise<any> { return (this.memStorage as any).getNotificationDeliveriesByUser(userId); }
+  async getNotificationDeliveriesByChallenge(challengeId: string): Promise<any> { return (this.memStorage as any).getNotificationDeliveriesByChallenge(challengeId); }
+  async getNotificationDeliveriesByStatus(status: string): Promise<any> { return (this.memStorage as any).getNotificationDeliveriesByStatus(status); }
+  async markNotificationDelivered(id: string, providerId?: string): Promise<any> { return (this.memStorage as any).markNotificationDelivered(id, providerId); }
+  async markNotificationFailed(id: string, errorMessage: string): Promise<any> { return (this.memStorage as any).markNotificationFailed(id, errorMessage); }
+  async getDisputeResolutionsByChallenge(challengeId: string): Promise<any> { return (this.memStorage as any).getDisputeResolutionsByChallenge(challengeId); }
+  async getDisputeResolutionsByPlayer(playerId: string): Promise<any> { return (this.memStorage as any).getDisputeResolutionsByPlayer(playerId); }
+  async getDisputeResolutionsByStatus(status: string): Promise<any> { return (this.memStorage as any).getDisputeResolutionsByStatus(status); }
+  async resolveDispute(id: string, resolution: string, resolvedBy: string, action?: string): Promise<any> { return (this.memStorage as any).resolveDispute(id, resolution, resolvedBy, action); }
+  async addDisputeEvidence(id: string, evidenceUrls: string[], evidenceTypes: string[], notes?: string): Promise<any> { return (this.memStorage as any).addDisputeEvidence(id, evidenceUrls, evidenceTypes, notes); }
+  async getActiveCooldowns(): Promise<any> { return (this.memStorage as any).getActiveCooldowns(); }
+  async getExpiringCooldowns(hours: number = 24): Promise<any> { return (this.memStorage as any).getExpiringCooldowns(hours); }
+  async liftPlayerCooldown(id: string, liftedBy: string, reason: string): Promise<any> { return (this.memStorage as any).liftPlayerCooldown(id, liftedBy, reason); }
+  async checkPlayerEligibility(playerId: string): Promise<any> { return (this.memStorage as any).checkPlayerEligibility(playerId); }
+  async getDeviceAttestationsByPlayer(playerId: string): Promise<any> { return (this.memStorage as any).getDeviceAttestationsByPlayer(playerId); }
+  async getDeviceAttestationsByChallenge(challengeId: string): Promise<any> { return (this.memStorage as any).getDeviceAttestationsByChallenge(challengeId); }
+  async getHighRiskAttestations(threshold: number = 0.8): Promise<any> { return (this.memStorage as any).getHighRiskAttestations(threshold); }
+  async getJob(id: string): Promise<any> { return (this.memStorage as any).getJob(id); }
+  async getJobsByType(jobType: string): Promise<any> { return (this.memStorage as any).getJobsByType(jobType); }
+  async getJobsByStatus(status: string): Promise<any> { return (this.memStorage as any).getJobsByStatus(status); }
+  async getPendingJobs(limit: number = 50): Promise<any> { return (this.memStorage as any).getPendingJobs(limit); }
+  async getFailedJobs(limit: number = 50): Promise<any> { return (this.memStorage as any).getFailedJobs(limit); }
+  async createJob(insertJob: InsertJobQueue): Promise<any> { return (this.memStorage as any).createJob(insertJob); }
+  async updateJob(id: string, updates: Partial<JobQueue>): Promise<any> { return (this.memStorage as any).updateJob(id, updates); }
+  async markJobStarted(id: string, processedBy: string): Promise<any> { return (this.memStorage as any).markJobStarted(id, processedBy); }
+  async markJobCompleted(id: string, result?: any): Promise<any> { return (this.memStorage as any).markJobCompleted(id, result); }
+  async markJobFailed(id: string, errorMessage: string): Promise<any> { return (this.memStorage as any).markJobFailed(id, errorMessage); }
+  async requeueJob(id: string): Promise<any> { return (this.memStorage as any).requeueJob(id); }
+  async cleanupCompletedJobs(olderThanDays: number = 7): Promise<any> { return (this.memStorage as any).cleanupCompletedJobs(olderThanDays); }
+  async getSystemMetricsByTimeWindow(windowStart: Date, windowEnd: Date, metricType?: string): Promise<any> { return (this.memStorage as any).getSystemMetricsByTimeWindow(windowStart, windowEnd, metricType); }
+  async aggregateMetrics(metricType: string, timeWindow: string, startDate: Date, endDate: Date): Promise<any> { return (this.memStorage as any).aggregateMetrics(metricType, timeWindow, startDate, endDate); }
+  async getPrizePool(...args: any[]): Promise<any> { return (this.memStorage as any).getPrizePool(...args); }
+  async getPrizePoolByPoolId(...args: any[]): Promise<any> { return (this.memStorage as any).getPrizePoolByPoolId(...args); }
+  async getPrizePoolsByHall(...args: any[]): Promise<any> { return (this.memStorage as any).getPrizePoolsByHall(...args); }
+  async getPrizePoolsByPeriod(...args: any[]): Promise<any> { return (this.memStorage as any).getPrizePoolsByPeriod(...args); }
+  async getPrizePoolsByStatus(...args: any[]): Promise<any> { return (this.memStorage as any).getPrizePoolsByStatus(...args); }
+  async createPrizePool(...args: any[]): Promise<any> { return (this.memStorage as any).createPrizePool(...args); }
+  async updatePrizePool(...args: any[]): Promise<any> { return (this.memStorage as any).updatePrizePool(...args); }
+  async lockPrizePool(...args: any[]): Promise<any> { return (this.memStorage as any).lockPrizePool(...args); }
+  async getPrizePoolContribution(...args: any[]): Promise<any> { return (this.memStorage as any).getPrizePoolContribution(...args); }
+  async getPrizePoolContributionsByPoolId(...args: any[]): Promise<any> { return (this.memStorage as any).getPrizePoolContributionsByPoolId(...args); }
+  async getPrizePoolContributionsByPlayer(...args: any[]): Promise<any> { return (this.memStorage as any).getPrizePoolContributionsByPlayer(...args); }
+  async createPrizePoolContribution(...args: any[]): Promise<any> { return (this.memStorage as any).createPrizePoolContribution(...args); }
+  async aggregatePrizePoolContributions(...args: any[]): Promise<any> { return (this.memStorage as any).aggregatePrizePoolContributions(...args); }
+  async getPrizePoolDistribution(...args: any[]): Promise<any> { return (this.memStorage as any).getPrizePoolDistribution(...args); }
+  async getPrizePoolDistributionsByPoolId(...args: any[]): Promise<any> { return (this.memStorage as any).getPrizePoolDistributionsByPoolId(...args); }
+  async getPrizePoolDistributionsByRecipient(...args: any[]): Promise<any> { return (this.memStorage as any).getPrizePoolDistributionsByRecipient(...args); }
+  async getPrizePoolDistributionsByStatus(...args: any[]): Promise<any> { return (this.memStorage as any).getPrizePoolDistributionsByStatus(...args); }
+  async createPrizePoolDistribution(...args: any[]): Promise<any> { return (this.memStorage as any).createPrizePoolDistribution(...args); }
+  async updatePrizePoolDistribution(...args: any[]): Promise<any> { return (this.memStorage as any).updatePrizePoolDistribution(...args); }
+  async markDistributionCompleted(...args: any[]): Promise<any> { return (this.memStorage as any).markDistributionCompleted(...args); }
+  async markDistributionFailed(...args: any[]): Promise<any> { return (this.memStorage as any).markDistributionFailed(...args); }
+
 }
 
 export const storage = new DatabaseStorage();

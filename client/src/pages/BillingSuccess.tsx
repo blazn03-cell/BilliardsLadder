@@ -9,7 +9,7 @@ export default function BillingSuccess() {
   const searchParams = new URLSearchParams(window.location.search);
   const sessionId = searchParams.get('session_id');
 
-  const { data: sessionData, isLoading } = useQuery({
+  const { data: sessionData, isLoading } = useQuery<{ subscriptionTier?: string }>({
     queryKey: ["/api/stripe/session", sessionId],
     enabled: !!sessionId,
     retry: false,
@@ -57,7 +57,7 @@ export default function BillingSuccess() {
               <CreditCard className="h-4 w-4" />
               <span>Payment confirmed</span>
             </div>
-            {sessionData && 'subscriptionTier' in sessionData && sessionData.subscriptionTier && (
+            {sessionData && sessionData.subscriptionTier && (
               <div className="flex items-center justify-center gap-2 text-emerald-400">
                 <Crown className="h-4 w-4" />
                 <span>
@@ -69,7 +69,7 @@ export default function BillingSuccess() {
           </div>
 
           <div className="bg-gray-900/50 rounded-lg p-4 space-y-2">
-            <h3 className="font-semibold text-white">Welcome to Billiards Ladder!</h3>
+            <h3 className="font-semibold text-white">Welcome to ActionLadder!</h3>
             <p className="text-sm text-gray-400">
               Your account is now active and ready to use. You'll be redirected to your dashboard automatically.
             </p>

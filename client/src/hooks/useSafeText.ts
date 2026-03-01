@@ -27,7 +27,7 @@ export function useSafeFormData<T extends Record<string, any>>(
     const cleaned = { ...data };
     fields.forEach(field => {
       if (typeof cleaned[field] === "string") {
-        cleaned[field] = sanitizeText(cleaned[field]);
+        (cleaned as any)[field] = sanitizeText(cleaned[field] as string);
       }
     });
     return cleaned;

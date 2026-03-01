@@ -8,21 +8,37 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  url: string,
-  options?: {
-    method?: string;
-    body?: string;
-    headers?: Record<string, string>;
-  }
+  urlOrMethod: string,
+  urlOrOptions?: string | { method?: string; body?: string; headers?: Record<string, string> },
+  bodyData?: unknown
 ): Promise<any> {
-  const method = options?.method || "GET";
+  let url: string;
+  let method: string;
+  let body: string | undefined;
+  let headers: Record<string, string> = {};
+
+  const httpMethods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"];
+  if (httpMethods.includes(urlOrMethod.toUpperCase())) {
+    // Old calling convention: apiRequest(method, url, body?)
+    method = urlOrMethod.toUpperCase();
+    url = urlOrOptions as string;
+    body = bodyData !== undefined ? JSON.stringify(bodyData) : undefined;
+  } else {
+    // New calling convention: apiRequest(url, options?)
+    url = urlOrMethod;
+    const options = urlOrOptions as { method?: string; body?: string; headers?: Record<string, string> } | undefined;
+    method = options?.method || "GET";
+    body = options?.body;
+    headers = options?.headers || {};
+  }
+
   const res = await fetch(url, {
     method,
     headers: {
-      ...options?.headers,
-      ...(options?.body ? { "Content-Type": "application/json" } : {}),
+      ...headers,
+      ...(body ? { "Content-Type": "application/json" } : {}),
     },
-    body: options?.body,
+    body,
     credentials: "include",
   });
 

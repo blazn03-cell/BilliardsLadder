@@ -430,7 +430,7 @@ export async function evaluateAllFees(req: Request, res: Response) {
     }
     
     const result = await scheduler.runEvaluation();
-    res.json(sanitizeResponse(result));
+    res.json(result);
   } catch (error: any) {
     console.error("Manual fee evaluation error:", error);
     res.status(500).json({ error: error.message });
@@ -446,7 +446,7 @@ export async function evaluateChallengeFees(req: Request, res: Response) {
     }
     
     const result = await scheduler.evaluateChallenge(challengeId);
-    res.json(sanitizeResponse(result));
+    res.json(result);
   } catch (error: any) {
     console.error("Challenge fee evaluation error:", error);
     res.status(500).json({ error: error.message });
@@ -531,7 +531,7 @@ export function secureCheckIn(storage: IStorage) {
       
       const result = await qrCodeService.processSecureCheckIn(token, authenticatedUserId, requestContext);
       
-      res.json(sanitizeResponse(result));
+      res.json(result);
     } catch (error: any) {
       console.error("Secure check-in processing error:", error);
       res.status(500).json({ error: error.message });
@@ -581,9 +581,9 @@ export function manualCheckIn(storage: IStorage) {
         signature: "manual-checkin"
       };
       
-      const result = await qrCodeService.processPlayerCheckIn(secureQRData as any, player.id);
+      const result = await (qrCodeService as any).processPlayerCheckIn(secureQRData as any, player.id);
       
-      res.json(sanitizeResponse(result));
+      res.json(result);
     } catch (error: any) {
       console.error("Manual check-in error:", error);
       res.status(500).json({ error: error.message });
@@ -599,7 +599,7 @@ export function getCheckInStatus(storage: IStorage) {
       
       const status = await qrCodeService.getChallengeCheckInStatus(challengeId);
       
-      res.json(sanitizeResponse(status));
+      res.json(status);
     } catch (error: any) {
       console.error("Check-in status error:", error);
       res.status(500).json({ error: error.message });

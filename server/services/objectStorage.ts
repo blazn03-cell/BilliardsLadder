@@ -38,7 +38,7 @@ export class ObjectNotFoundError extends Error {
   }
 }
 
-// Billiards Ladder specific file categorization
+// Action Ladder specific file categorization
 export type FileCategory = 
   | "profile_image"      // Player/operator profile images
   | "tournament_poster"  // Tournament and event posters
@@ -154,7 +154,7 @@ export class ObjectStorageService {
     }
   }
 
-  // Gets the upload URL for an object entity with Billiards Ladder specific path structure
+  // Gets the upload URL for an object entity with Action Ladder specific path structure
   async getObjectEntityUploadURL(
     userId: string, 
     userRole: string, 

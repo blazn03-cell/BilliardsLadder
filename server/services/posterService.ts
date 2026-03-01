@@ -73,7 +73,7 @@ export class PosterService {
   private buildPosterPrompt(challenge: ChallengeData, playerA: any, playerB: any): string {
     const scheduledDate = new Date(challenge.scheduledAt);
     
-    return `Generate compelling poster content for an Billiards Ladder billiards league challenge:
+    return `Generate compelling poster content for an ActionLadder billiards league challenge:
 
 CHALLENGE DETAILS:
 - Players: ${playerA.name} (${playerA.rating} rating, ${playerA.city || 'Unknown'}) vs ${playerB.name} (${playerB.rating} rating, ${playerB.city || 'Unknown'})
@@ -157,7 +157,7 @@ Make it exciting, respectful to both players, and capture the intensity of profe
       'one-pocket': 'ONE-POCKET BATTLE'
     };
     
-    return gameTypes[challenge.gameType as keyof typeof gameTypes] || 'BILLIARDS LADDER CHALLENGE';
+    return gameTypes[challenge.gameType as keyof typeof gameTypes] || 'ACTIONLADDER CHALLENGE';
   }
 
   /**
@@ -185,7 +185,7 @@ Make it exciting, respectful to both players, and capture the intensity of profe
       description += `💬 ${challenge.description}\n\n`;
     }
     
-    description += `Join the Billiards Ladder League\n`;
+    description += `Join the ActionLadder League\n`;
     description += `"In here, respect is earned in racks, not words"`;
     
     return description;
@@ -223,7 +223,7 @@ Make it exciting, respectful to both players, and capture the intensity of profe
    */
   private getFallbackContent(challenge: ChallengeData): PosterContent {
     return {
-      eventTitle: 'BILLIARDS LADDER CHALLENGE',
+      eventTitle: 'ACTIONLADDER CHALLENGE',
       hypeText: 'BATTLE AWAITS',
       tagline: '"In here, respect is earned in racks, not words"',
       challenge: `${challenge.aPlayerName} vs ${challenge.bPlayerName}`,

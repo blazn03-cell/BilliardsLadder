@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Eye, EyeOff, Mail, Lock, User, Building2, MapPin, Chrome, UserPlus, Star } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Building2, MapPin, Chrome, UserPlus } from "lucide-react";
 import { createOperatorSchema, createPlayerSchema } from "@shared/schema";
 import { z } from "zod";
 import { Link } from "wouter";
@@ -63,7 +63,6 @@ export default function Signup() {
       email: "",
       password: "",
       name: "",
-      nickname: "",
       city: "",
       state: "",
       tier: "rookie",
@@ -82,7 +81,7 @@ export default function Signup() {
         title: "Account Created!",
         description: "Your pool hall operator account has been created successfully.",
       });
-      window.location.href = "/";
+      window.location.href = "/login";
     },
     onError: (error: any) => {
       toast({
@@ -104,7 +103,7 @@ export default function Signup() {
         title: "Account Created!",
         description: "Your player account has been created successfully.",
       });
-      window.location.href = "/";
+      window.location.href = "/login";
     },
     onError: (error: any) => {
       toast({
@@ -133,7 +132,7 @@ export default function Signup() {
       <Card className="w-full max-w-md bg-black/60 backdrop-blur-sm border border-emerald-400/20 shadow-xl">
         <CardHeader className="text-center space-y-2">
           <CardTitle className="text-2xl font-bold text-emerald-300">
-            Join Billiards Ladder
+            Join ActionLadder
           </CardTitle>
           <p className="text-gray-400 text-sm">
             Create your account to start competing
@@ -269,28 +268,6 @@ export default function Signup() {
                             placeholder="John Doe"
                             className="pl-10 bg-gray-900/50 border-gray-600 text-white"
                             data-testid="input-name"
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={playerForm.control}
-                  name="nickname"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-emerald-300">Nickname <span className="text-yellow-400">(Required — shown on ladder)</span></FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Star className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                          <Input
-                            {...field}
-                            placeholder="Big Dog, Hustler, Shark..."
-                            className="pl-10 bg-gray-900/50 border-gray-600 text-white"
-                            data-testid="input-nickname"
                           />
                         </div>
                       </FormControl>

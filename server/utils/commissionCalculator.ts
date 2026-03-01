@@ -1,5 +1,5 @@
-import { storage } from "./storage";
-import { getActiveConfig } from "./config/revenueConfig";
+import { storage } from "../storage";
+import { getActiveConfig } from "../config/revenueConfig";
 
 // Get dynamic commission rates from active configuration
 function getCommissionRates() {

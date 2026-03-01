@@ -105,12 +105,12 @@ export default function MatchDivisions() {
   const queryClient = useQueryClient();
 
   // Fetch match divisions
-  const { data: divisions = [] } = useQuery({
+  const { data: divisions = [] } = useQuery<MatchDivision[]>({
     queryKey: ["/api/match-divisions"],
   });
 
   // Fetch operator tiers
-  const { data: operatorTiers = [] } = useQuery({
+  const { data: operatorTiers = [] } = useQuery<OperatorTier[]>({
     queryKey: ["/api/operator-tiers"],
   });
 
@@ -144,7 +144,7 @@ export default function MatchDivisions() {
     },
   });
 
-  const selectedDivisionData = divisions.find((d: MatchDivision) => d.id === selectedDivision);
+  const selectedDivisionData = divisions.find((d) => d.id === selectedDivision);
 
   const handleCreateMatch = () => {
     if (!selectedDivision || !selectedTeam) return;
@@ -205,7 +205,7 @@ export default function MatchDivisions() {
         {/* Match Divisions Overview */}
         <TabsContent value="divisions" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {divisions.map((division: MatchDivision) => (
+            {divisions.map((division) => (
               <Card key={division.id} className="bg-gray-800 border-gray-700">
                 <CardHeader>
                   <div className="flex items-center gap-3">
@@ -289,7 +289,7 @@ export default function MatchDivisions() {
                       <SelectValue placeholder="Choose division" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-700 border-gray-600">
-                      {divisions.map((division: MatchDivision) => (
+                      {divisions.map((division) => (
                         <SelectItem key={division.id} value={division.id} className="text-white">
                           {division.displayName}
                         </SelectItem>
@@ -396,7 +396,7 @@ export default function MatchDivisions() {
         {/* Operator Tiers */}
         <TabsContent value="operator-tiers" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {operatorTiers.map((tier: OperatorTier) => (
+            {operatorTiers.map((tier) => (
               <Card key={tier.id} className="bg-gray-800 border-gray-700">
                 <CardHeader>
                   <div className="flex items-center justify-between">

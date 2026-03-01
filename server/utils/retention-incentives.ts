@@ -1,5 +1,5 @@
 
-import { storage } from "./storage";
+import { storage } from '../storage';
 
 // Player retention incentive system
 export const RETENTION_INCENTIVES = {

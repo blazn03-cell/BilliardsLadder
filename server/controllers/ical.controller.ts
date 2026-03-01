@@ -367,7 +367,7 @@ export function cleanupExpiredTokens(storage: IStorage) {
 // Calendar subscription info endpoint
 export function getCalendarInfo(req: Request, res: Response) {
   res.json({
-    name: 'Billiards Ladder Challenge Calendar',
+    name: 'ActionLadder Challenge Calendar',
     description: 'Professional Billiards League - "In here, respect is earned in racks, not words"',
     version: '2.0.0', // Updated version for secure tokens
     timezone: 'America/New_York',
