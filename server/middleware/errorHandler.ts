@@ -81,16 +81,13 @@ export function errorHandler(
   });
 }
 
-// ─── 404 Not Found handler (register after all routes, before errorHandler) ──
-export function notFoundHandler(req: Request, res: Response, next: NextFunction) {
-  if (!req.path.startsWith("/api")) {
-    return next();
-  }
+// ─── 404 Not Found handler (mount on /api so it only catches unknown API routes) ──
+export function notFoundHandler(req: Request, res: Response) {
   const requestId = (req as any).requestId ?? "unknown";
-  logger.warn("Route not found", { requestId, path: req.path, method: req.method });
+  logger.warn("Route not found", { requestId, path: req.originalUrl, method: req.method });
   res.status(404).json({
     code: "NOT_FOUND",
-    message: `Route ${req.method} ${req.path} does not exist`,
+    message: `Route ${req.method} ${req.originalUrl} does not exist`,
     requestId,
   });
 }

@@ -144,8 +144,8 @@ if (process.env.NODE_ENV === "development") {
     serveStatic(app);
   }
 
-  // 404 handler — must be after all routes AND vite, before errorHandler
-  app.use(notFoundHandler);
+  // 404 handler — only catches unknown /api routes (Vite handles frontend)
+  app.use('/api', notFoundHandler);
 
   // Global error handler — must be LAST middleware (4-arg signature required)
   app.use(errorHandler);
