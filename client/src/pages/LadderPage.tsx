@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import type { Player, Match, Bounty } from '../../../shared/schema';
 import { WeightRulesDisplay } from '@/components/weight-rules-display';
 
@@ -11,6 +12,7 @@ interface PlayerWithRank extends Player {
 }
 
 const LadderPage: React.FC = () => {
+  const [, navigate] = useLocation();
   const { data: players = [], isLoading: playersLoading } = useQuery<Player[]>({
     queryKey: ['/api/players'],
   });
@@ -342,6 +344,7 @@ const LadderPage: React.FC = () => {
           <button 
             className="btn-gritty"
             data-testid="button-join-queue"
+            onClick={() => navigate('/join')}
           >
             🎯 Join the Queue
           </button>

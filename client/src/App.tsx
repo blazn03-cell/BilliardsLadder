@@ -41,6 +41,7 @@ import MatchDivisions from "@/components/match-divisions";
 import OperatorSubscriptions from "@/pages/OperatorSubscriptions";
 import MonetizationDashboard from "@/pages/MonetizationDashboard";
 import { FileManager } from "@/components/file-upload";
+import JoinPage from "@/pages/JoinPage";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import AuthSuccess from "@/pages/AuthSuccess";
@@ -439,6 +440,9 @@ function App() {
             </Route>
             <Route path="/acceptable-use">
               <AcceptableUse />
+            </Route>
+            <Route path="/join">
+              <JoinPage />
             </Route>
             <Route path="/training/leaderboard/:hallId?">
               <HallLeaderboard />

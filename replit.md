@@ -65,3 +65,10 @@ The system is built on a modern web stack designed for performance, scalability,
 
 ### Challenger Fee Model
 - Rookie = $0/match, Standard = $60/match, Premium = $60/match
+
+### /join Page
+- `/join` route added — renders an info page directing users to `/signup` (no backend queue API yet)
+- JoinPage shows 3-step flow: Create Account → Pick Table Size → Start Competing
+- "Create Account" button links to `/signup`, "Sign In" button links to `/login`
+- "Join the Queue" button on 9ft LadderPage navigates to `/join`
+- Queue API (`POST /api/player-queue`) not yet implemented — can be added later when needed
