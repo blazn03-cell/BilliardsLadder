@@ -156,11 +156,10 @@ if (process.env.NODE_ENV === "development") {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+  // Use 127.0.0.1 for local dev (0.0.0.0 is blocked in some Windows/WSL environments).
+  // On Replit / production the HOST env var overrides this back to 0.0.0.0.
+  const host = process.env.HOST ?? (process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1");
+  server.listen({ port, host }, () => {
     log(`serving on port ${port}`);
     logger.info(`Server started`, { port, env: process.env.NODE_ENV });
   });

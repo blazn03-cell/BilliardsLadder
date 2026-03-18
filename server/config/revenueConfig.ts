@@ -8,7 +8,7 @@
  *                     commission RATES (fee % per tier).
  * It does NOT own subscription prices — plans.ts owns those.
  */
- Flexible Revenue Configuration System
+// Flexible Revenue Configuration System
 // This file contains all configurable revenue sharing percentages
 
 export interface RevenueConfig {
