@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Full-Stack Dev (Express + Vite)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 5000
+    },
+    {
+      "name": "Client Vite Dev (standalone)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "client"],
+      "port": 5173
+    },
+    {
+      "name": "Database Push (Drizzle)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "db:push"],
+      "port": 0
+    }
+  ]
+}

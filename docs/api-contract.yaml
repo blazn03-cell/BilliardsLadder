@@ -1,0 +1,233 @@
+openapi: "3.1.0"
+info:
+  title: BilliardsLadder API
+  version: "1.0.0"
+  description: |
+    REST API for BilliardsLadder — competitive billiards ladder platform.
+    All endpoints return JSON. Auth via session cookie (Replit OIDC).
+    Error shape: { code: string, message: string, requestId: string }
+
+servers:
+  - url: http://localhost:5000
+    description: Local dev
+  - url: https://your-app.repl.co
+    description: Replit production
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        code: { type: string, example: "NOT_FOUND" }
+        message: { type: string, example: "Player not found" }
+        requestId: { type: string, example: "req-abc123" }
+
+    Player:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        nickname: { type: string }
+        rating: { type: number }
+        rank: { type: integer }
+        tier: { type: string, enum: [rookie, standard, premium, family, senior] }
+        wins: { type: integer }
+        losses: { type: integer }
+        hallId: { type: string }
+
+    Match:
+      type: object
+      properties:
+        id: { type: string }
+        challengerId: { type: string }
+        challengedId: { type: string }
+        stakeCents: { type: integer }
+        depositCents: { type: integer }
+        status: { type: string, enum: [pending, accepted, in_progress, completed, disputed] }
+        winnerId: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+paths:
+  /healthz:
+    get:
+      summary: Infrastructure health check
+      description: Used by deployment infra. Returns plain text "ok".
+      responses:
+        "200":
+          description: Server is running
+          content:
+            text/plain:
+              schema: { type: string, example: "ok" }
+
+  /api/health:
+    get:
+      summary: Application health status (JSON)
+      description: Used by monitoring dashboards.
+      responses:
+        "200":
+          description: Health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: "ok" }
+                  uptime: { type: number }
+                  ts: { type: string, format: date-time }
+
+  /api/login:
+    get:
+      summary: Initiate Replit OIDC login
+      description: Redirects to Replit authentication.
+      responses:
+        "302":
+          description: Redirect to Replit OIDC
+
+  /api/callback:
+    get:
+      summary: Replit OIDC callback
+      description: Handles auth callback, creates session, redirects to app.
+      responses:
+        "302":
+          description: Redirect to app
+
+  /api/logout:
+    get:
+      summary: Log out and clear session
+      responses:
+        "302":
+          description: Redirect to landing page
+
+  /api/auth/user:
+    get:
+      summary: Get current authenticated user
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Current user
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                \: "#/components/schemas/Error"
+
+  /api/player/leaderboard:
+    get:
+      summary: Get player leaderboard
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          description: Leaderboard array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  \: "#/components/schemas/Player"
+
+  /api/player/stats:
+    get:
+      summary: Get current player stats
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Player stats
+        "401":
+          description: Not authenticated
+
+  /api/player/challenges:
+    get:
+      summary: Get challenges for current player
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Challenge list
+
+  /api/wallet:
+    get:
+      summary: Get current player wallet
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Wallet balance and transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance: { type: integer, description: "cents" }
+                  pendingCredits: { type: integer }
+                  transactions: { type: array }
+
+  /api/profile:
+    get:
+      summary: Get current user profile
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: User profile
+    patch:
+      summary: Update user profile (nickname, city, theme, etc.)
+      security:
+        - sessionCookie: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nickname: { type: string, maxLength: 30 }
+                emailHidden: { type: boolean }
+                city: { type: string, maxLength: 100 }
+                birthday: { type: string }
+                theme: { type: string, enum: [green, blue, red, purple, gold, orange, cyan] }
+      responses:
+        "200":
+          description: Updated profile
+
+  /api/object-carom-games:
+    get:
+      summary: "[STUB] Object carom games"
+      description: Not yet implemented. Returns 503 FEATURE_NOT_LIVE.
+      responses:
+        "503":
+          description: Feature not live
+
+  /api/poolhall-matches:
+    get:
+      summary: "[STUB] Pool hall matches"
+      description: Not yet implemented.
+      responses:
+        "503":
+          description: Feature not live
+
+  /api/game-voting/current:
+    get:
+      summary: "[STUB] Game of the month voting"
+      description: Not yet implemented.
+      responses:
+        "503":
+          description: Feature not live
+
+  /api/spot-shots:
+    get:
+      summary: "[STUB] Spot shot games"
+      description: Not yet implemented.
+      responses:
+        "503":
+          description: Feature not live

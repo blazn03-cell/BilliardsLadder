@@ -1,0 +1,397 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+:root {
+  /* Dark felt theme colors */
+  --background: hsl(0, 0%, 4%); /* #0a0a0a */
+  --foreground: hsl(0, 0%, 98%); /* #ffffff */
+  
+  /* Card and surface colors */
+  --card: hsl(0, 0%, 7%); /* #111111 */
+  --card-foreground: hsl(0, 0%, 98%);
+  
+  /* Popover colors */
+  --popover: hsl(0, 0%, 7%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  
+  /* Primary neon green theme */
+  --primary: hsl(123, 100%, 63%); /* #00ff41 */
+  --primary-foreground: hsl(0, 0%, 4%);
+  
+  /* Secondary colors */
+  --secondary: hsl(142, 47%, 49%); /* #22c55e */
+  --secondary-foreground: hsl(0, 0%, 98%);
+  
+  /* Muted colors */
+  --muted: hsl(0, 0%, 15%);
+  --muted-foreground: hsl(0, 0%, 65%);
+  
+  /* Accent colors */
+  --accent: hsl(142, 47%, 49%); /* #22c55e */
+  --accent-foreground: hsl(0, 0%, 98%);
+  
+  /* Destructive colors */
+  --destructive: hsl(348, 100%, 65%); /* #ff4d6d */
+  --destructive-foreground: hsl(0, 0%, 98%);
+  
+  /* Border and input colors */
+  --border: hsl(0, 0%, 15%);
+  --input: hsl(0, 0%, 15%);
+  --ring: hsl(123, 100%, 63%);
+  
+  /* Chart colors */
+  --chart-1: hsl(123, 100%, 63%); /* neon green */
+  --chart-2: hsl(142, 47%, 49%); /* accent green */
+  --chart-3: hsl(43, 100%, 65%); /* warning amber */
+  --chart-4: hsl(348, 100%, 65%); /* danger red */
+  --chart-5: hsl(217, 91%, 60%); /* pool blue */
+  
+  /* Sidebar colors */
+  --sidebar-background: hsl(0, 0%, 4%);
+  --sidebar-foreground: hsl(0, 0%, 98%);
+  --sidebar-primary: hsl(123, 100%, 63%);
+  --sidebar-primary-foreground: hsl(0, 0%, 4%);
+  --sidebar-accent: hsl(142, 47%, 49%);
+  --sidebar-accent-foreground: hsl(0, 0%, 98%);
+  --sidebar-border: hsl(0, 0%, 15%);
+  --sidebar-ring: hsl(123, 100%, 63%);
+  
+  /* Custom billiards theme colors */
+  --felt-dark: hsl(0, 0%, 4%); /* #0a0a0a */
+  --felt-green: hsl(142, 69%, 20%); /* #1a4a2e */
+  --neon-green: hsl(123, 100%, 63%); /* #00ff41 */
+  --dollar-green: hsl(77, 44%, 55%); /* #85bb65 */
+  --pool-blue: hsl(217, 91%, 40%); /* #1e40af */
+  --warning-amber: hsl(43, 100%, 65%); /* #ffb703 */
+  --danger-red: hsl(348, 100%, 65%); /* #ff4d6d */
+  
+  /* Font families */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: 'Inter', system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  
+  /* Border radius */
+  --radius: 0.75rem;
+}
+
+.dark {
+  /* Same colors for dark mode since we're already dark themed */
+  --background: hsl(0, 0%, 4%);
+  --foreground: hsl(0, 0%, 98%);
+  --card: hsl(0, 0%, 7%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --popover: hsl(0, 0%, 7%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --primary: hsl(123, 100%, 63%);
+  --primary-foreground: hsl(0, 0%, 4%);
+  --secondary: hsl(142, 47%, 49%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --muted: hsl(0, 0%, 15%);
+  --muted-foreground: hsl(0, 0%, 65%);
+  --accent: hsl(142, 47%, 49%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(348, 100%, 65%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --border: hsl(0, 0%, 15%);
+  --input: hsl(0, 0%, 15%);
+  --ring: hsl(123, 100%, 63%);
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: radial-gradient(1200px 600px at -10% -10%, hsl(123, 100%, 63%, 0.1), transparent),
+              radial-gradient(1200px 600px at 110% 120%, hsl(142, 47%, 49%, 0.1), transparent),
+              var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Custom billiards theme utilities */
+.bg-felt-texture {
+  background: radial-gradient(circle at 25% 25%, var(--felt-green) 0%, hsl(142, 69%, 15%) 50%, var(--felt-dark) 100%);
+}
+
+.bg-neon-glow {
+  background: radial-gradient(circle, var(--neon-green) 0%, transparent 70%);
+}
+
+.bg-smoky {
+  background: linear-gradient(135deg, hsla(0, 0%, 0%, 0.9) 0%, hsla(142, 69%, 20%, 0.3) 50%, hsla(0, 0%, 0%, 0.9) 100%);
+}
+
+.shadow-neon {
+  box-shadow: 0 0 20px hsla(123, 100%, 63%, 0.5);
+}
+
+.shadow-neon-lg {
+  box-shadow: 0 0 40px hsla(123, 100%, 63%, 0.6);
+}
+
+.shadow-felt {
+  box-shadow: 0 10px 30px hsla(0, 0%, 0%, 0.8);
+}
+
+.text-neon-green {
+  color: var(--neon-green);
+}
+
+.text-dollar-green {
+  color: var(--dollar-green);
+}
+
+.text-pool-blue {
+  color: var(--pool-blue);
+}
+
+.text-warning-amber {
+  color: var(--warning-amber);
+}
+
+.text-danger-red {
+  color: var(--danger-red);
+}
+
+.border-neon-green {
+  border-color: var(--neon-green);
+}
+
+.bg-neon-green {
+  background-color: var(--neon-green);
+}
+
+/* Animation for pulsing live indicators */
+@keyframes pulse-neon {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 10px hsla(123, 100%, 63%, 0.8);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 20px hsla(123, 100%, 63%, 0.4);
+  }
+}
+
+.animate-pulse-neon {
+  animation: pulse-neon 2s ease-in-out infinite;
+}
+
+/* Scrollbar styling for dark theme */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom gradient backgrounds for cards */
+.bg-gradient-felt {
+  background: linear-gradient(180deg, hsl(0, 0%, 7%) 0%, hsl(0, 0%, 5%) 100%);
+}
+
+.bg-gradient-neon {
+  background: linear-gradient(135deg, var(--neon-green) 0%, var(--secondary) 100%);
+}
+
+/* Backdrop blur for glassmorphism effects */
+.backdrop-blur-felt {
+  backdrop-filter: saturate(1.3) blur(6px);
+}
+
+/* Typography enhancements */
+.font-pool {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* Button hover effects */
+.btn-neon {
+  background: linear-gradient(135deg, var(--neon-green), var(--secondary));
+  color: var(--felt-dark);
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.btn-neon:hover {
+  box-shadow: 0 0 20px hsla(123, 100%, 63%, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  border-color: hsla(123, 100%, 63%, 0.3);
+  box-shadow: 0 10px 40px hsla(0, 0%, 0%, 0.9), 0 0 20px hsla(123, 100%, 63%, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Loading states */
+.loading-shimmer {
+  background: linear-gradient(90deg, transparent, hsla(123, 100%, 63%, 0.1), transparent);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  body {
+    background: radial-gradient(600px 300px at 50% 0%, hsl(123, 100%, 63%, 0.08), transparent),
+                var(--background);
+  }
+  
+  /* Reduce padding on mobile */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Stack navigation items vertically on mobile */
+  .nav-mobile-stack {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  /* Smaller font sizes for mobile */
+  h1, .text-4xl, .text-5xl {
+    font-size: 1.875rem !important; /* text-3xl equivalent */
+    line-height: 2.25rem;
+  }
+  
+  h2, .text-3xl {
+    font-size: 1.5rem !important; /* text-2xl equivalent */
+    line-height: 2rem;
+  }
+  
+  /* Reduce spacing on mobile */
+  .py-12 {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+  
+  .py-8 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  
+  /* Make cards full width on mobile */
+  .card-mobile-full {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  
+  /* Stack grid items on mobile */
+  .grid-mobile-stack {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Smaller shadows on mobile for performance */
+  .shadow-neon {
+    box-shadow: 0 0 10px hsla(123, 100%, 63%, 0.3) !important;
+  }
+  
+  .shadow-neon-lg {
+    box-shadow: 0 0 15px hsla(123, 100%, 63%, 0.4) !important;
+  }
+  
+  /* Touch-friendly button sizes */
+  .btn-mobile {
+    min-height: 44px !important; /* iOS touch target recommendation */
+    padding: 0.75rem 1rem !important;
+  }
+  
+  /* Optimize dropdown menus for mobile */
+  .dropdown-mobile {
+    max-width: calc(100vw - 2rem) !important;
+    left: 1rem !important;
+    right: 1rem !important;
+  }
+  
+  /* Reduce animation complexity on mobile for performance */
+  .animate-pulse-neon {
+    animation: none !important;
+  }
+  
+  .card-hover:hover {
+    transform: none !important; /* Disable transform on mobile for performance */
+  }
+  
+  /* Mobile-specific loading states */
+  .loading-mobile {
+    padding: 1rem !important;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .grid-tablet-2-col {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Slightly smaller text on tablets */
+  h1, .text-4xl, .text-5xl {
+    font-size: 2.25rem !important; /* between mobile and desktop */
+  }
+}
+
+/* Touch device optimizations */
+@media (pointer: coarse) {
+  /* Larger touch targets */
+  button, .button, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Disable hover effects on touch devices */
+  .card-hover:hover,
+  .btn-neon:hover {
+    transform: none !important;
+    box-shadow: initial !important;
+  }
+}
+
+/* Dark mode specific mobile adjustments */
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
+  .border {
+    border-color: hsl(0, 0%, 20%) !important; /* Lighter borders for better visibility on mobile */
+  }
+  
+  .text-muted-foreground {
+    color: hsl(0, 0%, 75%) !important; /* Better contrast on small screens */
+  }
+}
+
+/* High DPI screen optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Crisper borders on high DPI screens */
+  .border {
+    border-width: 0.5px;
+  }
+}
