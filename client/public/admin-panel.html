@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Billiards Ladder — Commissioner Control Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --felt:#0a2d17;--felt2:#071e0f;--felt3:#061809;
+  --gold:#c9a84c;--gold2:#f0d080;--gold3:#faeab0;
+  --ivory:#f5f0e0;--slate:#0f1f14;--slate2:#162a1c;--slate3:#1c3524;
+  --danger:#c0392b;--danger2:#e87b6e;--warn:#d68910;--warn2:#f0c060;
+  --safe:#1a7a3c;--safe2:#5dba80;
+  --promote:#c9f090;--demote:#c090f0;--info:#80c8e0;
+  --text:#e8ead0;--muted:#8aa88a;--muted2:#6a886a;
+  --border:rgba(201,168,76,0.2);--border2:rgba(201,168,76,0.08);
+  --overlay:rgba(5,18,10,0.92);
+}
+body{font-family:'Barlow',sans-serif;background:var(--felt3);color:var(--text);min-height:100vh}
+a{color:var(--gold2);text-decoration:none}
+/* ── LAYOUT ── */
+#app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--slate);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:50}
+.logo{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold2);letter-spacing:.5px;display:flex;align-items:center;gap:10px}
+.logo-sub{font-family:'Barlow',sans-serif;font-size:11px;color:var(--muted);font-weight:400;border-left:1px solid var(--border);padding-left:10px;margin-left:4px}
+.badge-comm{background:var(--gold);color:#1a0e00;font-size:10px;font-weight:700;padding:3px 12px;border-radius:20px;letter-spacing:1.2px;text-transform:uppercase}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.topbar-pill{font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:20px;padding:3px 12px}
+/* ── SIDEBAR + BODY ── */
+.main{display:flex;flex:1}
+.sidebar{width:200px;background:var(--slate);border-right:1px solid var(--border);padding:16px 0;display:flex;flex-direction:column;gap:2px;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto}
+.nav-group{padding:8px 16px 4px;font-size:10px;color:var(--muted2);letter-spacing:1px;text-transform:uppercase;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-left:3px solid transparent;transition:all .15s}
+.nav-item:hover{color:var(--text);background:rgba(201,168,76,.05)}
+.nav-item.active{color:var(--gold2);background:rgba(201,168,76,.08);border-left:3px solid var(--gold)}
+.nav-icon{font-size:14px;width:18px;text-align:center}
+.nav-badge{margin-left:auto;background:var(--danger);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center}
+.nav-badge.gold{background:rgba(201,168,76,.25);color:var(--gold2)}
+.content{flex:1;padding:24px 28px;overflow-y:auto}
+/* ── PANELS ── */
+.panel{display:none}.panel.active{display:block}
+/* ── SECTION HEADER ── */
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.sec-title{font-family:'Playfair Display',serif;font-size:18px;color:var(--gold);display:flex;align-items:center;gap:10px}
+.sec-title::before{content:'';width:3px;height:18px;background:var(--gold);display:inline-block;border-radius:2px}
+/* ── STAT CARDS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--slate2);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.stat-num{font-family:'DM Mono',monospace;font-size:28px;font-weight:500;color:var(--gold2)}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:3px}
+.stat-trend{font-size:10px;margin-top:4px}
+.trend-up{color:var(--safe2)}.trend-dn{color:var(--danger2)}
+/* ── TABLES ── */
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:9px 14px;color:var(--muted);font-size:10px;letter-spacing:.8px;text-transform:uppercase;font-weight:600;border-bottom:1px solid var(--border);background:var(--slate2)}
+td{padding:10px 14px;border-bottom:1px solid var(--border2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(201,168,76,.03)}
+/* ── BADGES ── */
+.badge{font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.b-active{background:rgba(26,122,60,.3);color:var(--safe2);border:1px solid rgba(93,186,128,.25)}
+.b-banned{background:rgba(192,57,43,.2);color:var(--danger2);border:1px solid rgba(232,123,110,.25)}
+.b-suspended{background:rgba(214,137,16,.15);color:var(--warn2);border:1px solid rgba(240,192,96,.25)}
+.b-warned{background:rgba(201,168,76,.12);color:var(--gold2);border:1px solid var(--border)}
+.b-frozen{background:rgba(128,200,224,.1);color:var(--info);border:1px solid rgba(128,200,224,.25)}
+.b-pending{background:rgba(192,90,240,.1);color:#d090f0;border:1px solid rgba(180,90,240,.25)}
+.b-confirmed{background:rgba(26,122,60,.25);color:var(--safe2);border:1px solid rgba(93,186,128,.2)}
+.b-disputed{background:rgba(201,168,76,.12);color:var(--gold2);border:1px solid var(--border)}
+.b-voided{background:rgba(192,57,43,.15);color:var(--danger2);border:1px solid rgba(232,123,110,.2)}
+.b-scheduled{background:rgba(128,200,224,.1);color:var(--info);border:1px solid rgba(128,200,224,.2)}
+.b-open{background:rgba(214,137,16,.15);color:var(--warn2);border:1px solid rgba(240,192,96,.2)}
+.b-closed{background:rgba(100,110,100,.15);color:var(--muted);border:1px solid rgba(100,110,100,.2)}
+.b-broadcast{background:rgba(201,168,76,.15);color:var(--gold2);border:1px solid var(--border)}
+.b-direct{background:rgba(128,200,224,.1);color:var(--info);border:1px solid rgba(128,200,224,.2)}
+/* ── BUTTONS ── */
+.actions{display:flex;gap:5px;flex-wrap:wrap}
+.btn{font-size:11px;padding:4px 10px;border-radius:4px;border:1px solid;cursor:pointer;font-family:'Barlow',sans-serif;font-weight:500;transition:all .15s;background:transparent;white-space:nowrap}
+.btn:hover{opacity:.85;transform:scale(.97)}
+.btn:active{transform:scale(.94)}
+.btn-ban{color:var(--danger2);border-color:rgba(232,123,110,.35)}
+.btn-ban:hover{background:rgba(192,57,43,.18)}
+.btn-unban{color:var(--safe2);border-color:rgba(93,186,128,.35)}
+.btn-unban:hover{background:rgba(26,122,60,.18)}
+.btn-warn{color:var(--warn2);border-color:rgba(240,192,96,.35)}
+.btn-warn:hover{background:rgba(214,137,16,.18)}
+.btn-suspend{color:#f0a050;border-color:rgba(240,160,80,.35)}
+.btn-suspend:hover{background:rgba(214,100,16,.18)}
+.btn-promote{color:var(--promote);border-color:rgba(200,240,144,.35)}
+.btn-promote:hover{background:rgba(100,200,80,.15)}
+.btn-demote{color:var(--demote);border-color:rgba(190,144,240,.35)}
+.btn-demote:hover{background:rgba(150,90,220,.15)}
+.btn-pts{color:var(--info);border-color:rgba(128,200,224,.35)}
+.btn-pts:hover{background:rgba(40,130,180,.18)}
+.btn-freeze{color:var(--info);border-color:rgba(128,200,224,.35)}
+.btn-freeze:hover{background:rgba(40,130,180,.18)}
+.btn-note{color:var(--muted);border-color:rgba(138,168,138,.3)}
+.btn-note:hover{background:rgba(138,168,138,.1)}
+.btn-msg{color:var(--gold);border-color:rgba(201,168,76,.3)}
+.btn-msg:hover{background:rgba(201,168,76,.1)}
+.btn-reset{color:var(--danger2);border-color:rgba(232,123,110,.3)}
+.btn-reset:hover{background:rgba(192,57,43,.15)}
+.btn-approve{color:var(--safe2);border-color:rgba(93,186,128,.35)}
+.btn-approve:hover{background:rgba(26,122,60,.18)}
+.btn-deny{color:var(--danger2);border-color:rgba(232,123,110,.35)}
+.btn-deny:hover{background:rgba(192,57,43,.18)}
+.btn-override{color:var(--warn2);border-color:rgba(240,192,96,.35)}
+.btn-override:hover{background:rgba(214,137,16,.18)}
+.btn-primary{background:rgba(201,168,76,.15);color:var(--gold2);border-color:var(--gold);padding:7px 20px;font-size:13px;border-radius:6px}
+.btn-primary:hover{background:rgba(201,168,76,.25)}
+.btn-danger-full{background:rgba(192,57,43,.2);color:var(--danger2);border-color:rgba(232,123,110,.4);padding:7px 20px;font-size:13px;border-radius:6px}
+.btn-danger-full:hover{background:rgba(192,57,43,.35)}
+.btn-safe-full{background:rgba(26,122,60,.2);color:var(--safe2);border-color:rgba(93,186,128,.4);padding:7px 20px;font-size:13px;border-radius:6px}
+.btn-safe-full:hover{background:rgba(26,122,60,.35)}
+/* ── FORMS / INPUTS ── */
+.form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end}
+.form-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:140px}
+.form-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600}
+.form-input{background:var(--slate2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;outline:none;transition:border .2s}
+.form-input:focus{border-color:var(--gold)}
+.form-input::placeholder{color:var(--muted2)}
+select.form-input option{background:var(--slate);color:var(--text)}
+textarea.form-input{resize:vertical;min-height:90px;line-height:1.5}
+/* ── SEARCH / FILTER ── */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.search-input{background:var(--slate2);border:1px solid var(--border);border-radius:6px;padding:7px 14px;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;outline:none;flex:1;min-width:160px;max-width:280px}
+.search-input:focus{border-color:var(--gold)}
+.search-input::placeholder{color:var(--muted2)}
+.filter-btn{font-size:11px;padding:5px 14px;border-radius:20px;border:1px solid var(--border);cursor:pointer;background:transparent;color:var(--muted);font-family:'Barlow',sans-serif;font-weight:500;transition:all .18s;white-space:nowrap}
+.filter-btn:hover{color:var(--text);border-color:rgba(201,168,76,.4)}
+.filter-btn.active{background:rgba(201,168,76,.12);color:var(--gold2);border-color:var(--gold)}
+/* ── LOG ── */
+.log-box{background:var(--slate2);border:1px solid var(--border);border-radius:8px;padding:14px;max-height:340px;overflow-y:auto;font-family:'DM Mono',monospace;font-size:12px}
+.log-entry{padding:5px 0;border-bottom:1px solid var(--border2);display:flex;gap:10px;line-height:1.4}
+.log-entry:last-child{border-bottom:none}
+.log-time{color:var(--muted2);min-width:58px;font-size:11px}
+.log-user{color:var(--gold);min-width:90px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-action{color:var(--text);flex:1}
+.la-ban{color:var(--danger2)}.la-unban{color:var(--safe2)}.la-warn{color:var(--warn2)}
+.la-suspend{color:#f0a050}.la-promote{color:var(--promote)}.la-demote{color:var(--demote)}
+.la-pts{color:var(--info)}.la-msg{color:var(--gold)}.la-system{color:var(--muted)}
+/* ── RANK BADGE ── */
+.rank-num{font-family:'DM Mono',monospace;color:var(--gold);font-size:13px}
+.rank-num.top3{color:var(--gold3);font-weight:700}
+/* ── PLAYER NAME ── */
+.pname{font-weight:500;color:var(--text)}
+.pname.banned{color:var(--muted2);text-decoration:line-through}
+/* ── CARD ── */
+.card{background:var(--slate2);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:16px}
+.card-title{font-family:'Playfair Display',serif;font-size:14px;color:var(--gold);margin-bottom:12px}
+/* ── COMMISSIONER LAW ── */
+.comm-law{background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.03));border:1px solid var(--gold);border-radius:10px;padding:22px 24px;position:relative;overflow:hidden;margin-top:20px}
+.comm-law::before{content:'★';position:absolute;right:20px;top:14px;font-size:42px;color:rgba(201,168,76,.12);pointer-events:none}
+.comm-law-title{font-family:'Playfair Display',serif;font-size:16px;color:var(--gold2);margin-bottom:12px}
+.comm-law-text{font-size:13px;color:var(--text);line-height:1.75}
+.comm-law-text strong{color:var(--gold2)}
+/* ── CONFIRM MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:var(--overlay);z-index:200;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--slate);border:1px solid var(--gold);border-radius:12px;padding:28px 30px;max-width:400px;width:94%;position:relative}
+.modal-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--gold2);margin-bottom:8px}
+.modal-msg{font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:20px}
+.modal-msg strong{color:var(--text)}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end}
+.cbtn{padding:7px 20px;border-radius:6px;border:1px solid;cursor:pointer;font-size:13px;font-family:'Barlow',sans-serif;font-weight:500;transition:all .15s}
+.cbtn-cancel{color:var(--muted);border-color:var(--border);background:transparent}
+.cbtn-cancel:hover{color:var(--text)}
+.cbtn-danger{color:var(--danger2);border-color:rgba(232,123,110,.5);background:rgba(192,57,43,.2)}
+.cbtn-danger:hover{background:rgba(192,57,43,.35)}
+.cbtn-safe{color:var(--safe2);border-color:rgba(93,186,128,.5);background:rgba(26,122,60,.2)}
+.cbtn-safe:hover{background:rgba(26,122,60,.35)}
+.cbtn-gold{color:var(--gold2);border-color:var(--border);background:rgba(201,168,76,.15)}
+.cbtn-gold:hover{background:rgba(201,168,76,.25)}
+/* ── POINTS MODAL ── */
+.pts-modal-input{background:var(--slate2);border:1px solid var(--border);border-radius:6px;padding:9px 14px;color:var(--text);font-family:'DM Mono',monospace;font-size:20px;outline:none;width:100%;text-align:center;transition:border .2s;margin-bottom:8px}
+.pts-modal-input:focus{border-color:var(--gold)}
+.pts-type-row{display:flex;gap:8px;margin-bottom:16px}
+.pts-type-btn{flex:1;padding:7px;border-radius:5px;border:1px solid var(--border);cursor:pointer;background:transparent;color:var(--muted);font-family:'Barlow',sans-serif;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;transition:all .15s}
+.pts-type-btn.active-add{background:rgba(26,122,60,.2);color:var(--safe2);border-color:rgba(93,186,128,.4)}
+.pts-type-btn.active-sub{background:rgba(192,57,43,.2);color:var(--danger2);border-color:rgba(232,123,110,.4)}
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--slate);border:1px solid var(--gold);color:var(--gold2);padding:10px 20px;border-radius:7px;font-size:13px;font-family:'Barlow',sans-serif;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;max-width:340px}
+.toast.show{opacity:1}
+/* ── NOTE TEXTAREA ── */
+.note-area{background:var(--slate2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;resize:vertical;min-height:90px;outline:none;width:100%;transition:border .2s;line-height:1.5}
+.note-area:focus{border-color:var(--gold)}
+/* ── ANNOUNCE ── */
+.announce-card{background:var(--slate2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px}
+.announce-title{font-weight:600;font-size:14px;color:var(--gold2);margin-bottom:4px}
+.announce-body{font-size:13px;color:var(--muted);line-height:1.55}
+.announce-meta{font-size:11px;color:var(--muted2);margin-top:6px;font-family:'DM Mono',monospace}
+/* ── MSG CARD ── */
+.msg-card{background:var(--slate2);border:1px solid var(--border);border-radius:8px;padding:12px 15px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px}
+.msg-avatar{width:36px;height:36px;border-radius:50%;background:var(--slate3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);flex-shrink:0}
+.msg-content{flex:1;min-width:0}
+.msg-top{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+.msg-name{font-size:13px;font-weight:600;color:var(--text)}
+.msg-time{font-size:11px;color:var(--muted2);font-family:'DM Mono',monospace;margin-left:auto}
+.msg-text{font-size:13px;color:var(--muted);line-height:1.5}
+/* ── DISPUTE ── */
+.dispute-card{background:var(--slate2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;margin-bottom:12px}
+.dispute-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.dispute-match{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)}
+.dispute-players{font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px}
+.dispute-reason{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+/* ── SCHEDULE MODAL ── */
+.sched-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* ── SEASON PANEL ── */
+.season-stat{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border2);font-size:13px}
+.season-stat:last-child{border-bottom:none}
+.season-stat-label{color:var(--muted)}
+.season-stat-val{font-family:'DM Mono',monospace;color:var(--gold2);font-weight:500}
+/* ── RULES ── */
+.rule-item{padding:11px 0;border-bottom:1px solid var(--border2);font-size:13px;line-height:1.65;display:flex;gap:14px}
+.rule-item:last-child{border-bottom:none}
+.rule-num{font-family:'DM Mono',monospace;color:var(--gold);min-width:26px;font-weight:500}
+.rule-text strong{color:var(--gold2)}
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(201,168,76,.2);border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:rgba(201,168,76,.35)}
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  .sidebar{display:none}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .sched-grid{grid-template-columns:1fr}
+}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+.empty{padding:32px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">
+    🎱 Billiards Ladder
+    <span class="logo-sub">Action Ladder Platform</span>
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-pill" id="clock-display">--:--:--</span>
+    <span style="font-size:12px;color:var(--muted)">Commissioner</span>
+    <span class="badge-comm">★ Admin</span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="nav-group">Overview</div>
+    <div class="nav-item active" onclick="showPanel('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</div>
+    <div class="nav-item" onclick="showPanel('ladder',this)"><span class="nav-icon">📋</span> Ladder Rankings</div>
+
+    <div class="nav-group">Management</div>
+    <div class="nav-item" onclick="showPanel('players',this)"><span class="nav-icon">👤</span> Players <span class="nav-badge gold" id="nb-players">24</span></div>
+    <div class="nav-item" onclick="showPanel('registration',this)"><span class="nav-icon">📥</span> Registration <span class="nav-badge" id="nb-reg">3</span></div>
+    <div class="nav-item" onclick="showPanel('matches',this)"><span class="nav-icon">🎱</span> Matches</div>
+    <div class="nav-item" onclick="showPanel('schedule',this)"><span class="nav-icon">📅</span> Schedule</div>
+    <div class="nav-item" onclick="showPanel('disputes',this)"><span class="nav-icon">⚠️</span> Disputes <span class="nav-badge" id="nb-disputes">2</span></div>
+
+    <div class="nav-group">Communication</div>
+    <div class="nav-item" onclick="showPanel('messaging',this)"><span class="nav-icon">✉️</span> Messaging</div>
+    <div class="nav-item" onclick="showPanel('announcements',this)"><span class="nav-icon">📢</span> Announcements</div>
+
+    <div class="nav-group">Platform</div>
+    <div class="nav-item" onclick="showPanel('season',this)"><span class="nav-icon">🏆</span> Season Control</div>
+    <div class="nav-item" onclick="showPanel('log',this)"><span class="nav-icon">📜</span> Activity Log</div>
+    <div class="nav-item" onclick="showPanel('rules',this)"><span class="nav-icon">⚖️</span> Rules & Laws</div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="sec-header">
+        <div class="sec-title">Dashboard</div>
+        <button class="btn btn-primary" onclick="showPanel('players',document.querySelector('.nav-item:nth-child(7)'))">Manage Players</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num" id="ds-total">24</div><div class="stat-label">Total Players</div></div>
+        <div class="stat-card"><div class="stat-num" id="ds-active" style="color:var(--safe2)">19</div><div class="stat-label">Active</div></div>
+        <div class="stat-card"><div class="stat-num" id="ds-banned" style="color:var(--danger2)">2</div><div class="stat-label">Banned</div></div>
+        <div class="stat-card"><div class="stat-num" id="ds-suspended" style="color:var(--warn2)">1</div><div class="stat-label">Suspended</div></div>
+        <div class="stat-card"><div class="stat-num" id="ds-warned" style="color:var(--gold2)">2</div><div class="stat-label">Warned</div></div>
+        <div class="stat-card"><div class="stat-num" id="ds-frozen" style="color:var(--info)">1</div><div class="stat-label">Challenge Frozen</div></div>
+        <div class="stat-card"><div class="stat-num" id="ds-matches">41</div><div class="stat-label">Matches Played</div></div>
+        <div class="stat-card"><div class="stat-num" id="ds-disputes" style="color:var(--danger2)">2</div><div class="stat-label">Open Disputes</div></div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div style="margin-bottom:12px;font-family:'Playfair Display',serif;font-size:15px;color:var(--gold)">⚡ Quick Actions</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn btn-primary" style="text-align:left;justify-content:flex-start" onclick="openBroadcastQuick()">📢 Send Broadcast Announcement</button>
+            <button class="btn btn-primary" style="text-align:left" onclick="showPanel('registration',document.querySelector('[onclick*=registration]'))">📥 Review Registration Queue</button>
+            <button class="btn btn-primary" style="text-align:left" onclick="showPanel('disputes',document.querySelector('[onclick*=disputes]'))">⚠️ Resolve Open Disputes</button>
+            <button class="btn btn-primary" style="text-align:left" onclick="showPanel('schedule',document.querySelector('[onclick*=schedule]'))">📅 Schedule a Match</button>
+          </div>
+        </div>
+        <div>
+          <div style="margin-bottom:12px;font-family:'Playfair Display',serif;font-size:15px;color:var(--gold)">📜 Recent Activity</div>
+          <div class="log-box" id="dash-log" style="max-height:200px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LADDER RANKINGS -->
+    <div class="panel" id="panel-ladder">
+      <div class="sec-header">
+        <div class="sec-title">Ladder Rankings</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="openSwapRank()">↕️ Swap Ranks</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Rank</th><th>Player</th><th>W / L</th><th>Win %</th><th>Points</th><th>Streak</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="ladder-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PLAYERS -->
+    <div class="panel" id="panel-players">
+      <div class="sec-header">
+        <div class="sec-title">Player Management</div>
+      </div>
+      <div class="toolbar">
+        <input class="search-input" placeholder="Search players..." id="player-search" oninput="renderPlayers()">
+        <button class="filter-btn active" onclick="setFilter('all',this,'pf')">All</button>
+        <button class="filter-btn" onclick="setFilter('active',this,'pf')">Active</button>
+        <button class="filter-btn" onclick="setFilter('banned',this,'pf')">Banned</button>
+        <button class="filter-btn" onclick="setFilter('suspended',this,'pf')">Suspended</button>
+        <button class="filter-btn" onclick="setFilter('warned',this,'pf')">Warned</button>
+        <button class="filter-btn" onclick="setFilter('frozen',this,'pf')">Frozen</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Rank</th><th>Player</th><th>W/L</th><th>Points</th><th>Warnings</th><th>Status</th><th>Notes</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="players-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- REGISTRATION QUEUE -->
+    <div class="panel" id="panel-registration">
+      <div class="sec-header"><div class="sec-title">Registration Queue</div></div>
+      <div id="reg-list"></div>
+    </div>
+
+    <!-- MATCHES -->
+    <div class="panel" id="panel-matches">
+      <div class="sec-header">
+        <div class="sec-title">Match History</div>
+      </div>
+      <div class="toolbar">
+        <input class="search-input" placeholder="Search matches..." id="match-search" oninput="renderMatches()">
+        <button class="filter-btn active" onclick="setFilter('all',this,'mf')">All</button>
+        <button class="filter-btn" onclick="setFilter('confirmed',this,'mf')">Confirmed</button>
+        <button class="filter-btn" onclick="setFilter('disputed',this,'mf')">Disputed</button>
+        <button class="filter-btn" onclick="setFilter('voided',this,'mf')">Voided</button>
+        <button class="filter-btn" onclick="setFilter('scheduled',this,'mf')">Scheduled</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Players</th><th>Score</th><th>Date</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="matches-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="panel" id="panel-schedule">
+      <div class="sec-header"><div class="sec-title">Schedule a Match</div></div>
+      <div class="card" style="max-width:520px">
+        <div class="card-title">New Match</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Player 1</label>
+            <select class="form-input" id="sched-p1"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Player 2</label>
+            <select class="form-input" id="sched-p2"></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="sched-date">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Time</label>
+            <input type="time" class="form-input" id="sched-time">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Location / Table</label>
+            <input type="text" class="form-input" id="sched-loc" placeholder="e.g. Table 3, Main Hall">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Commissioner Notes (optional)</label>
+            <textarea class="form-input" id="sched-notes" rows="2" placeholder="Any notes for this match..."></textarea>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="scheduleMatch()">Schedule Match</button>
+      </div>
+
+      <div style="margin-top:24px">
+        <div style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);margin-bottom:12px">Upcoming Scheduled Matches</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Players</th><th>Date / Time</th><th>Location</th><th>Actions</th></tr></thead>
+            <tbody id="upcoming-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- DISPUTES -->
+    <div class="panel" id="panel-disputes">
+      <div class="sec-header"><div class="sec-title">Dispute Resolution</div></div>
+      <div id="disputes-list"></div>
+    </div>
+
+    <!-- MESSAGING -->
+    <div class="panel" id="panel-messaging">
+      <div class="sec-header"><div class="sec-title">Messaging</div></div>
+      <div class="two-col">
+        <div>
+          <div class="card">
+            <div class="card-title">Send Message</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-input" id="msg-type" onchange="toggleMsgType()">
+                  <option value="direct">Direct — Single Player</option>
+                  <option value="broadcast">Broadcast — All Players</option>
+                  <option value="group">Group — By Status</option>
+                </select>
+              </div>
+            </div>
+            <div id="msg-player-row" class="form-row">
+              <div class="form-group">
+                <label class="form-label">Player</label>
+                <select class="form-input" id="msg-player-select"></select>
+              </div>
+            </div>
+            <div id="msg-group-row" class="form-row" style="display:none">
+              <div class="form-group">
+                <label class="form-label">Group</label>
+                <select class="form-input" id="msg-group-select">
+                  <option>All Active Players</option>
+                  <option>All Warned Players</option>
+                  <option>All Suspended Players</option>
+                  <option>All Banned Players</option>
+                  <option>Top 5 Ranked</option>
+                  <option>Bottom 5 Ranked</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Subject</label>
+                <input type="text" class="form-input" id="msg-subject" placeholder="Message subject...">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Message</label>
+                <textarea class="form-input" id="msg-body" rows="4" placeholder="Your message..."></textarea>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" onclick="sendMessage()">Send Message</button>
+              <button class="btn btn-note" onclick="clearMsgForm()">Clear</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);margin-bottom:12px">Message History</div>
+          <div id="msg-history"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div class="panel" id="panel-announcements">
+      <div class="sec-header"><div class="sec-title">Platform Announcements</div></div>
+      <div class="two-col">
+        <div>
+          <div class="card">
+            <div class="card-title">New Announcement</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Title</label>
+                <input type="text" class="form-input" id="ann-title" placeholder="Announcement title...">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Priority</label>
+                <select class="form-input" id="ann-priority">
+                  <option value="normal">Normal</option>
+                  <option value="important">Important</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Body</label>
+                <textarea class="form-input" id="ann-body" rows="5" placeholder="Write your announcement..."></textarea>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="postAnnouncement()">Post Announcement</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);margin-bottom:12px">Posted Announcements</div>
+          <div id="ann-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEASON CONTROL -->
+    <div class="panel" id="panel-season">
+      <div class="sec-header"><div class="sec-title">Season Control</div></div>
+      <div class="two-col">
+        <div>
+          <div class="card">
+            <div class="card-title">Current Season</div>
+            <div id="season-stats"></div>
+          </div>
+          <div class="card" style="margin-top:0">
+            <div class="card-title" style="color:var(--danger2)">Danger Zone</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">These actions are irreversible. They affect all players on the ladder. Proceed only as Commissioner.</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-danger-full" onclick="confirmSeason('reset_pts')">Reset All Player Points to 0</button>
+              <button class="btn btn-danger-full" onclick="confirmSeason('reset_wl')">Reset All W/L Records</button>
+              <button class="btn btn-danger-full" onclick="confirmSeason('reset_ranks')">Reset All Rankings to Default</button>
+              <button class="btn btn-danger-full" onclick="confirmSeason('archive')">Archive Season & Start New</button>
+              <button class="btn btn-safe-full" onclick="confirmSeason('export')">Export Full Roster & Stats</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);margin-bottom:12px">Season Archive</div>
+          <div id="season-archive"></div>
+          <div style="font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);margin:18px 0 12px">Inactive Players (30+ days)</div>
+          <div id="inactive-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIVITY LOG -->
+    <div class="panel" id="panel-log">
+      <div class="sec-header">
+        <div class="sec-title">Activity Log</div>
+        <button class="btn btn-danger-full" onclick="clearLog()">Clear Log</button>
+      </div>
+      <div class="toolbar">
+        <input class="search-input" placeholder="Search log..." id="log-search" oninput="renderFullLog()">
+        <button class="filter-btn active" onclick="setFilter('all',this,'lf')">All</button>
+        <button class="filter-btn" onclick="setFilter('ban',this,'lf')">Bans</button>
+        <button class="filter-btn" onclick="setFilter('warn',this,'lf')">Warnings</button>
+        <button class="filter-btn" onclick="setFilter('pts',this,'lf')">Points</button>
+        <button class="filter-btn" onclick="setFilter('msg',this,'lf')">Messages</button>
+        <button class="filter-btn" onclick="setFilter('system',this,'lf')">System</button>
+      </div>
+      <div class="log-box" id="full-log" style="max-height:500px"></div>
+    </div>
+
+    <!-- RULES -->
+    <div class="panel" id="panel-rules">
+      <div class="sec-header"><div class="sec-title">Rules & Laws</div></div>
+      <div class="card">
+        <div id="rules-list"></div>
+      </div>
+      <div class="comm-law">
+        <div class="comm-law-title">★ Commissioner's Law — Absolute Final Authority</div>
+        <div class="comm-law-text">
+          The Commissioner is the <strong>highest and only final authority</strong> on this platform. All decisions made by the Commissioner — including bans, unbans, rank adjustments, point corrections, match overrides, rule changes, suspensions, and all platform conduct standards — are <strong>final, binding, and non-negotiable</strong> with no appeal process whatsoever.<br><br>
+          The Commissioner has the <strong>absolute and unilateral right</strong> to add, remove, or modify any rule at any time without prior notice to any player or party. No moderator, player, or third party may overrule, contest, or disregard a Commissioner decision.<br><br>
+          Any player, moderator, or participant who disagrees with a Commissioner ruling, does not like a ruling, or finds the rules unfair is <strong>free and welcome to leave the platform</strong> at any time. Continued participation in the Billiards Ladder constitutes full and unconditional acceptance of this authority and all Commissioner decisions, past, present, and future.<br><br>
+          <span style="color:var(--muted2);font-size:12px;font-style:italic">This clause is supreme and supersedes every other rule, policy, or precedent listed on this platform. Last updated by Commissioner.</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Generic Confirm -->
+<div class="modal-bg" id="modal-confirm">
+  <div class="modal">
+    <div class="modal-title" id="mc-title">Confirm</div>
+    <div class="modal-msg" id="mc-msg"></div>
+    <div id="mc-extra"></div>
+    <div class="modal-btns" style="margin-top:16px">
+      <button class="cbtn cbtn-cancel" onclick="closeModal('modal-confirm')">Cancel</button>
+      <button class="cbtn" id="mc-ok" onclick="runConfirm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Points Adjust -->
+<div class="modal-bg" id="modal-pts">
+  <div class="modal">
+    <div class="modal-title" id="pts-title">Adjust Points</div>
+    <div class="modal-msg" id="pts-msg"></div>
+    <div class="pts-type-row">
+      <button class="pts-type-btn active-add" id="pts-add-btn" onclick="setPtsType('add')">+ Add</button>
+      <button class="pts-type-btn" id="pts-sub-btn" onclick="setPtsType('sub')">− Subtract</button>
+      <button class="pts-type-btn" id="pts-set-btn" onclick="setPtsType('set')">= Set To</button>
+    </div>
+    <input type="number" class="pts-modal-input" id="pts-input" placeholder="0" min="0">
+    <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:16px">
+      Current: <span style="font-family:'DM Mono',monospace;color:var(--gold2)" id="pts-current">0</span> pts
+    </div>
+    <div class="modal-btns">
+      <button class="cbtn cbtn-cancel" onclick="closeModal('modal-pts')">Cancel</button>
+      <button class="cbtn cbtn-gold" onclick="applyPts()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- Note -->
+<div class="modal-bg" id="modal-note">
+  <div class="modal">
+    <div class="modal-title" id="note-title">Commissioner Note</div>
+    <div class="modal-msg" id="note-msg"></div>
+    <textarea class="note-area" id="note-input" placeholder="Enter note for this player..."></textarea>
+    <div class="modal-btns" style="margin-top:12px">
+      <button class="cbtn cbtn-cancel" onclick="closeModal('modal-note')">Cancel</button>
+      <button class="cbtn cbtn-gold" onclick="saveNote()">Save Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- Swap Rank -->
+<div class="modal-bg" id="modal-swap">
+  <div class="modal">
+    <div class="modal-title">Swap Player Ranks</div>
+    <div class="modal-msg">Swap the ladder positions of two players.</div>
+    <div class="sched-grid" style="margin-bottom:16px">
+      <div class="form-group">
+        <label class="form-label">Player A</label>
+        <select class="form-input" id="swap-a"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Player B</label>
+        <select class="form-input" id="swap-b"></select>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="cbtn cbtn-cancel" onclick="closeModal('modal-swap')">Cancel</button>
+      <button class="cbtn cbtn-gold" onclick="applySwap()">Swap Ranks</button>
+    </div>
+  </div>
+</div>
+
+<!-- Override Score -->
+<div class="modal-bg" id="modal-override">
+  <div class="modal">
+    <div class="modal-title" id="ov-title">Override Match Score</div>
+    <div class="modal-msg" id="ov-msg"></div>
+    <div class="sched-grid" style="margin-bottom:16px">
+      <div class="form-group">
+        <label class="form-label" id="ov-p1-label">Player 1 Score</label>
+        <input type="number" class="form-input" id="ov-s1" min="0" max="99" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="ov-p2-label">Player 2 Score</label>
+        <input type="number" class="form-input" id="ov-s2" min="0" max="99" placeholder="0">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Override Reason</label>
+      <input type="text" class="form-input" id="ov-reason" placeholder="Reason for override...">
+    </div>
+    <div class="modal-btns">
+      <button class="cbtn cbtn-cancel" onclick="closeModal('modal-override')">Cancel</button>
+      <button class="cbtn cbtn-gold" onclick="applyOverride()">Apply Override</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const players = [
+  {id:1,name:"Marcus Howell",rank:1,w:22,l:4,pts:1840,status:"active",warnings:0,frozen:false,note:"",streak:"+5",lastActive:"2026-03-24"},
+  {id:2,name:"Danny 'Cue' Reyes",rank:2,w:19,l:6,pts:1720,status:"active",warnings:0,frozen:false,note:"",streak:"+3",lastActive:"2026-03-23"},
+  {id:3,name:"Tyrone Banks",rank:3,w:17,l:7,pts:1650,status:"active",warnings:1,frozen:false,note:"",streak:"+2",lastActive:"2026-03-22"},
+  {id:4,name:"Phil Castillo",rank:4,w:15,l:9,pts:1540,status:"warned",warnings:2,frozen:false,note:"Unsportsmanlike conduct report filed 3/15.",streak:"-1",lastActive:"2026-03-15"},
+  {id:5,name:"Reggie St. Claire",rank:5,w:14,l:9,pts:1490,status:"active",warnings:0,frozen:false,note:"",streak:"+1",lastActive:"2026-03-24"},
+  {id:6,name:"Jerome Tatum",rank:6,w:13,l:11,pts:1380,status:"suspended",warnings:3,frozen:false,note:"Suspended pending review of match M-039.",streak:"-2",lastActive:"2026-03-22"},
+  {id:7,name:"Carlos Vega",rank:7,w:12,l:10,pts:1310,status:"active",warnings:0,frozen:true,note:"Challenge freeze: recovering from injury.",streak:"0",lastActive:"2026-03-20"},
+  {id:8,name:"Kenny Okafor",rank:8,w:11,l:12,pts:1200,status:"active",warnings:0,frozen:false,note:"",streak:"+1",lastActive:"2026-03-23"},
+  {id:9,name:"Big Walt Sullivan",rank:9,w:9,l:13,pts:1080,status:"active",warnings:0,frozen:false,note:"",streak:"-2",lastActive:"2026-03-19"},
+  {id:10,name:"Darnell Pierce",rank:10,w:8,l:14,pts:960,status:"banned",warnings:3,frozen:false,note:"Banned for match fixing. Permanent.",streak:"-4",lastActive:"2026-03-10"},
+  {id:11,name:"Ray 'Smooth' Kim",rank:11,w:7,l:14,pts:870,status:"active",warnings:0,frozen:false,note:"",streak:"+2",lastActive:"2026-03-21"},
+  {id:12,name:"Victor Lindsey",rank:12,w:6,l:15,pts:790,status:"banned",warnings:3,frozen:false,note:"Banned for no-show x3.",streak:"-3",lastActive:"2026-02-28"},
+  {id:13,name:"Andre Whitmore",rank:13,w:5,l:16,pts:700,status:"warned",warnings:1,frozen:false,note:"",streak:"-1",lastActive:"2026-03-24"},
+  {id:14,name:"Sam Dupont",rank:14,w:4,l:17,pts:590,status:"active",warnings:0,frozen:false,note:"",streak:"0",lastActive:"2026-03-18"},
+  {id:15,name:"Felix Nguyen",rank:15,w:3,l:18,pts:480,status:"suspended",warnings:3,frozen:false,note:"",streak:"-3",lastActive:"2026-03-05"},
+  {id:16,name:"Omar Hassan",rank:16,w:2,l:19,pts:340,status:"active",warnings:0,frozen:false,note:"",streak:"-1",lastActive:"2026-02-20"},
+  {id:17,name:"Kevin Marsh",rank:17,w:2,l:20,pts:280,status:"active",warnings:0,frozen:false,note:"",streak:"-2",lastActive:"2026-02-18"},
+];
+
+const matches = [
+  {id:"M-041",p1:"Marcus Howell",p2:"Danny 'Cue' Reyes",score:"5-2",date:"2026-03-24",status:"confirmed",note:""},
+  {id:"M-040",p1:"Tyrone Banks",p2:"Phil Castillo",score:"4-3",date:"2026-03-23",status:"disputed",note:"Phil claims score was entered wrong."},
+  {id:"M-039",p1:"Jerome Tatum",p2:"Carlos Vega",score:"3-5",date:"2026-03-22",status:"confirmed",note:""},
+  {id:"M-038",p1:"Reggie St. Claire",p2:"Kenny Okafor",score:"5-1",date:"2026-03-21",status:"confirmed",note:""},
+  {id:"M-037",p1:"Big Walt Sullivan",p2:"Ray 'Smooth' Kim",score:"4-4",date:"2026-03-20",status:"voided",note:"Draw result invalid per rules — rematch needed."},
+  {id:"M-036",p1:"Andre Whitmore",p2:"Sam Dupont",score:"5-3",date:"2026-03-19",status:"confirmed",note:""},
+  {id:"M-035",p1:"Felix Nguyen",p2:"Omar Hassan",score:"2-5",date:"2026-03-15",status:"confirmed",note:""},
+];
+
+const registrationQueue = [
+  {id:"R-001",name:"Tony Marcello",email:"tony.m@email.com",applied:"2026-03-25",experience:"Intermediate",note:"Referred by Marcus Howell."},
+  {id:"R-002",name:"Latasha Grimes",email:"lgrimes@email.com",applied:"2026-03-24",experience:"Advanced",note:"Former state champion 2023."},
+  {id:"R-003",name:"Benny Kowalski",email:"bkowalski@email.com",applied:"2026-03-23",experience:"Beginner",note:""},
+];
+
+const disputes = [
+  {id:"D-001",matchId:"M-040",p1:"Tyrone Banks",p2:"Phil Castillo",claimant:"Phil Castillo",reason:"Score recorded as 4-3 but I won 5-2. There is video footage available.",opened:"2026-03-23",status:"open"},
+  {id:"D-002",matchId:"M-037",p1:"Big Walt Sullivan",p2:"Ray 'Smooth' Kim",claimant:"Big Walt Sullivan",reason:"Match was called early. Final score should reflect full game.",opened:"2026-03-21",status:"open"},
+];
+
+let actLog = [];
+let announcements = [];
+let messages = [];
+let scheduledMatches = [];
+let seasonArchive = [{season:1,topPlayer:"Marcus Howell",matches:38,startDate:"2025-09-01",endDate:"2025-12-31"}];
+let currentSeason = 2;
+let pendingConfirm = null;
+let pendingPts = null;
+let pendingNote = null;
+let pendingOverride = null;
+let filterStates = {pf:'all', mf:'all', lf:'all'};
+
+// ═══════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════
+function ts(){
+  return new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function dateFmt(d){
+  if(!d)return'';
+  const dt=new Date(d+'T12:00:00');
+  return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function today(){return new Date().toISOString().slice(0,10)}
+function winPct(w,l){if(w+l===0)return'—';return Math.round(w/(w+l)*100)+'%'}
+function initials(name){return name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+function statusBadge(s,frozen){
+  if(frozen&&s==='active')return'<span class="badge b-frozen">Frozen</span>';
+  const m={active:'b-active',banned:'b-banned',suspended:'b-suspended',warned:'b-warned'};
+  return `<span class="badge ${m[s]||'b-active'}">${s}</span>`;
+}
+function addLog(msg,type='system',player='Commissioner'){
+  actLog.unshift({time:ts(),msg,type,player,date:new Date().toLocaleDateString()});
+  renderDashLog();
+}
+function toast(msg,dur=2600){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function openModal(id){document.getElementById(id).classList.add('open')}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function showPanel(name, el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(el&&el.classList)el.classList.add('active');
+  else{
+    document.querySelectorAll('.nav-item').forEach(n=>{
+      if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+name+"'"))n.classList.add('active');
+    });
+  }
+  if(name==='players')renderPlayers();
+  if(name==='ladder')renderLadder();
+  if(name==='matches')renderMatches();
+  if(name==='registration')renderRegistration();
+  if(name==='disputes')renderDisputes();
+  if(name==='schedule')renderSchedule();
+  if(name==='messaging')renderMessaging();
+  if(name==='announcements')renderAnnouncements();
+  if(name==='season')renderSeason();
+  if(name==='log')renderFullLog();
+  if(name==='rules')renderRules();
+}
+
+// ═══════════════════════════════════════════
+// FILTERS
+// ═══════════════════════════════════════════
+function setFilter(val, el, key){
+  filterStates[key]=val;
+  const parent=el.parentElement;
+  parent.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  if(key==='pf')renderPlayers();
+  if(key==='mf')renderMatches();
+  if(key==='lf')renderFullLog();
+}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+function updateDashStats(){
+  const active=players.filter(p=>p.status==='active'&&!p.frozen).length;
+  const banned=players.filter(p=>p.status==='banned').length;
+  const suspended=players.filter(p=>p.status==='suspended').length;
+  const warned=players.filter(p=>p.status==='warned').length;
+  const frozen=players.filter(p=>p.frozen&&p.status==='active').length;
+  const openDisp=disputes.filter(d=>d.status==='open').length;
+  document.getElementById('ds-total').textContent=players.length;
+  document.getElementById('ds-active').textContent=active;
+  document.getElementById('ds-banned').textContent=banned;
+  document.getElementById('ds-suspended').textContent=suspended;
+  document.getElementById('ds-warned').textContent=warned;
+  document.getElementById('ds-frozen').textContent=frozen;
+  document.getElementById('ds-matches').textContent=matches.length;
+  document.getElementById('ds-disputes').textContent=openDisp;
+  document.getElementById('nb-players').textContent=players.length;
+  document.getElementById('nb-reg').textContent=registrationQueue.filter(r=>!r.handled).length;
+  document.getElementById('nb-disputes').textContent=openDisp;
+}
+function renderDashLog(){
+  const el=document.getElementById('dash-log');
+  if(!el)return;
+  if(!actLog.length){el.innerHTML='<div style="color:var(--muted);padding:8px 0;font-size:12px">No activity yet.</div>';return;}
+  el.innerHTML=actLog.slice(0,12).map(e=>`<div class="log-entry"><span class="log-time">${e.time}</span><span class="log-action la-${e.type}">${e.msg}</span></div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// LADDER
+// ═══════════════════════════════════════════
+function renderLadder(){
+  const sorted=[...players].sort((a,b)=>a.rank-b.rank);
+  document.getElementById('ladder-tbody').innerHTML=sorted.map(p=>`<tr>
+    <td><span class="rank-num ${p.rank<=3?'top3':''}">#${p.rank}</span></td>
+    <td><span class="pname ${p.status==='banned'?'banned':''}">${p.name}</span></td>
+    <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)">${p.w} / ${p.l}</td>
+    <td style="font-size:12px;color:var(--muted)">${winPct(p.w,p.l)}</td>
+    <td><span style="font-family:'DM Mono',monospace;color:var(--gold2)">${p.pts.toLocaleString()}</span></td>
+    <td><span style="font-size:12px;font-family:'DM Mono',monospace;color:${p.streak.startsWith('+')?'var(--safe2)':p.streak.startsWith('-')?'var(--danger2)':'var(--muted)'}">${p.streak}</span></td>
+    <td>${statusBadge(p.status,p.frozen)}</td>
+    <td><div class="actions">
+      <button class="btn btn-promote" onclick="doAction(${p.id},'promote')">▲ Rank</button>
+      <button class="btn btn-demote" onclick="doAction(${p.id},'demote')">▼ Rank</button>
+      <button class="btn btn-pts" onclick="openPtsModal(${p.id})">± Pts</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// PLAYERS
+// ═══════════════════════════════════════════
+function renderPlayers(){
+  const q=(document.getElementById('player-search').value||'').toLowerCase();
+  const f=filterStates.pf;
+  const filtered=players.filter(p=>{
+    const mq=!q||p.name.toLowerCase().includes(q);
+    let mf=false;
+    if(f==='all')mf=true;
+    else if(f==='frozen')mf=p.frozen&&p.status==='active';
+    else mf=p.status===f;
+    return mq&&mf;
+  });
+  document.getElementById('players-tbody').innerHTML=filtered.length?filtered.map(p=>`<tr>
+    <td><span class="rank-num">#${p.rank}</span></td>
+    <td><span class="pname ${p.status==='banned'?'banned':''}">${p.name}</span></td>
+    <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)">${p.w}/${p.l}</td>
+    <td><span style="font-family:'DM Mono',monospace;color:var(--gold2)">${p.pts.toLocaleString()}</span></td>
+    <td><span style="font-family:'DM Mono',monospace;color:${p.warnings>=3?'var(--danger2)':p.warnings>=2?'var(--warn2)':'var(--muted)'}">${p.warnings}/3</span></td>
+    <td>${statusBadge(p.status,p.frozen)}</td>
+    <td style="max-width:140px;font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.note}">${p.note||'—'}</td>
+    <td><div class="actions">
+      ${p.status==='banned'
+        ?`<button class="btn btn-unban" onclick="doAction(${p.id},'unban')">Unban</button>`
+        :`<button class="btn btn-ban" onclick="doAction(${p.id},'ban')">Ban</button>`}
+      ${p.status==='suspended'
+        ?`<button class="btn btn-unban" onclick="doAction(${p.id},'unsuspend')">Unsuspend</button>`
+        :p.status!=='banned'?`<button class="btn btn-suspend" onclick="doAction(${p.id},'suspend')">Suspend</button>`:''}
+      ${p.status!=='banned'&&p.status!=='warned'?`<button class="btn btn-warn" onclick="doAction(${p.id},'warn')">Warn</button>`:''}
+      ${p.warnings>0?`<button class="btn btn-unban" onclick="doAction(${p.id},'clearwarn')">Clear Warn</button>`:''}
+      <button class="btn btn-pts" onclick="openPtsModal(${p.id})">± Pts</button>
+      ${p.status!=='banned'?`<button class="btn btn-promote" onclick="doAction(${p.id},'promote')">▲</button><button class="btn btn-demote" onclick="doAction(${p.id},'demote')">▼</button>`:''}
+      ${p.frozen?`<button class="btn btn-unban" onclick="doAction(${p.id},'unfreeze')">Unfreeze</button>`:`<button class="btn btn-freeze" onclick="doAction(${p.id},'freeze')">Freeze</button>`}
+      <button class="btn btn-note" onclick="openNoteModal(${p.id})">Note</button>
+      <button class="btn btn-msg" onclick="openQuickMsg(${p.id})">Msg</button>
+      <button class="btn btn-reset" onclick="doAction(${p.id},'resetpts')">Reset Pts</button>
+    </div></td>
+  </tr>`).join(''):`<tr><td colspan="8" class="empty">No players match this filter.</td></tr>`;
+  updateDashStats();
+}
+
+// ═══════════════════════════════════════════
+// ACTION ENGINE
+// ═══════════════════════════════════════════
+function doAction(pid, action){
+  const p=players.find(x=>x.id===pid);if(!p)return;
+  const cfg={
+    ban:{title:'Ban Player',msg:`Ban <strong>${p.name}</strong> from the ladder? They cannot participate until unbanned.`,btnClass:'cbtn-danger',btnText:'Ban Player',exec:()=>{p.status='banned';addLog(`BANNED: ${p.name}`,'ban',p.name)}},
+    unban:{title:'Unban Player',msg:`Restore <strong>${p.name}</strong>'s access to the ladder?`,btnClass:'cbtn-safe',btnText:'Unban',exec:()=>{p.status='active';addLog(`UNBANNED: ${p.name}`,'unban',p.name)}},
+    suspend:{title:'Suspend Player',msg:`Suspend <strong>${p.name}</strong>? They cannot play until unsuspended.`,btnClass:'cbtn-danger',btnText:'Suspend',exec:()=>{p.status='suspended';addLog(`SUSPENDED: ${p.name}`,'suspend',p.name)}},
+    unsuspend:{title:'Lift Suspension',msg:`Lift the suspension on <strong>${p.name}</strong>?`,btnClass:'cbtn-safe',btnText:'Unsuspend',exec:()=>{p.status='active';addLog(`UNSUSPENDED: ${p.name}`,'unban',p.name)}},
+    warn:{title:'Issue Warning',msg:`Issue an official warning to <strong>${p.name}</strong>? (${p.warnings+1}/3 warnings)`,btnClass:'cbtn-danger',btnText:'Issue Warning',exec:()=>{p.warnings++;if(p.warnings>=3){p.status='suspended';addLog(`SUSPENDED (3 warnings): ${p.name}`,'suspend',p.name)}else{p.status='warned';addLog(`WARNED (${p.warnings}/3): ${p.name}`,'warn',p.name)}}},
+    clearwarn:{title:'Clear Warnings',msg:`Clear all warnings for <strong>${p.name}</strong>?`,btnClass:'cbtn-safe',btnText:'Clear',exec:()=>{p.warnings=0;if(p.status==='warned')p.status='active';addLog(`WARNINGS CLEARED: ${p.name}`,'unban',p.name)}},
+    promote:{title:'Promote Rank',msg:`Move <strong>${p.name}</strong> up one position? (Currently #${p.rank})`,btnClass:'cbtn-gold',btnText:'Promote',exec:()=>{const other=players.find(x=>x.rank===p.rank-1);if(other)other.rank++;p.rank=Math.max(1,p.rank-1);addLog(`PROMOTED: ${p.name} → #${p.rank}`,'promote',p.name)}},
+    demote:{title:'Demote Rank',msg:`Move <strong>${p.name}</strong> down one position? (Currently #${p.rank})`,btnClass:'cbtn-danger',btnText:'Demote',exec:()=>{const other=players.find(x=>x.rank===p.rank+1);if(other)other.rank--;p.rank++;addLog(`DEMOTED: ${p.name} → #${p.rank}`,'demote',p.name)}},
+    resetpts:{title:'Reset Points',msg:`Reset <strong>${p.name}</strong>'s points to 0? This cannot be undone.`,btnClass:'cbtn-danger',btnText:'Reset',exec:()=>{p.pts=0;addLog(`POINTS RESET: ${p.name}`,'pts',p.name)}},
+    freeze:{title:'Freeze Challenges',msg:`Place a challenge freeze on <strong>${p.name}</strong>? They cannot be challenged until unfrozen.`,btnClass:'cbtn-gold',btnText:'Freeze',exec:()=>{p.frozen=true;addLog(`CHALLENGE FREEZE: ${p.name}`,'pts',p.name)}},
+    unfreeze:{title:'Remove Freeze',msg:`Remove the challenge freeze on <strong>${p.name}</strong>?`,btnClass:'cbtn-safe',btnText:'Unfreeze',exec:()=>{p.frozen=false;addLog(`FREEZE REMOVED: ${p.name}`,'unban',p.name)}},
+  };
+  const c=cfg[action];if(!c)return;
+  pendingConfirm={exec:c.exec,refresh:()=>{renderPlayers();renderLadder();updateDashStats()}};
+  document.getElementById('mc-title').textContent=c.title;
+  document.getElementById('mc-msg').innerHTML=c.msg;
+  document.getElementById('mc-extra').innerHTML='';
+  const ok=document.getElementById('mc-ok');
+  ok.className=`cbtn ${c.btnClass}`;ok.textContent=c.btnText;
+  openModal('modal-confirm');
+}
+
+function runConfirm(){
+  if(pendingConfirm){pendingConfirm.exec();if(pendingConfirm.refresh)pendingConfirm.refresh();}
+  closeModal('modal-confirm');
+  toast('✓ Action applied');
+  pendingConfirm=null;
+}
+
+// ═══════════════════════════════════════════
+// POINTS MODAL
+// ═══════════════════════════════════════════
+let ptsMode='add';
+function openPtsModal(pid){
+  const p=players.find(x=>x.id===pid);if(!p)return;
+  pendingPts={pid};
+  document.getElementById('pts-title').textContent=`Adjust Points — ${p.name}`;
+  document.getElementById('pts-msg').innerHTML=`Rank <strong>#${p.rank}</strong>`;
+  document.getElementById('pts-current').textContent=p.pts.toLocaleString();
+  document.getElementById('pts-input').value='';
+  setPtsType('add');
+  openModal('modal-pts');
+}
+function setPtsType(t){
+  ptsMode=t;
+  ['add','sub','set'].forEach(x=>{
+    const btn=document.getElementById('pts-'+x+'-btn');
+    btn.className='pts-type-btn'+(t===x?' active-'+x:'');
+    if(x==='set')btn.className='pts-type-btn'+(t==='set'?' active-add':'');
+  });
+}
+function applyPts(){
+  if(!pendingPts)return;
+  const p=players.find(x=>x.id===pendingPts.pid);if(!p)return;
+  const val=parseInt(document.getElementById('pts-input').value)||0;
+  const before=p.pts;
+  if(ptsMode==='add')p.pts+=val;
+  else if(ptsMode==='sub')p.pts=Math.max(0,p.pts-val);
+  else p.pts=Math.max(0,val);
+  addLog(`POINTS ${ptsMode.toUpperCase()}: ${p.name} (${before} → ${p.pts})`,'pts',p.name);
+  closeModal('modal-pts');
+  renderPlayers();renderLadder();
+  toast(`✓ Points updated: ${p.name} → ${p.pts.toLocaleString()} pts`);
+  pendingPts=null;
+}
+
+// ═══════════════════════════════════════════
+// NOTE MODAL
+// ═══════════════════════════════════════════
+function openNoteModal(pid){
+  const p=players.find(x=>x.id===pid);if(!p)return;
+  pendingNote=pid;
+  document.getElementById('note-title').textContent=`Note — ${p.name}`;
+  document.getElementById('note-msg').innerHTML=`Commissioner note visible only in admin panel.`;
+  document.getElementById('note-input').value=p.note;
+  openModal('modal-note');
+}
+function saveNote(){
+  const p=players.find(x=>x.id===pendingNote);if(!p)return;
+  p.note=document.getElementById('note-input').value.trim();
+  addLog(`NOTE UPDATED: ${p.name}`,'system',p.name);
+  closeModal('modal-note');
+  renderPlayers();
+  toast('✓ Note saved');
+  pendingNote=null;
+}
+
+// ═══════════════════════════════════════════
+// SWAP RANK MODAL
+// ═══════════════════════════════════════════
+function openSwapRank(){
+  const opts=players.sort((a,b)=>a.rank-b.rank).map(p=>`<option value="${p.id}">#${p.rank} — ${p.name}</option>`).join('');
+  document.getElementById('swap-a').innerHTML=opts;
+  document.getElementById('swap-b').innerHTML=opts;
+  openModal('modal-swap');
+}
+function applySwap(){
+  const a=parseInt(document.getElementById('swap-a').value);
+  const b=parseInt(document.getElementById('swap-b').value);
+  if(a===b){toast('⚠ Select two different players');return;}
+  const pa=players.find(x=>x.id===a);
+  const pb=players.find(x=>x.id===b);
+  const tmp=pa.rank;pa.rank=pb.rank;pb.rank=tmp;
+  addLog(`RANK SWAP: ${pa.name} (#${pb.rank}) ↔ ${pb.name} (#${pa.rank})`,'promote');
+  closeModal('modal-swap');
+  renderLadder();
+  toast(`✓ Ranks swapped: ${pa.name} ↔ ${pb.name}`);
+}
+
+// ═══════════════════════════════════════════
+// REGISTRATION
+// ═══════════════════════════════════════════
+function renderRegistration(){
+  const pending=registrationQueue.filter(r=>!r.handled);
+  const handled=registrationQueue.filter(r=>r.handled);
+  let html='';
+  if(!pending.length)html+='<div class="empty">No pending registrations.</div>';
+  else pending.forEach(r=>{
+    html+=`<div class="card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px">${r.name}</div>
+          <div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:4px">${r.email}</div>
+          <div style="font-size:12px;color:var(--muted)">Applied: ${dateFmt(r.applied)} &nbsp;|&nbsp; Experience: <strong style="color:var(--text)">${r.experience}</strong></div>
+          ${r.note?`<div style="font-size:12px;color:var(--gold);margin-top:6px">Note: ${r.note}</div>`:''}
+        </div>
+        <div class="actions">
+          <button class="btn btn-approve" onclick="handleReg('${r.id}','approve')">✓ Approve</button>
+          <button class="btn btn-deny" onclick="handleReg('${r.id}','deny')">✕ Deny</button>
+          <button class="btn btn-warn" onclick="handleReg('${r.id}','hold')">Hold</button>
+        </div>
+      </div>
+    </div>`;
+  });
+  if(handled.length){
+    html+=`<div style="font-family:'Playfair Display',serif;font-size:15px;color:var(--muted);margin:18px 0 10px">Handled</div>`;
+    handled.forEach(r=>{
+      html+=`<div class="card" style="opacity:.55">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div><span style="font-weight:600;color:var(--text)">${r.name}</span> <span style="font-size:12px;color:var(--muted);margin-left:8px">${r.email}</span></div>
+          <span class="badge ${r.decision==='approve'?'b-active':'b-banned'}">${r.decision==='approve'?'Approved':'Denied'}</span>
+        </div>
+      </div>`;
+    });
+  }
+  document.getElementById('reg-list').innerHTML=html;
+  document.getElementById('nb-reg').textContent=pending.length;
+}
+function handleReg(id,decision){
+  const r=registrationQueue.find(x=>x.id===id);if(!r)return;
+  if(decision==='approve'){
+    r.handled=true;r.decision='approve';
+    const newRank=players.length+1;
+    players.push({id:Date.now(),name:r.name,rank:newRank,w:0,l:0,pts:500,status:'active',warnings:0,frozen:false,note:'New player — approved '+dateFmt(today()),streak:'0',lastActive:today()});
+    addLog(`APPROVED REGISTRATION: ${r.name} — Added at Rank #${newRank}`,'unban');
+    toast(`✓ ${r.name} approved and added to ladder`);
+  } else if(decision==='deny'){
+    r.handled=true;r.decision='deny';
+    addLog(`DENIED REGISTRATION: ${r.name}`,'ban');
+    toast(`✕ ${r.name} registration denied`);
+  } else {
+    addLog(`REGISTRATION ON HOLD: ${r.name}`,'warn');
+    toast(`⏸ ${r.name} placed on hold`);
+    return;
+  }
+  renderRegistration();updateDashStats();
+}
+
+// ═══════════════════════════════════════════
+// MATCHES
+// ═══════════════════════════════════════════
+function renderMatches(){
+  const q=(document.getElementById('match-search').value||'').toLowerCase();
+  const f=filterStates.mf;
+  const all=[...matches,...scheduledMatches];
+  const filtered=all.filter(m=>{
+    const mq=!q||m.p1.toLowerCase().includes(q)||m.p2.toLowerCase().includes(q)||m.id.toLowerCase().includes(q);
+    const mf=f==='all'||m.status===f;
+    return mq&&mf;
+  });
+  const bm={confirmed:'b-confirmed',disputed:'b-disputed',voided:'b-voided',scheduled:'b-scheduled'};
+  document.getElementById('matches-tbody').innerHTML=filtered.length?filtered.map(m=>`<tr>
+    <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${m.id}</td>
+    <td><strong style="color:var(--text)">${m.p1}</strong> <span style="color:var(--muted);font-size:11px">vs</span> <strong style="color:var(--text)">${m.p2}</strong></td>
+    <td style="font-family:'DM Mono',monospace;color:var(--gold2)">${m.score||'TBD'}</td>
+    <td style="font-size:12px;color:var(--muted)">${dateFmt(m.date)}</td>
+    <td><span class="badge ${bm[m.status]||'b-scheduled'}">${m.status}</span></td>
+    <td><div class="actions">
+      <button class="btn btn-override" onclick="openOverrideModal('${m.id}')">Override</button>
+      ${m.status!=='voided'?`<button class="btn btn-ban" onclick="voidMatch('${m.id}')">Void</button>`:''}
+      ${m.status==='disputed'||m.status==='scheduled'?`<button class="btn btn-approve" onclick="confirmMatch('${m.id}')">Confirm</button>`:''}
+    </div></td>
+  </tr>`).join(''):`<tr><td colspan="6" class="empty">No matches found.</td></tr>`;
+}
+
+function openOverrideModal(mid){
+  const m=[...matches,...scheduledMatches].find(x=>x.id===mid);if(!m)return;
+  pendingOverride=mid;
+  document.getElementById('ov-title').textContent=`Override — ${m.id}`;
+  document.getElementById('ov-msg').innerHTML=`<strong>${m.p1}</strong> vs <strong>${m.p2}</strong>`;
+  document.getElementById('ov-p1-label').textContent=m.p1+' Score';
+  document.getElementById('ov-p2-label').textContent=m.p2+' Score';
+  const parts=(m.score||'0-0').split('-');
+  document.getElementById('ov-s1').value=parts[0]||0;
+  document.getElementById('ov-s2').value=parts[1]||0;
+  document.getElementById('ov-reason').value='';
+  openModal('modal-override');
+}
+function applyOverride(){
+  const m=[...matches,...scheduledMatches].find(x=>x.id===pendingOverride);if(!m)return;
+  const s1=document.getElementById('ov-s1').value;
+  const s2=document.getElementById('ov-s2').value;
+  const reason=document.getElementById('ov-reason').value||'Commissioner override';
+  m.score=`${s1}-${s2}`;m.status='confirmed';m.note=reason;
+  addLog(`OVERRIDE: ${m.id} score set to ${s1}-${s2} — ${reason}`,'warn');
+  closeModal('modal-override');renderMatches();
+  toast(`✓ Match ${m.id} overridden to ${s1}-${s2}`);
+  pendingOverride=null;
+}
+function voidMatch(mid){
+  const m=[...matches,...scheduledMatches].find(x=>x.id===mid);if(!m)return;
+  m.status='voided';
+  addLog(`VOIDED: Match ${mid}`,'ban');
+  renderMatches();toast(`✕ Match ${mid} voided`);
+}
+function confirmMatch(mid){
+  const m=[...matches,...scheduledMatches].find(x=>x.id===mid);if(!m)return;
+  m.status='confirmed';
+  addLog(`CONFIRMED: Match ${mid}`,'unban');
+  renderMatches();toast(`✓ Match ${mid} confirmed`);
+}
+
+// ═══════════════════════════════════════════
+// SCHEDULE
+// ═══════════════════════════════════════════
+function renderSchedule(){
+  const opts=players.filter(p=>p.status==='active').sort((a,b)=>a.rank-b.rank).map(p=>`<option value="${p.name}">#${p.rank} ${p.name}</option>`).join('');
+  document.getElementById('sched-p1').innerHTML=opts;
+  document.getElementById('sched-p2').innerHTML=opts;
+  document.getElementById('sched-date').value=today();
+  renderUpcoming();
+}
+function scheduleMatch(){
+  const p1=document.getElementById('sched-p1').value;
+  const p2=document.getElementById('sched-p2').value;
+  const d=document.getElementById('sched-date').value;
+  const t=document.getElementById('sched-time').value;
+  const loc=document.getElementById('sched-loc').value||'TBD';
+  const notes=document.getElementById('sched-notes').value;
+  if(!p1||!p2){toast('⚠ Select two players');return;}
+  if(p1===p2){toast('⚠ Cannot schedule a player against themselves');return;}
+  const id='S-'+String(scheduledMatches.length+1).padStart(3,'0');
+  scheduledMatches.push({id,p1,p2,score:'',date:d,time:t,location:loc,status:'scheduled',note:notes});
+  addLog(`SCHEDULED: ${p1} vs ${p2} on ${dateFmt(d)} at ${loc}`,'system');
+  renderUpcoming();renderMatches();
+  toast(`✓ Match scheduled: ${p1} vs ${p2}`);
+}
+function renderUpcoming(){
+  const upcoming=scheduledMatches.filter(m=>m.status==='scheduled');
+  document.getElementById('upcoming-tbody').innerHTML=upcoming.length?upcoming.map(m=>`<tr>
+    <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${m.id}</td>
+    <td><strong>${m.p1}</strong> <span style="color:var(--muted);font-size:11px">vs</span> <strong>${m.p2}</strong></td>
+    <td style="font-size:12px;color:var(--muted)">${dateFmt(m.date)} ${m.time?'@ '+m.time:''}</td>
+    <td style="font-size:12px;color:var(--muted)">${m.location}</td>
+    <td><div class="actions">
+      <button class="btn btn-approve" onclick="confirmMatch('${m.id}')">Confirm</button>
+      <button class="btn btn-ban" onclick="voidMatch('${m.id}')">Cancel</button>
+    </div></td>
+  </tr>`).join(''):`<tr><td colspan="5" class="empty">No upcoming matches scheduled.</td></tr>`;
+}
+
+// ═══════════════════════════════════════════
+// DISPUTES
+// ═══════════════════════════════════════════
+function renderDisputes(){
+  const open=disputes.filter(d=>d.status==='open');
+  const closed=disputes.filter(d=>d.status!=='open');
+  let html='';
+  if(!open.length)html+='<div class="empty">No open disputes.</div>';
+  open.forEach(d=>{
+    html+=`<div class="dispute-card">
+      <div class="dispute-header">
+        <span class="badge b-open">Open</span>
+        <span class="dispute-match">${d.id} / Match ${d.matchId}</span>
+      </div>
+      <div class="dispute-players">${d.p1} vs ${d.p2}</div>
+      <div style="font-size:12px;color:var(--gold);margin-bottom:4px">Claimant: ${d.claimant}</div>
+      <div class="dispute-reason">"${d.reason}"</div>
+      <div style="font-size:11px;color:var(--muted2);font-family:'DM Mono',monospace;margin-bottom:12px">Opened: ${dateFmt(d.opened)}</div>
+      <div class="actions">
+        <button class="btn btn-approve" onclick="resolveDispute('${d.id}','${d.p1}')">Award Win: ${d.p1}</button>
+        <button class="btn btn-approve" onclick="resolveDispute('${d.id}','${d.p2}')">Award Win: ${d.p2}</button>
+        <button class="btn btn-override" onclick="openOverrideModal('${d.matchId}')">Override Score</button>
+        <button class="btn btn-ban" onclick="resolveDispute('${d.id}','void')">Void Match</button>
+        <button class="btn btn-note" onclick="resolveDispute('${d.id}','dismiss')">Dismiss</button>
+      </div>
+    </div>`;
+  });
+  if(closed.length){
+    html+=`<div style="font-family:'Playfair Display',serif;font-size:15px;color:var(--muted);margin:18px 0 10px">Resolved</div>`;
+    closed.forEach(d=>{
+      html+=`<div class="dispute-card" style="opacity:.55">
+        <div class="dispute-header"><span class="badge b-closed">Closed</span><span class="dispute-match">${d.id}</span></div>
+        <div class="dispute-players">${d.p1} vs ${d.p2}</div>
+        <div style="font-size:12px;color:var(--muted)">Resolution: <strong style="color:var(--text)">${d.resolution||'Closed'}</strong></div>
+      </div>`;
+    });
+  }
+  document.getElementById('disputes-list').innerHTML=html;
+  document.getElementById('nb-disputes').textContent=open.length;
+  document.getElementById('ds-disputes')&&(document.getElementById('ds-disputes').textContent=open.length);
+}
+function resolveDispute(did,resolution){
+  const d=disputes.find(x=>x.id===did);if(!d)return;
+  d.status='closed';
+  d.resolution=resolution==='void'?'Match Voided':resolution==='dismiss'?'Dismissed':`Win Awarded to ${resolution}`;
+  if(resolution==='void'){const m=matches.find(x=>x.id===d.matchId);if(m)m.status='voided';}
+  addLog(`DISPUTE ${did} RESOLVED: ${d.resolution}`,'warn');
+  renderDisputes();renderMatches();
+  toast(`✓ Dispute ${did} resolved`);
+}
+
+// ═══════════════════════════════════════════
+// MESSAGING
+// ═══════════════════════════════════════════
+function renderMessaging(){
+  const opts=players.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('msg-player-select').innerHTML=opts;
+  renderMsgHistory();
+}
+function toggleMsgType(){
+  const t=document.getElementById('msg-type').value;
+  document.getElementById('msg-player-row').style.display=t==='direct'?'flex':'none';
+  document.getElementById('msg-group-row').style.display=t==='group'?'flex':'none';
+}
+function sendMessage(){
+  const t=document.getElementById('msg-type').value;
+  const sub=document.getElementById('msg-subject').value.trim();
+  const body=document.getElementById('msg-body').value.trim();
+  if(!sub||!body){toast('⚠ Subject and message required');return;}
+  let to='All Players';
+  if(t==='direct'){
+    const pid=parseInt(document.getElementById('msg-player-select').value);
+    const p=players.find(x=>x.id===pid);
+    to=p?p.name:'Unknown';
+  } else if(t==='group'){
+    to=document.getElementById('msg-group-select').value;
+  }
+  messages.unshift({id:'MSG-'+Date.now(),type:t,to,subject:sub,body,time:ts(),date:today()});
+  addLog(`MESSAGE SENT to ${to}: "${sub}"`,'msg');
+  clearMsgForm();renderMsgHistory();
+  toast(`✓ Message sent to ${to}`);
+}
+function clearMsgForm(){
+  document.getElementById('msg-subject').value='';
+  document.getElementById('msg-body').value='';
+}
+function renderMsgHistory(){
+  const el=document.getElementById('msg-history');
+  if(!messages.length){el.innerHTML='<div class="empty">No messages sent yet.</div>';return;}
+  el.innerHTML=messages.slice(0,20).map(m=>`<div class="msg-card">
+    <div class="msg-avatar">${m.type==='broadcast'?'📢':initials(m.to)}</div>
+    <div class="msg-content">
+      <div class="msg-top">
+        <span class="msg-name">${m.to}</span>
+        <span class="badge ${m.type==='broadcast'?'b-broadcast':'b-direct'}" style="font-size:9px">${m.type}</span>
+        <span class="msg-time">${m.time}</span>
+      </div>
+      <div style="font-size:12px;color:var(--gold2);margin-bottom:2px">${m.subject}</div>
+      <div class="msg-text">${m.body}</div>
+    </div>
+  </div>`).join('');
+}
+function openQuickMsg(pid){
+  const p=players.find(x=>x.id===pid);if(!p)return;
+  showPanel('messaging',document.querySelector('[onclick*="messaging"]'));
+  setTimeout(()=>{
+    document.getElementById('msg-type').value='direct';toggleMsgType();
+    document.getElementById('msg-player-select').value=pid;
+    document.getElementById('msg-subject').focus();
+  },100);
+}
+
+// ═══════════════════════════════════════════
+// ANNOUNCEMENTS
+// ═══════════════════════════════════════════
+function renderAnnouncements(){
+  const el=document.getElementById('ann-list');
+  if(!announcements.length){el.innerHTML='<div class="empty">No announcements posted.</div>';return;}
+  const pColors={normal:'b-active',important:'b-warned',urgent:'b-banned'};
+  el.innerHTML=announcements.map((a,i)=>`<div class="announce-card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+      <div class="announce-title">${a.title}</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span class="badge ${pColors[a.priority]||'b-active'}">${a.priority}</span>
+        <button class="btn btn-ban" style="font-size:10px;padding:2px 8px" onclick="deleteAnnouncement(${i})">Delete</button>
+      </div>
+    </div>
+    <div class="announce-body">${a.body}</div>
+    <div class="announce-meta">Posted: ${dateFmt(a.date)} at ${a.time} by Commissioner</div>
+  </div>`).join('');
+}
+function postAnnouncement(){
+  const title=document.getElementById('ann-title').value.trim();
+  const body=document.getElementById('ann-body').value.trim();
+  const priority=document.getElementById('ann-priority').value;
+  if(!title||!body){toast('⚠ Title and body required');return;}
+  announcements.unshift({title,body,priority,date:today(),time:ts()});
+  addLog(`ANNOUNCEMENT: "${title}" (${priority})`,'msg');
+  document.getElementById('ann-title').value='';
+  document.getElementById('ann-body').value='';
+  renderAnnouncements();toast('✓ Announcement posted');
+}
+function deleteAnnouncement(i){
+  announcements.splice(i,1);
+  renderAnnouncements();toast('✓ Announcement deleted');
+}
+function openBroadcastQuick(){
+  showPanel('announcements',document.querySelector('[onclick*="announcements"]'));
+  setTimeout(()=>document.getElementById('ann-title').focus(),100);
+}
+
+// ═══════════════════════════════════════════
+// SEASON
+// ═══════════════════════════════════════════
+function renderSeason(){
+  const totalPts=players.reduce((s,p)=>s+p.pts,0);
+  const topPlayer=players.reduce((a,b)=>a.pts>b.pts?a:b);
+  document.getElementById('season-stats').innerHTML=`
+    <div class="season-stat"><span class="season-stat-label">Current Season</span><span class="season-stat-val">Season ${currentSeason}</span></div>
+    <div class="season-stat"><span class="season-stat-label">Total Players</span><span class="season-stat-val">${players.length}</span></div>
+    <div class="season-stat"><span class="season-stat-label">Total Matches</span><span class="season-stat-val">${matches.length}</span></div>
+    <div class="season-stat"><span class="season-stat-label">Current Leader</span><span class="season-stat-val">${topPlayer.name}</span></div>
+    <div class="season-stat"><span class="season-stat-label">Leader Points</span><span class="season-stat-val">${topPlayer.pts.toLocaleString()}</span></div>
+    <div class="season-stat"><span class="season-stat-label">Total Points in Play</span><span class="season-stat-val">${totalPts.toLocaleString()}</span></div>
+    <div class="season-stat"><span class="season-stat-label">Open Disputes</span><span class="season-stat-val">${disputes.filter(d=>d.status==='open').length}</span></div>
+  `;
+  const archive=document.getElementById('season-archive');
+  if(!seasonArchive.length)archive.innerHTML='<div class="empty">No archived seasons yet.</div>';
+  else archive.innerHTML=seasonArchive.map(s=>`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-weight:600;color:var(--text)">Season ${s.season}</div><div style="font-size:12px;color:var(--muted)">${dateFmt(s.startDate)} — ${dateFmt(s.endDate)}</div></div>
+      <div style="text-align:right"><div style="font-size:12px;color:var(--gold2)">Champion</div><div style="font-weight:600;color:var(--text)">${s.topPlayer}</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-top:6px">${s.matches} matches played</div>
+  </div>`).join('');
+
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-30);
+  const inactive=players.filter(p=>{
+    if(!p.lastActive)return false;
+    return new Date(p.lastActive)<cutoff;
+  });
+  const inactiveEl=document.getElementById('inactive-list');
+  if(!inactive.length)inactiveEl.innerHTML='<div class="empty">No inactive players.</div>';
+  else inactiveEl.innerHTML=inactive.map(p=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);font-size:13px">
+    <div><strong>#${p.rank} ${p.name}</strong><div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">Last active: ${dateFmt(p.lastActive)}</div></div>
+    <div class="actions">
+      <button class="btn btn-warn" onclick="doAction(${p.id},'demote')">Move Down</button>
+      <button class="btn btn-msg" onclick="openQuickMsg(${p.id})">Remind</button>
+    </div>
+  </div>`).join('');
+}
+function confirmSeason(action){
+  const msgs={
+    reset_pts:['Reset All Points','This will set every player\'s points to 0. This cannot be undone.','cbtn-danger','Reset All Points'],
+    reset_wl:['Reset W/L Records','All win/loss records will be cleared to 0/0. This cannot be undone.','cbtn-danger','Reset All Records'],
+    reset_ranks:['Reset Rankings','All player ranks will be reassigned in current order starting from #1.','cbtn-danger','Reset Rankings'],
+    archive:['Archive Season','Current season will be archived and a new season will begin.','cbtn-gold','Archive & Start New'],
+    export:['Export Roster & Stats','A summary of the full roster will be logged.','cbtn-safe','Export'],
+  };
+  const [title,msg,btnClass,btnText]=msgs[action];
+  pendingConfirm={exec:()=>{
+    if(action==='reset_pts'){players.forEach(p=>p.pts=0);addLog('SEASON: All points reset to 0','system')}
+    else if(action==='reset_wl'){players.forEach(p=>{p.w=0;p.l=0});addLog('SEASON: All W/L records reset','system')}
+    else if(action==='reset_ranks'){players.sort((a,b)=>a.rank-b.rank).forEach((p,i)=>p.rank=i+1);addLog('SEASON: Rankings reset','system')}
+    else if(action==='archive'){
+      const top=players.reduce((a,b)=>a.pts>b.pts?a:b);
+      seasonArchive.push({season:currentSeason,topPlayer:top.name,matches:matches.length,startDate:'2026-01-01',endDate:today()});
+      currentSeason++;
+      addLog(`SEASON ${currentSeason-1} ARCHIVED — New Season ${currentSeason} started`,'system');
+    }
+    else if(action==='export'){addLog(`EXPORT: Full roster snapshot saved (${players.length} players)`,'system')}
+    renderSeason();renderPlayers();renderLadder();updateDashStats();
+  },refresh:null};
+  document.getElementById('mc-title').textContent=title;
+  document.getElementById('mc-msg').innerHTML=msg;
+  document.getElementById('mc-extra').innerHTML='';
+  const ok=document.getElementById('mc-ok');ok.className=`cbtn ${btnClass}`;ok.textContent=btnText;
+  openModal('modal-confirm');
+}
+
+// ═══════════════════════════════════════════
+// LOG
+// ═══════════════════════════════════════════
+function renderFullLog(){
+  const q=(document.getElementById('log-search').value||'').toLowerCase();
+  const f=filterStates.lf;
+  const filtered=actLog.filter(e=>{
+    const mq=!q||e.msg.toLowerCase().includes(q)||e.player.toLowerCase().includes(q);
+    const mf=f==='all'||e.type===f;
+    return mq&&mf;
+  });
+  const el=document.getElementById('full-log');
+  if(!filtered.length){el.innerHTML='<div style="color:var(--muted);padding:8px;font-size:12px">No entries match.</div>';return;}
+  el.innerHTML=filtered.map(e=>`<div class="log-entry"><span class="log-time">${e.time}</span><span class="log-user">${e.player}</span><span class="log-action la-${e.type}">${e.msg}</span></div>`).join('');
+}
+function clearLog(){
+  pendingConfirm={exec:()=>{actLog.length=0;renderFullLog();renderDashLog();},refresh:null};
+  document.getElementById('mc-title').textContent='Clear Activity Log';
+  document.getElementById('mc-msg').innerHTML='This will permanently delete all log entries.';
+  document.getElementById('mc-extra').innerHTML='';
+  const ok=document.getElementById('mc-ok');ok.className='cbtn cbtn-danger';ok.textContent='Clear Log';
+  openModal('modal-confirm');
+}
+
+// ═══════════════════════════════════════════
+// RULES
+// ═══════════════════════════════════════════
+const rulesData=[
+  "All ladder challenges must be accepted within <strong>72 hours</strong> or the challenger is awarded a forfeit win.",
+  "Players may only challenge opponents ranked <strong>up to 3 positions above</strong> them on the ladder.",
+  "Match results must be submitted by <strong>both players</strong> within 24 hours of completion. Disputes go to the Commissioner.",
+  "A player who accumulates <strong>3 warnings</strong> will face automatic suspension pending Commissioner review.",
+  "Banned players are <strong>ineligible to re-register</strong> for a period determined solely by the Commissioner.",
+  "Unsportsmanlike conduct, cheating, or falsifying match results results in <strong>immediate ban without warning</strong>.",
+  "The Commissioner may <strong>override any result, ranking, or penalty</strong> at any time for platform integrity.",
+  "Inactive players (no activity for <strong>30 days</strong>) may be moved to the bottom of the ladder.",
+  "Players with a <strong>challenge freeze</strong> cannot be challenged until the Commissioner removes the freeze.",
+  "All platform communications from the Commissioner are <strong>official and binding</strong>. Ignoring a Commissioner notice may result in suspension.",
+  "No player may participate in the ladder under <strong>multiple accounts</strong>. Duplicate accounts result in permanent ban.",
+  "Players must conduct themselves with <strong>respect and sportsmanship</strong> at all times — online and in person.",
+];
+function renderRules(){
+  document.getElementById('rules-list').innerHTML=rulesData.map((r,i)=>`<div class="rule-item"><div class="rule-num">0${i+1>9?'':0}${i+1}</div><div class="rule-text">${r}</div></div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════
+function updateClock(){
+  document.getElementById('clock-display').textContent=new Date().toLocaleTimeString('en-US',{hour12:false});
+}
+setInterval(updateClock,1000);updateClock();
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+addLog('Commissioner session started — Admin panel loaded','system','System');
+addLog('Billiards Ladder Season 2 active','system','System');
+renderDashLog();updateDashStats();renderRules();
+// Populate schedule selects
+setTimeout(()=>{
+  const opts=players.filter(p=>p.status==='active').sort((a,b)=>a.rank-b.rank).map(p=>`<option value="${p.name}">#${p.rank} ${p.name}</option>`).join('');
+  const s1=document.getElementById('sched-p1');const s2=document.getElementById('sched-p2');
+  const sa=document.getElementById('swap-a');const sb=document.getElementById('swap-b');
+  if(s1)s1.innerHTML=opts;if(s2)s2.innerHTML=opts;
+  const allOpts=players.sort((a,b)=>a.rank-b.rank).map(p=>`<option value="${p.id}">#${p.rank} ${p.name}</option>`).join('');
+  if(sa)sa.innerHTML=allOpts;if(sb)sb.innerHTML=allOpts;
+  const msgOpts=players.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  const ms=document.getElementById('msg-player-select');if(ms)ms.innerHTML=msgOpts;
+},100);
+</script>
+</body>
+</html>

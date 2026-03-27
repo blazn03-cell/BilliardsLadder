@@ -69,6 +69,7 @@ import LeagueProgressionPage from "@/pages/LeagueProgressionPage";
 import RecurringLeagues from "@/pages/RecurringLeagues";
 import ProfileSettings from "@/pages/ProfileSettings";
 import ThresholdDashboard from "@/pages/ThresholdDashboard";
+import CommissionerPanel from "@/pages/CommissionerPanel";
 const logoBackground = "/images/logo-background.png";
 // Auth-protected route component
 function AppContent({ activeTab }: { activeTab: string }) {
@@ -87,7 +88,7 @@ function AppContent({ activeTab }: { activeTab: string }) {
     'ai-features', 'poster-generator', 'file-manager', 'player-subscription', 
     'checkout', 'monetization', 'team-management', 'team-matches', 'team-challenges',
     'sportsmanship', 'bounties', 'qr-registration', 'operator-settings', 
-    'operator-subscriptions', 'revenue-admin', 'admin', 'admin-training-rewards',
+    'operator-subscriptions', 'revenue-admin', 'admin', 'commissioner-panel', 'admin-training-rewards',
     'player-threshold'
   ];
   
@@ -147,6 +148,7 @@ function AppContent({ activeTab }: { activeTab: string }) {
         {activeTab === "ai-features" && <AIDashboard />}
         {activeTab === "operator-settings" && <OperatorSettings />}
         {activeTab === "admin" && <AdminDashboard />}
+        {activeTab === "commissioner-panel" && <CommissionerPanel />}
         {activeTab === "tournaments" && <Tournaments />}
         {activeTab === "tournament-brackets" && <TournamentBrackets />}
         {activeTab === "special-games" && <SpecialGames />}
@@ -256,6 +258,7 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
         { id: "revenue-admin", label: "💰 Revenue Configuration", roles: ["OWNER", "TRUSTEE"] as GlobalRole[], requiresAuth: true },
         { id: "admin-training-rewards", label: "🏆 Training Rewards", roles: ["OWNER", "OPERATOR", "STAFF"] as GlobalRole[], requiresAuth: true },
         { id: "admin", label: "🛡️ Admin Dashboard", requiresAuth: true },
+        { id: "commissioner-panel", label: "⭐ Commissioner Panel", roles: ["OWNER", "TRUSTEE"] as GlobalRole[], requiresAuth: true },
       ]
     },
   ];
@@ -476,6 +479,9 @@ function App() {
             </Route>
             <Route path="/operator-dashboard">
               {() => { window.location.href = "/app?tab=operator-settings"; return null; }}
+            </Route>
+            <Route path="/commissioner">
+              <CommissionerPanel />
             </Route>
             <Route path="/training/leaderboard/:hallId?">
               <HallLeaderboard />
