@@ -64,23 +64,23 @@ const stripe = process.env.STRIPE_SECRET_KEY
 
 // Stripe Price IDs for ActionLadder Commission System
 const prices = {
-  rookie_monthly: "price_1S36UcDc2BliYufwVpgpOph9", // ActionLadder Rookie Pass ($20/month → $4 operator commission)
-  basic_monthly: "price_1S36UcDc2BliYufwF8R8w5BY", // ActionLadder Basic Membership ($25/month → $7 operator commission)
-  pro_monthly: "price_1S36UdDc2BliYufwGZmAEVPq", // ActionLadder Pro Membership ($60/month → $10 operator commission)
+  rookie_monthly: "price_1THmhwDvTG8XWAaKP5IdXAic", // ActionLadder Rookie Pass ($20/month → $4 operator commission)
+  basic_monthly: "price_1THmi0DvTG8XWAaKGZwVO8WR", // ActionLadder Basic Membership ($25/month → $7 operator commission)
+  pro_monthly: "price_1THmi2DvTG8XWAaKpyx6VNyR", // ActionLadder Pro Membership ($60/month → $10 operator commission)
   small: process.env.SMALL_PRICE_ID, // Operator subscription tiers
   medium: process.env.MEDIUM_PRICE_ID,
   large: process.env.LARGE_PRICE_ID,
   mega: process.env.MEGA_PRICE_ID,
   // Charity Donation System
-  charity_product: "prod_Sz4wWq0exnJOBv", // ActionLadder Charity Donations
+  charity_product: "prod_UGJKFusMczHWQ3", // ActionLadder Charity Donations
   charity_donations: {
-    "5": "price_1S36mVDc2BliYufwKkppBTdZ",
-    "10": "price_1S36mWDc2BliYufw9SnYauG6", 
-    "25": "price_1S36mWDc2BliYufwdLec5IH6",
-    "50": "price_1S36mWDc2BliYufwnyruktLt",
-    "100": "price_1S36mWDc2BliYufwMMQxtrpd",
-    "250": "price_1S36mXDc2BliYufw8KoRGk5g",
-    "500": "price_1S36mXDc2BliYufwhW9OUZng"
+    "5": "price_1THmi4DvTG8XWAaKLE6mESxA",
+    "10": "price_1THmi7DvTG8XWAaKdKDzSjXE", 
+    "25": "price_1THmi9DvTG8XWAaKY0S3p2Cf",
+    "50": "price_1THmiCDvTG8XWAaKbUxZQUnc",
+    "100": "price_1THmiEDvTG8XWAaK0aXNtqxB",
+    "250": "price_1THmiGDvTG8XWAaK1Lh1RO9i",
+    "500": "price_1THmiJDvTG8XWAaKPVETvXvR"
   }
 };
 
