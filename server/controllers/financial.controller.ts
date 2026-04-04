@@ -15,6 +15,20 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : (null as unknown as Stripe);
 
+function getAppBaseUrl(): string {
+  const configuredBaseUrl = process.env.APP_BASE_URL?.trim();
+  if (configuredBaseUrl) {
+    return configuredBaseUrl.replace(/\/+$/, "");
+  }
+
+  const replitDomain = process.env.REPLIT_DOMAINS?.split(",")[0]?.trim();
+  if (replitDomain) {
+    return `https://${replitDomain.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
+  }
+
+  return "http://localhost:5000";
+}
+
 // Stripe Price IDs for ActionLadder Commission System
 const prices = {
   rookie_monthly: process.env.PLAYER_ROOKIE_MONTHLY_PRICE_ID || "price_1THmhwDvTG8XWAaKP5IdXAic",
@@ -98,6 +112,7 @@ export function calculateMembershipSavings() {
 export function createCheckoutSession() {
   return async (req: Request, res: Response) => {
     try {
+      const appBaseUrl = getAppBaseUrl();
       const { priceIds = [], mode = 'subscription', quantities = [], metadata = {}, userId, customerId } = req.body;
 
       const line_items = priceIds.map((priceId: string, i: number) => ({
@@ -108,8 +123,8 @@ export function createCheckoutSession() {
       const sessionPayload: any = {
         mode,
         line_items,
-        success_url: `${process.env.APP_BASE_URL || 'http://localhost:5000'}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.APP_BASE_URL || 'http://localhost:5000'}/billing/cancel`,
+        success_url: `${appBaseUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${appBaseUrl}/billing/cancel`,
         allow_promotion_codes: true,
         automatic_tax: { enabled: false },
         client_reference_id: userId,
@@ -138,6 +153,7 @@ export function createCheckoutSession() {
 export function createBillingPortalSession() {
   return async (req: Request, res: Response) => {
     try {
+      const appBaseUrl = getAppBaseUrl();
       const { customerId } = req.body;
 
       if (!customerId) {
@@ -146,7 +162,7 @@ export function createBillingPortalSession() {
 
       const portalSession = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: `${process.env.APP_BASE_URL || 'http://localhost:5000'}/dashboard`,
+        return_url: `${appBaseUrl}/dashboard`,
       });
 
       res.json({ url: portalSession.url });
