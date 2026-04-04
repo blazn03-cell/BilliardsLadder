@@ -17,9 +17,9 @@ const stripe = process.env.STRIPE_SECRET_KEY
 
 // Stripe Price IDs for ActionLadder Commission System
 const prices = {
-  rookie_monthly: "price_1THmhwDvTG8XWAaKP5IdXAic",
-  basic_monthly: "price_1THmi0DvTG8XWAaKGZwVO8WR",
-  pro_monthly: "price_1THmi2DvTG8XWAaKpyx6VNyR",
+  rookie_monthly: process.env.PLAYER_ROOKIE_MONTHLY_PRICE_ID || "price_1THmhwDvTG8XWAaKP5IdXAic",
+  basic_monthly: process.env.PLAYER_STANDARD_MONTHLY_PRICE_ID || "price_1THmi0DvTG8XWAaKGZwVO8WR",
+  pro_monthly: process.env.PLAYER_PREMIUM_MONTHLY_PRICE_ID || "price_1THmi2DvTG8XWAaKpyx6VNyR",
   small: process.env.SMALL_PRICE_ID,
   medium: process.env.MEDIUM_PRICE_ID,
   large: process.env.LARGE_PRICE_ID,

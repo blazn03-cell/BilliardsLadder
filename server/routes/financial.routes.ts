@@ -3,6 +3,7 @@ import express from "express";
 import { IStorage } from "../storage";
 import { sanitizeBody } from "../utils/sanitize";
 import * as financialController from "../controllers/financial.controller";
+import { isAuthenticated } from "../replitAuth";
 
 export function setupFinancialRoutes(app: Express, storage: IStorage) {
   // ==================== PRICING ROUTES ====================
@@ -18,6 +19,7 @@ export function setupFinancialRoutes(app: Express, storage: IStorage) {
 
   // ==================== BILLING ROUTES ====================
   app.post("/api/billing/checkout",
+    isAuthenticated,
     sanitizeBody(["description", "name", "title"]),
     financialController.createCheckoutSession()
   );

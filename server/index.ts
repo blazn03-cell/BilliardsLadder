@@ -71,6 +71,7 @@ const authLimiter = rateLimit({
   message: { error: 'Too many authentication attempts, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
+  skipFailedRequests: true, // Don't count failed requests (4xx)
 });
 
 const paymentLimiter = rateLimit({
@@ -79,6 +80,7 @@ const paymentLimiter = rateLimit({
   message: { error: 'Too many payment requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
+  skipFailedRequests: true, // Don't count failed requests (4xx)
 });
 
 const generalLimiter = rateLimit({
@@ -87,6 +89,7 @@ const generalLimiter = rateLimit({
   message: { error: 'Too many API requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
+  skipFailedRequests: true, // Don't count failed requests (4xx)
 });
 
 // Apply rate limiting with webhook exclusions
