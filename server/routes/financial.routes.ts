@@ -29,6 +29,7 @@ export function setupFinancialRoutes(app: Express, storage: IStorage) {
   );
 
   app.post("/api/create-payment-intent",
+    isAuthenticated,
     sanitizeBody(["description", "statement_descriptor"]),
     financialController.createPaymentIntent()
   );

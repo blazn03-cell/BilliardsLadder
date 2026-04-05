@@ -44,6 +44,17 @@ The system is built on a modern web stack designed for performance, scalability,
 - **OCR**: tesseract.js (for optical character recognition capabilities within tournament features).
 - **Database**: PostgreSQL (available as an option, currently in-memory storage is used for core data).
 
+## Stripe Configuration
+- **Account**: `acct_1RzCXFDc2BliYufw` (blazn03@gmail.com, "Action Ladder sandbox")
+- **Price IDs are hardcoded with correct fallbacks** in `server/controllers/financial.controller.ts` (no env vars needed)
+- Player subscriptions: Rookie $25.99/mo, Basic $35.99/mo, Pro $59.99/mo
+- Operator halls: Small $199/mo, Medium $299/mo, Large $499/mo, Mega $799/mo
+- Charity donations: $5, $10, $25, $50, $100, $250, $500 (one-time)
+- Player billing (`/api/player-billing/checkout`) uses dynamic `price_data` — does not rely on pre-created price IDs
+- Generic billing (`/api/billing/checkout`) uses pre-created price IDs from the hardcoded `prices` object
+- All billing endpoints require authentication
+- Webhook endpoint: `POST /api/stripe/webhook` with signature verification
+
 ## Recent Changes (Session Notes)
 
 ### Ladder Page Standardization
