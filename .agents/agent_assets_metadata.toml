@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "qY0dA9lTyAsrC7uH6v166"
+uri = "file://exports/stripe-qa-report.md"
+type = "text"
+title = "Stripe QA Report - BilliardsLadder"
