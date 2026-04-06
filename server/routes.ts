@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
+import path from "path";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { AIService } from "./services/ai-service";
@@ -95,6 +96,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Health check endpoint (required for production deployment)
   app.get("/healthz", (_, res) => res.send("ok"));
+
+  // Serve downloadable export files
+  app.get("/api/exports/:filename", (req, res) => {
+    const filename = req.params.filename.replace(/[^a-zA-Z0-9._-]/g, "");
+    const filePath = path.resolve("exports", filename);
+    if (!filePath.startsWith(path.resolve("exports"))) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    res.download(filePath, filename, (err) => {
+      if (err && !res.headersSent) {
+        res.status(404).json({ message: "File not found" });
+      }
+    });
+  });
   
   // Register authentication routes
   registerAuthRoutes(app);
