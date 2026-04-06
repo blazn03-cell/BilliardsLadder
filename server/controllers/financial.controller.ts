@@ -562,12 +562,32 @@ async function handleCheckoutCompleted(storage: IStorage, session: any): Promise
     } else if (type === 'player_subscription' && tier && userId) {
       console.log(`Player subscription checkout completed for user ${userId} with tier ${tier}`);
     } else if (userId) {
-      await storage.updatePlayer(userId, {
+      const resolvedPlayerId = await resolvePlayerId(storage, userId, playerId);
+
+      if (!resolvedPlayerId) {
+        console.error(`❌ Player not found for checkout-complete user ${userId}`);
+        return;
+      }
+
+      await storage.updatePlayer(resolvedPlayerId, {
         member: true,
         stripeCustomerId: session.customer as string
       });
     }
   }
+}
+
+async function resolvePlayerId(storage: IStorage, userId?: string, playerId?: string): Promise<string | undefined> {
+  if (playerId) {
+    return playerId;
+  }
+
+  if (!userId) {
+    return undefined;
+  }
+
+  const player = await storage.getPlayerByUserId(userId);
+  return player?.id;
 }
 
 async function handleSubscription(storage: IStorage, subscription: any): Promise<void> {
@@ -597,8 +617,14 @@ async function handleSubscription(storage: IStorage, subscription: any): Promise
     const currentPeriodStart = new Date(subscription.current_period_start * 1000);
     const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
     const cancelAtPeriodEnd = subscription.cancel_at_period_end || false;
+    const resolvedPlayerId = await resolvePlayerId(storage, userId, playerId);
 
-    const existingSubscription = await storage.getMembershipSubscriptionByPlayerId(userId);
+    if (!resolvedPlayerId) {
+      console.error(`❌ Player not found for subscription user ${userId}`);
+      return;
+    }
+
+    const existingSubscription = await storage.getMembershipSubscriptionByPlayerId(resolvedPlayerId);
 
     if (existingSubscription) {
       console.log(`✅ Updating player subscription for user ${userId}: ${tier} (${subscription.status})`);
@@ -609,13 +635,14 @@ async function handleSubscription(storage: IStorage, subscription: any): Promise
         cancelAtPeriodEnd,
         tier
       });
+      await storage.updatePlayer(resolvedPlayerId, { member: isActive });
     } else {
       const user = await storage.getUser(userId);
       if (user) {
         console.log(`✅ Creating new player subscription for user ${userId}: ${tier}`);
         try {
           await storage.createMembershipSubscription({
-            playerId: userId,
+            playerId: resolvedPlayerId,
             tier,
             status: subscription.status,
             stripeSubscriptionId: subscription.id,
@@ -627,6 +654,7 @@ async function handleSubscription(storage: IStorage, subscription: any): Promise
             perks: [],
             commissionRate: tier === 'rookie' ? 1000 : tier === 'standard' ? 800 : 500
           });
+          await storage.updatePlayer(resolvedPlayerId, { member: isActive });
         } catch (error: any) {
           console.error(`❌ Failed to create membership subscription for user ${userId}:`, error.message);
           throw error;
@@ -637,7 +665,14 @@ async function handleSubscription(storage: IStorage, subscription: any): Promise
     }
   } else if (userId) {
     const isActive = subscription.status === 'active';
-    await storage.updatePlayer(userId, {
+    const resolvedPlayerId = await resolvePlayerId(storage, userId, playerId);
+
+    if (!resolvedPlayerId) {
+      console.error(`❌ Player not found for subscription user ${userId}`);
+      return;
+    }
+
+    await storage.updatePlayer(resolvedPlayerId, {
       member: isActive
     });
   }
@@ -694,7 +729,14 @@ async function handleInvoicePaid(storage: IStorage, invoice: any): Promise<void>
       console.log(`✅ Operator subscription split recorded for operator ${operatorId}: $${(amountCents / 100).toFixed(2)}`);
       console.log(`   Pot: $${(split.potAmount / 100).toFixed(2)} | Trustee: $${(split.trusteeAmount / 100).toFixed(2)} | Founder: $${(split.founderAmount / 100).toFixed(2)} | Payroll: $${(split.payrollAmount / 100).toFixed(2)}`);
     } else if (userId) {
-      await storage.updatePlayer(userId, {
+      const resolvedPlayerId = await resolvePlayerId(storage, userId, playerId);
+
+      if (!resolvedPlayerId) {
+        console.error(`❌ Player not found for invoice subscription user ${userId}`);
+        return;
+      }
+
+      await storage.updatePlayer(resolvedPlayerId, {
         member: true
       });
     }
