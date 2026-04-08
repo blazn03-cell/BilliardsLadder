@@ -12,3 +12,9 @@ id = "igT9BNQsZdneGaru_j1eq"
 uri = "file://exports/stripe-production-verification-report.md"
 type = "text"
 title = "Stripe Production Verification Report"
+
+[[outputs]]
+id = "m6PeaGr7MwrL04Z_PI-Tv"
+uri = "file://exports/e2e-audit-log.md"
+type = "text"
+title = "BilliardsLadder E2E Audit Log"
