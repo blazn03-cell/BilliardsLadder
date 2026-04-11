@@ -640,13 +640,14 @@ export default function Dashboard() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("subscription") === "success") {
       const sessionId = params.get("session_id");
-      console.log(`🔍 [Dashboard] Post-checkout: sessionId=${sessionId}`);
-
       const verifyAndShow = async () => {
         let verified = false;
-        if (sessionId) {
+        let attempts = 0;
+        const maxAttempts = 5;
+
+        while (!verified && sessionId && attempts < maxAttempts) {
+          attempts += 1;
           try {
-            console.log(`📡 [Dashboard] Calling verify-session endpoint...`);
             const resp = await fetch("/api/player-billing/verify-session", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -655,39 +656,48 @@ export default function Dashboard() {
             });
 
             const data = await resp.json();
-            console.log(`✅ [Dashboard] Verify-session response:`, data);
+            if (resp.ok && data.hasSubscription === true) {
+              verified = true;
 
-            if (resp.ok) {
-              verified = data.hasSubscription === true;
-              console.log(`📦 [Dashboard] Verified subscription: ${verified}`);
-            } else {
-              console.error(`❌ [Dashboard] Verify-session failed with status ${resp.status}:`, data);
+              // Prime the cache immediately so the status card updates without waiting on another round-trip.
+              queryClient.setQueryData(["/api/player-billing/status"], {
+                hasSubscription: true,
+                tier: data.tier,
+                status: data.status || "active",
+                tierInfo: data.tierInfo,
+              });
+              break;
             }
-          } catch (err) {
-            console.error(`❌ [Dashboard] Verify-session error:`, err);
+          } catch {
+            // Ignore transient failures and retry below.
+          }
+
+          if (attempts < maxAttempts) {
+            await new Promise((resolve) => setTimeout(resolve, 1200));
           }
         }
 
-        console.log(`🔄 [Dashboard] Invalidating query cache...`);
-        await queryClient.invalidateQueries({ queryKey: ["/api/player-billing/status"] });
-        await queryClient.invalidateQueries({ queryKey: ["/api/operator-subscriptions", user?.id] });
+        await queryClient.refetchQueries({ queryKey: ["/api/player-billing/status"], type: "all" });
+        await queryClient.refetchQueries({ queryKey: ["/api/operator-subscriptions", user?.id], type: "all" });
 
         if (verified || sessionId) {
-          console.log(`🎉 [Dashboard] Showing success banner`);
           setShowSuccessBanner(true);
           toast({
             title: "Subscription Activated!",
-            description: "Your membership is now active. Welcome to the ladder!",
+            description: verified
+              ? "Your membership is now active. Welcome to the ladder!"
+              : "Payment completed. Subscription status may take a few seconds to update.",
           });
         }
+
+        // Clear URL params only after verification attempts complete.
+        const url = new URL(window.location.href);
+        url.searchParams.delete("subscription");
+        url.searchParams.delete("session_id");
+        window.history.replaceState({}, "", url.toString());
       };
 
-      verifyAndShow();
-
-      const url = new URL(window.location.href);
-      url.searchParams.delete("subscription");
-      url.searchParams.delete("session_id");
-      window.history.replaceState({}, "", url.toString());
+      void verifyAndShow();
     }
   }, []);
 

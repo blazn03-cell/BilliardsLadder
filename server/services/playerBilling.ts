@@ -399,9 +399,26 @@ export function registerPlayerBillingRoutes(app: Express) {
         });
       }
 
-      const tier = session.metadata?.tier;
+      let stripeSubId = session.subscription as string || null;
+      let periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      let tier = session.metadata?.tier || null;
+
+      if (stripeSubId) {
+        try {
+          console.log(`📦 Retrieving subscription ${stripeSubId} from Stripe...`);
+          const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
+          periodEnd = new Date(stripeSub.current_period_end * 1000);
+          if (!tier) {
+            tier = stripeSub.metadata?.tier || null;
+          }
+          console.log(`✅ Subscription period ends: ${periodEnd.toISOString()}`);
+        } catch (err) {
+          console.error(`⚠️  Failed to retrieve subscription:`, err);
+        }
+      }
+
       if (!tier) {
-        console.error(`❌ Verify session: No tier found in session metadata for sessionId ${sessionId}`);
+        console.error(`❌ Verify session: No tier found in session or subscription metadata for sessionId ${sessionId}`);
         console.error(`   Session metadata: ${JSON.stringify(session.metadata)}`);
         return res.json({ hasSubscription: false, error: "No tier in session", metadata: session.metadata });
       }
@@ -409,19 +426,6 @@ export function registerPlayerBillingRoutes(app: Express) {
       console.log(`✅ Verify session: Complete session found with tier ${tier}`);
 
       const tierInfo = getPlayerSubscriptionTier(tier);
-      let stripeSubId = session.subscription as string || null;
-      let periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-      if (stripeSubId) {
-        try {
-          console.log(`📦 Retrieving subscription ${stripeSubId} from Stripe...`);
-          const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
-          periodEnd = new Date(stripeSub.current_period_end * 1000);
-          console.log(`✅ Subscription period ends: ${periodEnd.toISOString()}`);
-        } catch (err) {
-          console.error(`⚠️  Failed to retrieve subscription:`, err);
-        }
-      }
 
       try {
         const subscription = await storage.createMembershipSubscription({
