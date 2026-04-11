@@ -8,7 +8,7 @@ import { generateQRCodeUrl, generateJoinUrl } from "@/lib/qr-generator";
 import { generateFightNightPoster } from "@/lib/poster-generator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Brain, TrendingUp, Zap, Settings, Users, Shield, Crown, Star, AlertCircle } from "lucide-react";
+import { Brain, TrendingUp, Zap, Settings, Users, Shield, Crown, Star, AlertCircle, Building2, Rocket } from "lucide-react";
 import type {
   Player,
   Match,
@@ -234,6 +234,104 @@ function SubscriptionStatus() {
       <span className={`text-sm font-semibold ${config.color} text-center leading-tight`}>
         {config.label}
       </span>
+    </div>
+  );
+}
+
+function DashboardSubscriptionStatus() {
+  const { user } = useAuth();
+  const role = user?.globalRole;
+
+  if (role === "OPERATOR" || role === "OWNER" || role === "TRUSTEE") {
+    return <OperatorSubscriptionStatus />;
+  }
+  return <SubscriptionStatus />;
+}
+
+function OperatorSubscriptionStatus() {
+  const { user } = useAuth();
+  const [isHovered, setIsHovered] = useState(false);
+
+  const { data: currentSubscription, isLoading } = useQuery<{
+    hasSubscription: boolean;
+    tier?: string;
+    status?: string;
+    hallName?: string;
+  }>({
+    queryKey: ["/api/operator-subscriptions", user?.id],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/operator-subscriptions/${user?.id}`, { credentials: "include" });
+        if (!res.ok) return { hasSubscription: false };
+        const sub = await res.json();
+        if (sub && sub.id) {
+          return { hasSubscription: true, tier: sub.tier, status: sub.status, hallName: sub.hallName };
+        }
+        return { hasSubscription: false };
+      } catch {
+        return { hasSubscription: false };
+      }
+    },
+    enabled: !!user,
+  });
+
+  const hasActive = currentSubscription?.hasSubscription && currentSubscription?.status === "active";
+  const tierKey = currentSubscription?.tier || null;
+
+  const tierConfig: Record<string, { icon: typeof Building2; color: string; label: string; price: number }> = {
+    small: { icon: Building2, color: "text-green-400", label: "Small Hall", price: 199 },
+    medium: { icon: Star, color: "text-blue-400", label: "Medium Hall", price: 299 },
+    large: { icon: Crown, color: "text-purple-400", label: "Large Hall", price: 399 },
+    mega: { icon: Rocket, color: "text-yellow-400", label: "Mega Hall", price: 799 },
+  };
+
+  const tierColors: Record<string, { borderColor: string; hoverBorderColor: string; shadowColor: string; hoverShadowColor: string }> = {
+    small: { borderColor: "rgba(74,222,128,0.5)", hoverBorderColor: "rgba(74,222,128,0.8)", shadowColor: "rgba(34,197,94,0.2)", hoverShadowColor: "rgba(34,197,94,0.4)" },
+    medium: { borderColor: "rgba(96,165,250,0.5)", hoverBorderColor: "rgba(96,165,250,0.8)", shadowColor: "rgba(59,130,246,0.2)", hoverShadowColor: "rgba(59,130,246,0.4)" },
+    large: { borderColor: "rgba(192,132,252,0.5)", hoverBorderColor: "rgba(192,132,252,0.8)", shadowColor: "rgba(168,85,247,0.2)", hoverShadowColor: "rgba(168,85,247,0.4)" },
+    mega: { borderColor: "rgba(250,204,21,0.5)", hoverBorderColor: "rgba(250,204,21,0.8)", shadowColor: "rgba(234,179,8,0.2)", hoverShadowColor: "rgba(234,179,8,0.4)" },
+  };
+
+  const inactiveIconConfig = { icon: AlertCircle, color: "text-red-400", label: "No Active Plan", price: 0 };
+  const inactiveColors = { borderColor: "rgba(248,113,113,0.5)", hoverBorderColor: "rgba(248,113,113,0.8)", shadowColor: "rgba(239,68,68,0.2)", hoverShadowColor: "rgba(239,68,68,0.4)" };
+
+  const config = hasActive && tierKey ? (tierConfig[tierKey] || inactiveIconConfig) : inactiveIconConfig;
+  const colors = hasActive && tierKey ? (tierColors[tierKey] || inactiveColors) : inactiveColors;
+  const IconComponent = config.icon;
+
+  if (isLoading) {
+    return (
+      <div className="w-44 h-20 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)" }}>
+        <LoadingSpinner size="sm" color="neon" />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="w-44 rounded-xl cursor-pointer flex flex-col items-center justify-center gap-2 px-4 py-3 transition-all duration-300 ease-out"
+      style={{
+        background: "rgba(255,255,255,0.05)",
+        WebkitBackdropFilter: "blur(12px)",
+        backdropFilter: "blur(12px)",
+        border: `1px solid ${isHovered ? colors.hoverBorderColor : colors.borderColor}`,
+        boxShadow: isHovered
+          ? `0 10px 25px -5px ${colors.hoverShadowColor}, 0 8px 10px -6px ${colors.hoverShadowColor}`
+          : `0 4px 15px -3px ${colors.shadowColor}, 0 2px 6px -4px ${colors.shadowColor}`,
+        transform: isHovered ? "scale(1.05)" : "scale(1)",
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={() => window.location.href = "/app?tab=operator-subscriptions"}
+      data-testid="operator-subscription-status-card"
+    >
+      <IconComponent className={`h-6 w-6 ${config.color}`} />
+      <span className={`text-sm font-semibold ${config.color} text-center leading-tight`}>
+        {config.label}
+      </span>
+      {hasActive && tierKey && (
+        <span className="text-xs text-gray-400">${config.price}/mo</span>
+      )}
     </div>
   );
 }
@@ -588,7 +686,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       {/* Subscription Status */}
-      <SubscriptionStatus />
+      <DashboardSubscriptionStatus />
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

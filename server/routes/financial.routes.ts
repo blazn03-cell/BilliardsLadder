@@ -71,18 +71,22 @@ export function setupFinancialRoutes(app: Express, storage: IStorage) {
 
   // ==================== OPERATOR SUBSCRIPTION ROUTES ====================
   app.get("/api/operator-subscriptions",
+    requireAnyAuth,
     financialController.getOperatorSubscriptions(storage)
   );
 
   app.get("/api/operator-subscriptions/:operatorId",
+    requireAnyAuth,
     financialController.getOperatorSubscription(storage)
   );
 
   app.post("/api/operator-subscriptions",
+    requireAnyAuth,
     financialController.createOperatorSubscription(storage)
   );
 
   app.put("/api/operator-subscriptions/:operatorId",
+    requireAnyAuth,
     financialController.updateOperatorSubscription(storage)
   );
 
