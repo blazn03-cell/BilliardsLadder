@@ -221,6 +221,45 @@ In `handleCheckoutCompleted()`, the `checkout.session.completed` webhook event f
 
 ---
 
+## 14. Player Subscription Status — Query Parameter Type Mismatch
+**Status:** Completed  
+**Severity:** Critical Bug  
+**Files Modified:** `server/services/playerBilling.ts`, `server/utils/premiumSavingsCalculator.ts`
+
+**Problem:** After successful Stripe payment, the subscription status indicator disappeared instead of displaying the purchased tier. Root cause was four endpoints passing `userId` (authenticated user ID) to `getMembershipSubscriptionByPlayerId(playerId)` instead of looking up the database `playerId` first.
+
+**Method Signature:**
+```typescript
+getMembershipSubscriptionByPlayerId(playerId: string): Promise<MembershipSubscription | undefined>
+// Expects playerId (from players table), NOT userId (from users/auth table)
+```
+
+**Affected Endpoints:**
+1. `GET /api/player-billing/status` (line 307) — PRIMARY: called on dashboard load
+2. `GET /api/player-billing/premium-savings` (line 130)
+3. `POST /api/player-billing/cancel` (line 426)
+4. `POST /api/player-billing/reactivate` (line 458)
+5. `PremiumSavingsCalculator.calculateMonthlySavings()` (line 29)
+
+**Flow of the Bug:**
+1. Player logs in → Dashboard queries `/api/player-billing/status` with `userId`
+2. Subscription lookup fails (wrong ID type) → Shows "No Active Plan"
+3. Player completes Stripe payment → `verify-session` endpoint **correctly** creates subscription using `playerId`
+4. Dashboard refetches status → **Still passes userId** (not playerId) → Subscription invisible
+5. Indicator disappears even though subscription exists in database
+
+**Resolution:**
+All five affected locations now follow the correct pattern:
+```typescript
+const userId = (req as any).dbUser.id;
+const player = await storage.getPlayerByUserId(userId);     // ← NEW
+const subscription = await storage.getMembershipSubscriptionByPlayerId(player.id); // ← FIXED
+```
+
+This ensures the subscription record created by the verify-session endpoint can be reliably fetched and displayed.
+
+---
+
 ## Status Summary
 
 | # | Issue | Category | Severity | Status | Files |
@@ -232,12 +271,13 @@ In `handleCheckoutCompleted()`, the `checkout.session.completed` webhook event f
 | 5 | Operator Checkout 500 | Bug | Critical | Done | `OperatorSubscriptions.tsx`, `financial.routes.ts`, `financial.controller.ts` |
 | 6 | Operator Dashboard Status Card | Feature | — | Done | `dashboard.tsx` |
 | 7 | IDOR on Operator Subscriptions | Security | High | Done | `financial.routes.ts` |
-| 8 | Player Subscription Record Gap | Bug | Critical | Partial | `financial.controller.ts` |
+| 8 | Player Subscription Record Gap | Bug | Critical | Done | `financial.controller.ts` |
 | 9 | Post-Checkout Success Banner | Feature | — | Done | `dashboard.tsx` |
-| 10 | Stripe Session Verification | Bug | Critical | Partial | `playerBilling.ts`, `dashboard.tsx` |
+| 10 | Stripe Session Verification | Bug | Critical | Done | `playerBilling.ts`, `dashboard.tsx` |
 | 11 | TanStack Query URL 404 | Bug | Medium | Done | `PlayerSubscriptionTiers.tsx` |
 | 12 | Operator Success URL | Bug | Low | Done | `financial.controller.ts` |
 | 13 | Player Subscription Card Styling | UI | Low | Done | `PlayerSubscriptionTiers.tsx` |
+| 14 | Player Subscription Status Query Mismatch | Bug | Critical | Done | `playerBilling.ts`, `premiumSavingsCalculator.ts` |
 
 ---
 
@@ -245,7 +285,7 @@ In `handleCheckoutCompleted()`, the `checkout.session.completed` webhook event f
 
 | Item | Priority | Notes |
 |------|----------|-------|
-| Stripe webhook reliability (dev vs prod) | High | Items 8 & 10 depend on webhook delivery. Verify-session endpoint provides a fallback but adds latency. |
+| Stripe webhook reliability (dev vs prod) | High | Items 8 & 10 rely on webhook delivery in production. Verify-session endpoint and dashboard query now properly handle retrieved subscriptions. See item #14. |
 | Auth rate limit | Medium | Currently set to 30 req/window (beta). Revert to 5 for production launch. Config location: `server/index.ts`. |
 | Branding inconsistency | Low | Login/signup pages display "ActionLadder" instead of "BilliardsLadder". |
 | Duplicate webhook handlers | Medium | Three handlers registered at `POST /api/stripe/webhook` (`webhook.routes.ts`, `financial.routes.ts`, `billing.js`). Only the first (from `webhook.routes.ts`) executes. The other two are dead code. |

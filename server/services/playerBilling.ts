@@ -127,7 +127,12 @@ export function registerPlayerBillingRoutes(app: Express) {
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const subscription = await storage.getMembershipSubscriptionByPlayerId(userId);
+      const player = await storage.getPlayerByUserId(userId);
+      if (!player) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
+      const subscription = await storage.getMembershipSubscriptionByPlayerId(player.id);
 
       if (!subscription || subscription.tier !== 'premium') {
         return res.json({
@@ -303,8 +308,14 @@ export function registerPlayerBillingRoutes(app: Express) {
         return res.status(401).json({ error: "Authentication required" });
       }
 
+      // Get player from user ID
+      const player = await storage.getPlayerByUserId(userId);
+      if (!player) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
       // Check if user has active subscription in our database
-      const subscription = await storage.getMembershipSubscriptionByPlayerId(userId);
+      const subscription = await storage.getMembershipSubscriptionByPlayerId(player.id);
 
       if (!subscription) {
         return res.json({
@@ -381,7 +392,7 @@ export function registerPlayerBillingRoutes(app: Express) {
         try {
           const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
           periodEnd = new Date(stripeSub.current_period_end * 1000);
-        } catch {}
+        } catch { }
       }
 
       await storage.createMembershipSubscription({
@@ -423,7 +434,12 @@ export function registerPlayerBillingRoutes(app: Express) {
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const subscription = await storage.getMembershipSubscriptionByPlayerId(userId);
+      const player = await storage.getPlayerByUserId(userId);
+      if (!player) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
+      const subscription = await storage.getMembershipSubscriptionByPlayerId(player.id);
       if (!subscription || !subscription.stripeSubscriptionId) {
         return res.status(404).json({ error: "No active subscription found" });
       }
@@ -455,7 +471,12 @@ export function registerPlayerBillingRoutes(app: Express) {
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const subscription = await storage.getMembershipSubscriptionByPlayerId(userId);
+      const player = await storage.getPlayerByUserId(userId);
+      if (!player) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
+      const subscription = await storage.getMembershipSubscriptionByPlayerId(player.id);
       if (!subscription || !subscription.stripeSubscriptionId) {
         return res.status(404).json({ error: "No subscription found" });
       }
