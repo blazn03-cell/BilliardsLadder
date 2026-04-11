@@ -122,8 +122,8 @@ export function createCheckoutSession() {
       const sessionPayload: any = {
         mode,
         line_items,
-        success_url: `${appBaseUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${appBaseUrl}/billing/cancel`,
+        success_url: `${appBaseUrl}/app?tab=dashboard&subscription=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${appBaseUrl}/app?tab=dashboard&subscription=cancelled`,
         allow_promotion_codes: true,
         automatic_tax: { enabled: false },
         client_reference_id: userId,

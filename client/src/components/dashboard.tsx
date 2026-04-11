@@ -639,15 +639,42 @@ export default function Dashboard() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("subscription") === "success") {
-      setShowSuccessBanner(true);
-      toast({
-        title: "Subscription Activated!",
-        description: "Your membership is now active. Welcome to the ladder!",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/player-billing/status"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/operator-subscriptions", user?.id] });
+      const sessionId = params.get("session_id");
+
+      const verifyAndShow = async () => {
+        let verified = false;
+        if (sessionId) {
+          try {
+            const resp = await fetch("/api/player-billing/verify-session", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ sessionId }),
+            });
+            if (resp.ok) {
+              const data = await resp.json();
+              verified = data.hasSubscription === true;
+            }
+          } catch {}
+        }
+
+        await queryClient.invalidateQueries({ queryKey: ["/api/player-billing/status"] });
+        await queryClient.invalidateQueries({ queryKey: ["/api/operator-subscriptions", user?.id] });
+
+        if (verified || sessionId) {
+          setShowSuccessBanner(true);
+          toast({
+            title: "Subscription Activated!",
+            description: "Your membership is now active. Welcome to the ladder!",
+          });
+        }
+      };
+
+      verifyAndShow();
+
       const url = new URL(window.location.href);
       url.searchParams.delete("subscription");
+      url.searchParams.delete("session_id");
       window.history.replaceState({}, "", url.toString());
     }
   }, []);

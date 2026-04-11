@@ -55,6 +55,11 @@ export function PlayerSubscriptionTiers({ userId, currentUserRole }: PlayerSubsc
   // Fetch current subscription status
   const { data: subscriptionStatus, isLoading: statusLoading } = useQuery<SubscriptionStatus>({
     queryKey: ["/api/player-billing/status", userId],
+    queryFn: async () => {
+      const res = await fetch("/api/player-billing/status", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch status");
+      return res.json();
+    },
     enabled: !!userId,
   });
 

@@ -258,7 +258,7 @@ export function registerPlayerBillingRoutes(app: Express) {
           },
           quantity: 1
         }],
-        success_url: `${appBaseUrl}/app?tab=dashboard&subscription=success`,
+        success_url: `${appBaseUrl}/app?tab=dashboard&subscription=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${appBaseUrl}/app?tab=dashboard&subscription=cancelled`,
         client_reference_id: userId,
         subscription_data: {
@@ -331,6 +331,85 @@ export function registerPlayerBillingRoutes(app: Express) {
 
     } catch (error: any) {
       console.error("Get subscription status error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/player-billing/verify-session", requireAnyAuth, async (req, res) => {
+    try {
+      const { sessionId } = req.body;
+      if (!sessionId || !stripe) {
+        return res.status(400).json({ error: "Session ID required" });
+      }
+
+      const userId = (req as any).dbUser.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const player = await storage.getPlayerByUserId(userId);
+      if (!player) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
+      const existing = await storage.getMembershipSubscriptionByPlayerId(player.id);
+      if (existing && existing.status === "active") {
+        const tierInfo = getPlayerSubscriptionTier(existing.tier);
+        return res.json({
+          hasSubscription: true,
+          tier: existing.tier,
+          status: existing.status,
+          tierInfo,
+        });
+      }
+
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      if (!session || session.status !== "complete") {
+        return res.json({ hasSubscription: false, error: "Session not complete" });
+      }
+
+      const tier = session.metadata?.tier;
+      if (!tier) {
+        return res.json({ hasSubscription: false, error: "No tier in session" });
+      }
+
+      const tierInfo = getPlayerSubscriptionTier(tier);
+      let stripeSubId = session.subscription as string || null;
+      let periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+      if (stripeSubId) {
+        try {
+          const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
+          periodEnd = new Date(stripeSub.current_period_end * 1000);
+        } catch {}
+      }
+
+      await storage.createMembershipSubscription({
+        playerId: player.id,
+        tier,
+        status: "active",
+        stripeSubscriptionId: stripeSubId,
+        stripeCustomerId: session.customer as string || null,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: periodEnd,
+        cancelAtPeriodEnd: false,
+        monthlyPrice: tierInfo?.monthlyPrice || 0,
+        perks: tierInfo?.perks || [],
+        commissionRate: tierInfo?.commissionRate || 1000,
+      });
+      await storage.updatePlayer(player.id, { member: true });
+
+      console.log(`✅ Verified and created subscription for player ${player.id} tier ${tier}`);
+
+      res.json({
+        hasSubscription: true,
+        tier,
+        status: "active",
+        tierInfo,
+      });
+
+    } catch (error: any) {
+      console.error("Verify session error:", error);
       res.status(500).json({ error: error.message });
     }
   });
