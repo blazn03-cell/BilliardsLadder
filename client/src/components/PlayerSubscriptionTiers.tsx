@@ -279,25 +279,9 @@ export function PlayerSubscriptionTiers({ userId, currentUserRole }: PlayerSubsc
           const isCurrentTier = currentTier === tier.tier;
           const price = selectedBilling === "yearly" ? tier.yearlyPrice : tier.monthlyPrice;
           const savings = selectedBilling === "yearly" ? tier.yearlySavings : tier.monthlySavings;
-          const isPopular = tier.tier === "standard";
 
           return (
-            <Card
-              key={tier.tier}
-              className={`relative ${
-                isCurrentTier
-                  ? "ring-2 ring-emerald-500 bg-emerald-900/10"
-                  : isPopular
-                  ? "ring-2 ring-purple-500 bg-purple-900/10"
-                  : "bg-gray-900 border-gray-700"
-              }`}
-            >
-              {isPopular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-purple-500 text-white">Most Popular</Badge>
-                </div>
-              )}
-
+            <PlayerTierCard key={tier.tier} tierKey={tier.tier} isCurrentTier={isCurrentTier}>
               <CardHeader className="text-center space-y-4">
                 <div className="flex justify-center">{getTierIcon(tier.tier)}</div>
                 <div>
@@ -367,18 +351,14 @@ export function PlayerSubscriptionTiers({ userId, currentUserRole }: PlayerSubsc
                   <Button
                     onClick={() => handleSubscribe(tier.tier)}
                     disabled={subscribeMutation.isPending}
-                    className={`w-full ${
-                      isPopular
-                        ? "bg-purple-600 hover:bg-purple-700"
-                        : "bg-emerald-600 hover:bg-emerald-700"
-                    }`}
+                    className={`w-full ${getTierButtonColor(tier.tier)}`}
                     data-testid={`button-subscribe-${tier.tier}`}
                   >
                     {subscribeMutation.isPending ? "Processing..." : `Choose ${tier.name}`}
                   </Button>
                 )}
               </CardFooter>
-            </Card>
+            </PlayerTierCard>
           );
         })}
       </div>
@@ -416,6 +396,71 @@ export function PlayerSubscriptionTiers({ userId, currentUserRole }: PlayerSubsc
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+const TIER_STYLES: Record<string, {
+  borderColor: string;
+  hoverBorderColor: string;
+  hoverShadow: string;
+  btnColor: string;
+}> = {
+  rookie: {
+    borderColor: "rgba(96,165,250,0.35)",
+    hoverBorderColor: "rgba(96,165,250,0.8)",
+    hoverShadow: "0 10px 30px -5px rgba(59,130,246,0.3)",
+    btnColor: "bg-blue-600 hover:bg-blue-700",
+  },
+  standard: {
+    borderColor: "rgba(192,132,252,0.35)",
+    hoverBorderColor: "rgba(192,132,252,0.8)",
+    hoverShadow: "0 10px 30px -5px rgba(168,85,247,0.3)",
+    btnColor: "bg-purple-600 hover:bg-purple-700",
+  },
+  premium: {
+    borderColor: "rgba(250,204,21,0.35)",
+    hoverBorderColor: "rgba(250,204,21,0.8)",
+    hoverShadow: "0 10px 30px -5px rgba(234,179,8,0.3)",
+    btnColor: "bg-yellow-600 hover:bg-yellow-700",
+  },
+};
+
+function getTierButtonColor(tierKey: string): string {
+  return TIER_STYLES[tierKey]?.btnColor || "bg-emerald-600 hover:bg-emerald-700";
+}
+
+function PlayerTierCard({
+  tierKey,
+  isCurrentTier,
+  children,
+}: {
+  tierKey: string;
+  isCurrentTier: boolean;
+  children: React.ReactNode;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const styles = TIER_STYLES[tierKey] || TIER_STYLES.rookie;
+
+  return (
+    <div
+      className="relative flex flex-col rounded-xl transition-all duration-300 ease-out"
+      style={{
+        border: `1px solid ${isHovered ? styles.hoverBorderColor : isCurrentTier ? "rgba(16,185,129,0.6)" : styles.borderColor}`,
+        boxShadow: isHovered ? styles.hoverShadow : "none",
+        transform: isHovered ? "scale(1.03)" : "scale(1)",
+        background: isCurrentTier ? "rgba(16,185,129,0.05)" : "rgb(17,24,39)",
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      data-testid={`card-tier-${tierKey}`}
+    >
+      {isCurrentTier && (
+        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+          <Badge className="bg-emerald-500 text-white px-3">Current Plan</Badge>
+        </div>
+      )}
+      {children}
     </div>
   );
 }
