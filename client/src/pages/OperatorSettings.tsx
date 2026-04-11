@@ -41,8 +41,7 @@ export default function OperatorSettings() {
   const { data: settings, isLoading } = useQuery({
     queryKey: ["/api/operator/settings", operatorUserId],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/operator/settings?userId=${operatorUserId}`);
-      return response.json();
+      return await apiRequest("GET", `/api/operator/settings?userId=${operatorUserId}`);
     },
     refetchOnMount: true,
   });
@@ -58,8 +57,7 @@ export default function OperatorSettings() {
   // Update settings mutation
   const updateSettingsMutation = useMutation({
     mutationFn: async (data: { cityName: string; areaName: string; customBranding?: string }) => {
-      const response = await apiRequest("PUT", `/api/operator/settings?userId=${operatorUserId}`, data);
-      return response.json();
+      return await apiRequest("PUT", `/api/operator/settings?userId=${operatorUserId}`, data);
     },
     onSuccess: () => {
       toast({
