@@ -40,7 +40,9 @@ const membershipTiers = [
 ];
 
 export default function Signup() {
-  const [accountType, setAccountType] = useState<UserType>("player");
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialRole = urlParams.get("role") === "operator" ? "operator" : "player";
+  const [accountType, setAccountType] = useState<UserType>(initialRole);
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
 
