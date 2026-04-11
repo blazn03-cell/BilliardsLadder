@@ -67,7 +67,7 @@ const skipWebhooks = (limiter: any) => (req: express.Request, res: express.Respo
 // Create persistent rate limiter instances at app initialization
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: 30, // BETA: increased from 5 for testing, revert to 5 for production
   message: { error: 'Too many authentication attempts, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
