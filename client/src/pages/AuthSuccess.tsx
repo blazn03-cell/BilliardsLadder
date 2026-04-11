@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 
 export default function AuthSuccess() {
@@ -17,14 +16,7 @@ export default function AuthSuccess() {
         if (role === "admin") {
           window.location.href = "/app?tab=admin";
         } else if (role === "operator") {
-          try {
-            const res = await fetch("/api/auth/me", { credentials: "include" });
-            const me = await res.json();
-            const check = await apiRequest(`/api/operator/settings-complete?userId=${me?.id || me?.user?.id}`);
-            window.location.href = (check as any)?.complete ? "/app?tab=dashboard" : "/app?tab=operator-settings";
-          } catch {
-            window.location.href = "/app?tab=operator-settings";
-          }
+          window.location.href = "/app?tab=dashboard";
         } else {
           window.location.href = "/app?tab=dashboard";
         }

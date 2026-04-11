@@ -61,13 +61,7 @@ export default function Login() {
         } else if (user?.globalRole === "TRUSTEE") {
           window.location.href = "/app?tab=admin";
         } else if (user?.globalRole === "OPERATOR") {
-          apiRequest(`/api/operator/settings-complete?userId=${user.id}`)
-            .then((check: any) => {
-              window.location.href = check?.complete ? "/app?tab=dashboard" : "/app?tab=operator-settings";
-            })
-            .catch(() => {
-              window.location.href = "/app?tab=operator-settings";
-            });
+          window.location.href = "/app?tab=dashboard";
         } else {
           window.location.href = "/app?tab=dashboard";
         }

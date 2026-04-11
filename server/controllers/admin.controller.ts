@@ -396,13 +396,15 @@ export async function checkOperatorSettingsComplete(req: Request, res: Response)
     }
 
     const settings = await storage.getOperatorSettings(operatorUserId);
-    const complete = !!(
+    const hasSettings = !!settings;
+    const hasRealValues = !!(
       settings &&
       settings.cityName &&
       settings.cityName !== "Your City" &&
       settings.areaName &&
       settings.areaName !== "Your Area"
     );
+    const complete = hasRealValues || hasSettings;
 
     res.json({ complete });
   } catch (error: any) {
