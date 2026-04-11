@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { generateQRCodeUrl, generateJoinUrl } from "@/lib/qr-generator";
 import { generateFightNightPoster } from "@/lib/poster-generator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Brain, TrendingUp, Zap, Settings, Users, Shield, Crown, Star, AlertCircle, Building2, Rocket } from "lucide-react";
+import { Brain, TrendingUp, Zap, Settings, Users, Shield, Crown, Star, AlertCircle, Building2, Rocket, CheckCircle2 } from "lucide-react";
 import type {
   Player,
   Match,
@@ -631,6 +631,27 @@ function RecentMatches({
 }
 
 export default function Dashboard() {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("subscription") === "success") {
+      setShowSuccessBanner(true);
+      toast({
+        title: "Subscription Activated!",
+        description: "Your membership is now active. Welcome to the ladder!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/player-billing/status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/operator-subscriptions", user?.id] });
+      const url = new URL(window.location.href);
+      url.searchParams.delete("subscription");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
+
   const { data: players = [], isLoading: playersLoading } = useQuery<Player[]>({
     queryKey: ["/api/players"],
   });
@@ -685,6 +706,32 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
+      {showSuccessBanner && (
+        <div
+          className="flex items-center gap-3 px-5 py-4 rounded-xl border"
+          style={{
+            background: "rgba(16,185,129,0.1)",
+            borderColor: "rgba(16,185,129,0.4)",
+          }}
+          data-testid="subscription-success-banner"
+        >
+          <CheckCircle2 className="h-6 w-6 text-emerald-400 flex-shrink-0" />
+          <div>
+            <p className="text-emerald-400 font-semibold">Subscription Activated!</p>
+            <p className="text-gray-300 text-sm">Your membership is now active. Your subscription status has been updated below.</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto text-gray-400 hover:text-white"
+            onClick={() => setShowSuccessBanner(false)}
+            data-testid="button-dismiss-success"
+          >
+            Dismiss
+          </Button>
+        </div>
+      )}
+
       {/* Subscription Status */}
       <DashboardSubscriptionStatus />
 

@@ -576,6 +576,30 @@ async function handleCheckoutCompleted(storage: IStorage, session: any): Promise
       });
     } else if (type === 'player_subscription' && tier && userId) {
       console.log(`Player subscription checkout completed for user ${userId} with tier ${tier}`);
+      const resolvedPlayerId = await resolvePlayerId(storage, userId, playerId);
+      if (resolvedPlayerId) {
+        const existing = await storage.getMembershipSubscriptionByPlayerId(resolvedPlayerId);
+        if (!existing) {
+          const { getPlayerSubscriptionTier } = await import("../services/playerBilling");
+          const tierInfo = getPlayerSubscriptionTier(tier);
+          const user = await storage.getUser(userId);
+          await storage.createMembershipSubscription({
+            playerId: resolvedPlayerId,
+            tier,
+            status: "active",
+            stripeSubscriptionId: session.subscription as string || null,
+            stripeCustomerId: (user?.stripeCustomerId || session.customer as string) || null,
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            cancelAtPeriodEnd: false,
+            monthlyPrice: tierInfo?.monthlyPrice || 0,
+            perks: tierInfo?.perks || [],
+            commissionRate: tierInfo?.commissionRate || 1000,
+          });
+          await storage.updatePlayer(resolvedPlayerId, { member: true });
+          console.log(`✅ Created membership subscription for player ${resolvedPlayerId} tier ${tier}`);
+        }
+      }
     } else if (userId) {
       const resolvedPlayerId = await resolvePlayerId(storage, userId, playerId);
 
