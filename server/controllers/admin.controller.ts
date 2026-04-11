@@ -388,6 +388,28 @@ export async function toggleFreeMonths(req: Request, res: Response) {
 }
 
 // Get operator's own settings
+export async function checkOperatorSettingsComplete(req: Request, res: Response) {
+  try {
+    const operatorUserId = req.query.userId as string;
+    if (!operatorUserId) {
+      return res.json({ complete: false });
+    }
+
+    const settings = await storage.getOperatorSettings(operatorUserId);
+    const complete = !!(
+      settings &&
+      settings.cityName &&
+      settings.cityName !== "Your City" &&
+      settings.areaName &&
+      settings.areaName !== "Your Area"
+    );
+
+    res.json({ complete });
+  } catch (error: any) {
+    res.json({ complete: false });
+  }
+}
+
 export async function getOperatorSettings(req: Request, res: Response) {
   try {
     // In a real app, this would get the current user from session

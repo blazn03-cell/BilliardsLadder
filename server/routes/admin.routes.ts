@@ -14,6 +14,7 @@ export function registerAdminRoutes(app: Express) {
 }
 
 export function registerOperatorRoutes(app: Express) {
+  app.get("/api/operator/settings-complete", requireAnyAuth, adminController.checkOperatorSettingsComplete);
   app.get("/api/operator/settings", requireAnyAuth, adminController.getOperatorSettings);
   app.put("/api/operator/settings", requireAnyAuth, adminController.updateOperatorSettings);
   app.post("/api/operator/toggle-free-month", requireStaffOrOwner, adminController.toggleFreeMonth);

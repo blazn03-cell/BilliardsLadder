@@ -11,21 +11,25 @@ export default function AuthSuccess() {
 
   useEffect(() => {
     if (!isLoading && authData) {
-      const { role, redirectUrl } = authData;
+      const { role } = authData;
       
-      // Redirect based on role
-      switch (role) {
-        case "admin":
+      const doRedirect = async () => {
+        if (role === "admin") {
           window.location.href = "/app?tab=admin";
-          break;
-        case "operator":
-          window.location.href = "/app?tab=operator-settings";
-          break;
-        case "player":
-        default:
+        } else if (role === "operator") {
+          try {
+            const res = await fetch("/api/auth/me", { credentials: "include" });
+            const me = await res.json();
+            const check = await apiRequest(`/api/operator/settings-complete?userId=${me?.id || me?.user?.id}`);
+            window.location.href = (check as any)?.complete ? "/app?tab=dashboard" : "/app?tab=operator-settings";
+          } catch {
+            window.location.href = "/app?tab=operator-settings";
+          }
+        } else {
           window.location.href = "/app?tab=dashboard";
-          break;
-      }
+        }
+      };
+      doRedirect();
     }
   }, [authData, isLoading]);
 
