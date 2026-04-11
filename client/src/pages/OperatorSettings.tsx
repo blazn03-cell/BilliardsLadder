@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { Settings, MapPin, Palette, Gift } from "lucide-react";
 
 interface OperatorSettings {
@@ -25,9 +26,8 @@ interface OperatorSettings {
 }
 
 export default function OperatorSettings() {
-  // For demo purposes, using a hardcoded user ID
-  // In a real app, this would come from user session/authentication
-  const operatorUserId = "demo-operator-id";
+  const { user } = useAuth();
+  const operatorUserId = user?.id || "";
   
   const [cityName, setCityName] = useState("");
   const [areaName, setAreaName] = useState("");
