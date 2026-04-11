@@ -8,7 +8,7 @@ import { generateQRCodeUrl, generateJoinUrl } from "@/lib/qr-generator";
 import { generateFightNightPoster } from "@/lib/poster-generator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Brain, TrendingUp, Zap, Settings, Users, Shield, CreditCard, Crown, AlertCircle } from "lucide-react";
+import { Brain, TrendingUp, Zap, Settings, Users, Shield, Crown, Star, AlertCircle } from "lucide-react";
 import type {
   Player,
   Match,
@@ -162,6 +162,7 @@ function AIInsightsSection({
 
 function SubscriptionStatus() {
   const { user } = useAuth();
+  const [isHovered, setIsHovered] = useState(false);
 
   const { data: billingStatus, isLoading } = useQuery<{
     hasSubscription: boolean;
@@ -177,77 +178,63 @@ function SubscriptionStatus() {
     enabled: !!user,
   });
 
+  const hasActive = billingStatus?.hasSubscription && billingStatus?.status === "active";
+  const tierKey = billingStatus?.tier || null;
+
+  const tierConfig: Record<string, { icon: typeof Users; color: string; label: string }> = {
+    rookie: { icon: Users, color: "text-blue-400", label: "Rookie" },
+    standard: { icon: Star, color: "text-purple-400", label: "Standard" },
+    basic: { icon: Star, color: "text-purple-400", label: "Standard" },
+    premium: { icon: Crown, color: "text-yellow-400", label: "Premium" },
+    pro: { icon: Crown, color: "text-yellow-400", label: "Premium" },
+  };
+
+  const inactiveIconConfig = { icon: AlertCircle, color: "text-red-400", label: "No Active Plan" };
+  const inactiveColors = { borderColor: "rgba(248,113,113,0.5)", hoverBorderColor: "rgba(248,113,113,0.8)", shadowColor: "rgba(239,68,68,0.2)", hoverShadowColor: "rgba(239,68,68,0.4)" };
+
+  const tierColors: Record<string, { borderColor: string; hoverBorderColor: string; shadowColor: string; hoverShadowColor: string }> = {
+    rookie: { borderColor: "rgba(96,165,250,0.5)", hoverBorderColor: "rgba(96,165,250,0.8)", shadowColor: "rgba(59,130,246,0.2)", hoverShadowColor: "rgba(59,130,246,0.4)" },
+    standard: { borderColor: "rgba(192,132,252,0.5)", hoverBorderColor: "rgba(192,132,252,0.8)", shadowColor: "rgba(168,85,247,0.2)", hoverShadowColor: "rgba(168,85,247,0.4)" },
+    basic: { borderColor: "rgba(192,132,252,0.5)", hoverBorderColor: "rgba(192,132,252,0.8)", shadowColor: "rgba(168,85,247,0.2)", hoverShadowColor: "rgba(168,85,247,0.4)" },
+    premium: { borderColor: "rgba(250,204,21,0.5)", hoverBorderColor: "rgba(250,204,21,0.8)", shadowColor: "rgba(234,179,8,0.2)", hoverShadowColor: "rgba(234,179,8,0.4)" },
+    pro: { borderColor: "rgba(250,204,21,0.5)", hoverBorderColor: "rgba(250,204,21,0.8)", shadowColor: "rgba(234,179,8,0.2)", hoverShadowColor: "rgba(234,179,8,0.4)" },
+  };
+
+  const config = hasActive && tierKey ? (tierConfig[tierKey] || inactiveIconConfig) : inactiveIconConfig;
+  const colors = hasActive && tierKey ? (tierColors[tierKey] || inactiveColors) : inactiveColors;
+  const IconComponent = config.icon;
+
   if (isLoading) {
     return (
-      <Card className="bg-black/60 backdrop-blur-sm border border-neon-green/20 shadow-felt">
-        <CardContent className="p-4 flex items-center gap-3">
-          <LoadingSpinner size="sm" color="neon" />
-          <span className="text-gray-400 text-sm">Loading subscription...</span>
-        </CardContent>
-      </Card>
+      <div className="w-44 h-20 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)" }}>
+        <LoadingSpinner size="sm" color="neon" />
+      </div>
     );
   }
 
-  const hasActive = billingStatus?.hasSubscription && billingStatus?.status === "active";
-  const tierName = billingStatus?.tierInfo?.name || billingStatus?.tier || "None";
-  const price = billingStatus?.monthlyPrice ? (billingStatus.monthlyPrice / 100).toFixed(2) : null;
-  const renewalDate = billingStatus?.currentPeriodEnd
-    ? new Date(billingStatus.currentPeriodEnd).toLocaleDateString()
-    : null;
-
   return (
-    <Card className={`bg-black/60 backdrop-blur-sm border ${hasActive ? 'border-emerald-500/40' : 'border-yellow-500/40'} shadow-felt`} data-testid="subscription-status-card">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {hasActive ? (
-              <div className="p-2 bg-emerald-900/40 rounded-lg">
-                <Crown className="h-5 w-5 text-emerald-400" />
-              </div>
-            ) : (
-              <div className="p-2 bg-yellow-900/40 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-yellow-400" />
-              </div>
-            )}
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-white text-sm">Subscription</span>
-                <Badge className={hasActive
-                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                  : "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
-                }>
-                  {hasActive ? "Active" : "Inactive"}
-                </Badge>
-              </div>
-              {hasActive ? (
-                <div className="text-xs text-gray-400 mt-1">
-                  {tierName} Plan {price ? `- $${price}/mo` : ""} {renewalDate ? `- Renews ${renewalDate}` : ""}
-                  {billingStatus?.cancelAtPeriodEnd && (
-                    <span className="text-yellow-400 ml-1">(Cancels at period end)</span>
-                  )}
-                </div>
-              ) : (
-                <div className="text-xs text-gray-400 mt-1">
-                  No active plan - Subscribe to unlock full features
-                </div>
-              )}
-            </div>
-          </div>
-          <Button
-            size="sm"
-            onClick={() => window.location.href = hasActive ? "/app?tab=player-subscription" : "/app?tab=checkout"}
-            className={hasActive
-              ? "bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/30"
-              : "bg-emerald-600 hover:bg-emerald-700 text-white"
-            }
-            data-testid="button-manage-subscription"
-          >
-            <CreditCard className="h-4 w-4 mr-1" />
-            {hasActive ? "Manage" : "Subscribe"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <div
+      className="w-44 rounded-xl cursor-pointer flex flex-col items-center justify-center gap-2 px-4 py-3 transition-all duration-300 ease-out"
+      style={{
+        background: "rgba(255,255,255,0.05)",
+        WebkitBackdropFilter: "blur(12px)",
+        backdropFilter: "blur(12px)",
+        border: `1px solid ${isHovered ? colors.hoverBorderColor : colors.borderColor}`,
+        boxShadow: isHovered
+          ? `0 10px 25px -5px ${colors.hoverShadowColor}, 0 8px 10px -6px ${colors.hoverShadowColor}`
+          : `0 4px 15px -3px ${colors.shadowColor}, 0 2px 6px -4px ${colors.shadowColor}`,
+        transform: isHovered ? "scale(1.05)" : "scale(1)",
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={() => window.location.href = "/app?tab=player-subscription"}
+      data-testid="subscription-status-card"
+    >
+      <IconComponent className={`h-6 w-6 ${config.color}`} />
+      <span className={`text-sm font-semibold ${config.color} text-center leading-tight`}>
+        {config.label}
+      </span>
+    </div>
   );
 }
 
