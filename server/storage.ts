@@ -1,4 +1,4 @@
-import { 
+import {
   type Player, type InsertPlayer,
   type Match, type InsertMatch,
   type Tournament, type InsertTournament,
@@ -82,10 +82,12 @@ import {
   insertUserSchema,
   insertOrganizationSchema,
   insertPayoutTransferSchema,
+  membershipSubscriptions as membershipSubscriptionsTable,
   players as playersTable,
   matches as matchesTable,
   tournaments as tournamentsTable,
   users as usersTable,
+  webhookEvents,
   sessionAnalytics,
   shots,
   ladderTrainingScores,
@@ -116,26 +118,26 @@ export interface User {
   lastLoginAt?: Date;
   loginAttempts?: number;
   lockedUntil?: Date;
-  
+
   globalRole: GlobalRole;
   role?: string;
-  
+
   // Profile and status
   profileComplete?: boolean;
   onboardingComplete: boolean;
   accountStatus?: string;
-  
+
   // Payment integration
   stripeCustomerId?: string;
   stripeConnectId?: string;
   payoutShareBps?: number;
-  
+
   // Operator-specific fields
   hallName?: string;
   city?: string;
   state?: string;
   subscriptionTier?: string;
-  
+
   createdAt: Date;
   updatedAt?: Date;
 }
@@ -167,20 +169,20 @@ export type InsertUser = {
   twoFactorEnabled?: boolean;
   twoFactorSecret?: string;
   phoneNumber?: string;
-  
+
   globalRole: GlobalRole;
   role?: string;
-  
+
   // Profile and status
   profileComplete?: boolean;
   onboardingComplete?: boolean;
   accountStatus?: string;
-  
+
   // Payment integration
   stripeCustomerId?: string;
   stripeConnectId?: string;
   payoutShareBps?: number;
-  
+
   // Operator-specific fields
   hallName?: string;
   city?: string;
@@ -294,13 +296,13 @@ const NULLABLE_FIELDS = {
 
 // Centralized update helper that handles nullable fields properly
 function applyUpdate<T, K extends keyof T>(
-  base: T, 
-  updates: Partial<T>, 
+  base: T,
+  updates: Partial<T>,
   nullableKeys: readonly K[]
 ): T {
   const normalized = Object.fromEntries(
     Object.entries(updates).map(([k, v]) => [
-      k, 
+      k,
       (nullableKeys as readonly string[]).includes(k) ? (v === undefined ? null : v) : v
     ])
   ) as Partial<T>;
@@ -309,9 +311,9 @@ function applyUpdate<T, K extends keyof T>(
 
 // Generic update helper for Map-based storage
 function updateMapRecord<T>(
-  map: Map<string, T>, 
-  id: string, 
-  updates: Partial<T>, 
+  map: Map<string, T>,
+  id: string,
+  updates: Partial<T>,
   nullable: readonly (keyof T)[]
 ): T | undefined {
   const cur = map.get(id);
@@ -332,25 +334,25 @@ export interface IStorage {
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   deleteUser(id: string): Promise<boolean>;
-  
+
   // Organizations
   getOrganization(id: string): Promise<Organization | undefined>;
   getAllOrganizations(): Promise<Organization[]>;
   createOrganization(org: InsertOrganization): Promise<Organization>;
   updateOrganization(id: string, updates: Partial<Organization>): Promise<Organization | undefined>;
-  
+
   // Payout Transfers
   getPayoutTransfer(id: string): Promise<PayoutTransfer | undefined>;
   getPayoutTransfersByInvoice(invoiceId: string): Promise<PayoutTransfer[]>;
   getAllPayoutTransfers(): Promise<PayoutTransfer[]>;
   createPayoutTransfer(transfer: InsertPayoutTransfer): Promise<PayoutTransfer>;
-  
+
   // Operator Settings
   getOperatorSettings(operatorUserId: string): Promise<OperatorSettings | undefined>;
   getAllOperatorSettings(): Promise<OperatorSettings[]>;
   createOperatorSettings(settings: InsertOperatorSettings): Promise<OperatorSettings>;
   updateOperatorSettings(operatorUserId: string, updates: Partial<OperatorSettings>): Promise<OperatorSettings | undefined>;
-  
+
   // Players
   getPlayer(id: string): Promise<Player | undefined>;
   getPlayerByUserId(userId: string): Promise<Player | undefined>;
@@ -359,28 +361,28 @@ export interface IStorage {
   createPlayer(player: InsertPlayer): Promise<Player>;
   updatePlayer(id: string, updates: Partial<Player>): Promise<Player | undefined>;
   deletePlayer(id: string): Promise<boolean>;
-  
+
   // Matches
   getMatch(id: string): Promise<Match | undefined>;
   getMatches(): Promise<Match[]>;
   getAllMatches(): Promise<Match[]>; // Alias for backwards compatibility
   createMatch(match: InsertMatch): Promise<Match>;
   updateMatch(id: string, updates: Partial<Match>): Promise<Match | undefined>;
-  
+
   // Tournaments
   getTournament(id: string): Promise<Tournament | undefined>;
   getTournaments(): Promise<Tournament[]>;
   getAllTournaments(): Promise<Tournament[]>; // Alias for backwards compatibility
   createTournament(tournament: InsertTournament): Promise<Tournament>;
   updateTournament(id: string, updates: Partial<Tournament>): Promise<Tournament | undefined>;
-  
+
   // Tournament Calcuttas - Bidding on tournament participants
   getTournamentCalcutta(id: string): Promise<TournamentCalcutta | undefined>;
   getTournamentCalcuttas(): Promise<TournamentCalcutta[]>;
   getTournamentCalcuttasByTournament(tournamentId: string): Promise<TournamentCalcutta[]>;
   createTournamentCalcutta(calcutta: InsertTournamentCalcutta): Promise<TournamentCalcutta>;
   updateTournamentCalcutta(id: string, updates: Partial<TournamentCalcutta>): Promise<TournamentCalcutta | undefined>;
-  
+
   // Calcutta Bids
   getCalcuttaBid(id: string): Promise<CalcuttaBid | undefined>;
   getCalcuttaBids(): Promise<CalcuttaBid[]>;
@@ -388,14 +390,14 @@ export interface IStorage {
   getCalcuttaBidsByBidder(bidderId: string): Promise<CalcuttaBid[]>;
   createCalcuttaBid(bid: InsertCalcuttaBid): Promise<CalcuttaBid>;
   updateCalcuttaBid(id: string, updates: Partial<CalcuttaBid>): Promise<CalcuttaBid | undefined>;
-  
+
   // Season Predictions - Championship predictions
   getSeasonPrediction(id: string): Promise<SeasonPrediction | undefined>;
   getSeasonPredictions(): Promise<SeasonPrediction[]>;
   getSeasonPredictionsByStatus(status: string): Promise<SeasonPrediction[]>;
   createSeasonPrediction(prediction: InsertSeasonPrediction): Promise<SeasonPrediction>;
   updateSeasonPrediction(id: string, updates: Partial<SeasonPrediction>): Promise<SeasonPrediction | undefined>;
-  
+
   // Prediction Entries
   getPredictionEntry(id: string): Promise<PredictionEntry | undefined>;
   getPredictionEntries(): Promise<PredictionEntry[]>;
@@ -403,7 +405,7 @@ export interface IStorage {
   getPredictionEntriesByPredictor(predictorId: string): Promise<PredictionEntry[]>;
   createPredictionEntry(entry: InsertPredictionEntry): Promise<PredictionEntry>;
   updatePredictionEntry(id: string, updates: Partial<PredictionEntry>): Promise<PredictionEntry | undefined>;
-  
+
   // Added Money Fund - Tournament revenue allocation
   getAddedMoneyFund(id: string): Promise<AddedMoneyFund | undefined>;
   getAddedMoneyFunds(): Promise<AddedMoneyFund[]>;
@@ -411,14 +413,14 @@ export interface IStorage {
   getAddedMoneyFundsByTournament(tournamentId: string): Promise<AddedMoneyFund[]>;
   createAddedMoneyFund(fund: InsertAddedMoneyFund): Promise<AddedMoneyFund>;
   updateAddedMoneyFund(id: string, updates: Partial<AddedMoneyFund>): Promise<AddedMoneyFund | undefined>;
-  
+
   // Kelly Pools
   getKellyPool(id: string): Promise<KellyPool | undefined>;
   getKellyPools(): Promise<KellyPool[]>;
   getAllKellyPools(): Promise<KellyPool[]>; // Alias for backwards compatibility
   createKellyPool(kellyPool: InsertKellyPool): Promise<KellyPool>;
   updateKellyPool(id: string, updates: Partial<KellyPool>): Promise<KellyPool | undefined>;
-  
+
   // Money Games
   getMoneyGame(id: string): Promise<MoneyGame | undefined>;
   getMoneyGames(): Promise<MoneyGame[]>;
@@ -426,28 +428,28 @@ export interface IStorage {
   createMoneyGame(game: InsertMoneyGame): Promise<MoneyGame>;
   updateMoneyGame(id: string, updates: Partial<MoneyGame>): Promise<MoneyGame | undefined>;
   deleteMoneyGame(id: string): Promise<boolean>;
-  
+
   // Bounties
   getBounty(id: string): Promise<Bounty | undefined>;
   getBounties(): Promise<Bounty[]>;
   getAllBounties(): Promise<Bounty[]>; // Alias for backwards compatibility
   createBounty(bounty: InsertBounty): Promise<Bounty>;
   updateBounty(id: string, updates: Partial<Bounty>): Promise<Bounty | undefined>;
-  
+
   // Charity Events
   getCharityEvent(id: string): Promise<CharityEvent | undefined>;
   getCharityEvents(): Promise<CharityEvent[]>;
   getAllCharityEvents(): Promise<CharityEvent[]>; // Alias for backwards compatibility
   createCharityEvent(event: InsertCharityEvent): Promise<CharityEvent>;
   updateCharityEvent(id: string, updates: Partial<CharityEvent>): Promise<CharityEvent | undefined>;
-  
+
   // Support Requests
   getSupportRequest(id: string): Promise<SupportRequest | undefined>;
   getSupportRequests(): Promise<SupportRequest[]>;
   getAllSupportRequests(): Promise<SupportRequest[]>; // Alias for backwards compatibility
   createSupportRequest(request: InsertSupportRequest): Promise<SupportRequest>;
   updateSupportRequest(id: string, updates: Partial<SupportRequest>): Promise<SupportRequest | undefined>;
-  
+
   // Live Streams
   getLiveStream(id: string): Promise<LiveStream | undefined>;
   getLiveStreams(): Promise<LiveStream[]>;
@@ -485,11 +487,11 @@ export interface IStorage {
   getRosterByPlayer(playerId: string): Promise<HallRoster[]>;
   createHallRoster(roster: InsertHallRoster): Promise<HallRoster>;
   updateHallRoster(id: string, updates: Partial<HallRoster>): Promise<HallRoster | undefined>;
-  
+
   // Webhook Events
   getWebhookEvent(stripeEventId: string): Promise<WebhookEvent | undefined>;
   createWebhookEvent(event: InsertWebhookEvent): Promise<WebhookEvent>;
-  
+
   // Rookie System
   getRookieMatch(id: string): Promise<RookieMatch | undefined>;
   getRookieMatches(): Promise<RookieMatch[]>;
@@ -497,25 +499,25 @@ export interface IStorage {
   getRookieMatchesByPlayer(playerId: string): Promise<RookieMatch[]>;
   createRookieMatch(match: InsertRookieMatch): Promise<RookieMatch>;
   updateRookieMatch(id: string, updates: Partial<RookieMatch>): Promise<RookieMatch | undefined>;
-  
+
   getRookieEvent(id: string): Promise<RookieEvent | undefined>;
   getRookieEvents(): Promise<RookieEvent[]>;
   getAllRookieEvents(): Promise<RookieEvent[]>; // Alias for backwards compatibility
   createRookieEvent(event: InsertRookieEvent): Promise<RookieEvent>;
   updateRookieEvent(id: string, updates: Partial<RookieEvent>): Promise<RookieEvent | undefined>;
-  
+
   getRookieAchievement(id: string): Promise<RookieAchievement | undefined>;
   getRookieAchievementsByPlayer(playerId: string): Promise<RookieAchievement[]>;
   createRookieAchievement(achievement: InsertRookieAchievement): Promise<RookieAchievement>;
-  
+
   getRookieSubscription(playerId: string): Promise<RookieSubscription | undefined>;
   getAllRookieSubscriptions(): Promise<RookieSubscription[]>;
   createRookieSubscription(subscription: InsertRookieSubscription): Promise<RookieSubscription>;
   updateRookieSubscription(playerId: string, updates: Partial<RookieSubscription>): Promise<RookieSubscription | undefined>;
-  
+
   getRookieLeaderboard(): Promise<Player[]>;
   promoteRookieToMainLadder(playerId: string): Promise<Player | undefined>;
-  
+
   // Side Betting - Wallet Operations
   getWallet(userId: string): Promise<Wallet | undefined>;
   createWallet(wallet: InsertWallet): Promise<Wallet>;
@@ -523,10 +525,10 @@ export interface IStorage {
   creditWallet(userId: string, amount: number): Promise<Wallet | undefined>;
   lockCredits(userId: string, amount: number): Promise<boolean>;
   unlockCredits(userId: string, amount: number): Promise<boolean>;
-  
+
   // Wallet aliases (for backwards compatibility)
   addCredits(userId: string, amount: number): Promise<Wallet | undefined>;
-  
+
   // Side Betting - Side Pots
   getSidePot(id: string): Promise<SidePot | undefined>;
   getAllSidePots(): Promise<SidePot[]>;
@@ -536,57 +538,57 @@ export interface IStorage {
   updateSidePot(id: string, updates: Partial<SidePot>): Promise<SidePot | undefined>;
   getExpiredDisputePots(now: Date): Promise<SidePot[]>;
   processDelayedPayouts(potId: string, winningSide: string): Promise<any>;
-  
+
   // Challenge Pool aliases (for backwards compatibility)
   getChallengePool(id: string): Promise<ChallengePool | undefined>;
   getAllChallengePools(): Promise<ChallengePool[]>;
   createChallengePool(pool: InsertChallengePool): Promise<ChallengePool>;
   updateChallengePool(id: string, updates: Partial<ChallengePool>): Promise<ChallengePool | undefined>;
-  
+
   // Side Betting - Side Bets
   getSideBet(id: string): Promise<SideBet | undefined>;
   getSideBetsByPot(challengePoolId: string): Promise<SideBet[]>;
   getSideBetsByUser(userId: string): Promise<SideBet[]>;
   createSideBet(bet: InsertSideBet): Promise<SideBet>;
   updateSideBet(id: string, updates: Partial<SideBet>): Promise<SideBet | undefined>;
-  
+
   // Challenge Entry aliases (for backwards compatibility)
   getChallengeEntry(id: string): Promise<ChallengeEntry | undefined>;
   getChallengeEntriesByPool(poolId: string): Promise<ChallengeEntry[]>;
   createChallengeEntry(entry: InsertChallengeEntry): Promise<ChallengeEntry>;
   updateChallengeEntry(id: string, updates: Partial<ChallengeEntry>): Promise<ChallengeEntry | undefined>;
-  
+
   // Side Betting - Ledger
   getLedgerEntry(id: string): Promise<LedgerEntry | undefined>;
   getLedgerByUser(userId: string): Promise<LedgerEntry[]>;
   createLedgerEntry(entry: InsertLedgerEntry): Promise<LedgerEntry>;
-  
+
   // Side Betting - Resolutions
   getResolution(id: string): Promise<Resolution | undefined>;
   getResolutionByPot(challengePoolId: string): Promise<Resolution | undefined>;
   createResolution(resolution: InsertResolution): Promise<Resolution>;
-  
+
   // Operator Subscriptions
   getOperatorSubscription(operatorId: string): Promise<OperatorSubscription | undefined>;
   getOperatorSubscriptions(): Promise<OperatorSubscription[]>;
   getAllOperatorSubscriptions(): Promise<OperatorSubscription[]>; // Alias for backwards compatibility
   createOperatorSubscription(subscription: InsertOperatorSubscription): Promise<OperatorSubscription>;
   updateOperatorSubscription(operatorId: string, updates: Partial<OperatorSubscription>): Promise<OperatorSubscription | undefined>;
-  
+
   // Operator Subscription Splits
   createOperatorSubscriptionSplit(split: InsertOperatorSubscriptionSplit): Promise<OperatorSubscriptionSplit>;
   getOperatorSubscriptionSplits(operatorId: string): Promise<OperatorSubscriptionSplit[]>;
   getOperatorSubscriptionSplitsBySubscription(subscriptionId: string): Promise<OperatorSubscriptionSplit[]>;
   getTrusteeEarnings(trusteeId: string): Promise<{ totalEarnings: number; splitCount: number; splits: OperatorSubscriptionSplit[] }>;
   getOperatorSubscriptionSplit(id: string): Promise<OperatorSubscriptionSplit | undefined>;
-  
+
   // Membership Subscriptions
   getMembershipSubscription(id: string): Promise<MembershipSubscription | undefined>;
   getMembershipSubscriptionByPlayerId(playerId: string): Promise<MembershipSubscription | undefined>;
   getMembershipSubscriptionsByPlayer(playerId: string): Promise<MembershipSubscription[]>; // Alias for compatibility
   createMembershipSubscription(subscription: InsertMembershipSubscription): Promise<MembershipSubscription>;
   updateMembershipSubscription(id: string, updates: Partial<MembershipSubscription>): Promise<MembershipSubscription | undefined>;
-  
+
   // Team Division System
   getTeam(id: string): Promise<Team | undefined>;
   getTeamsByOperator(operatorId: string): Promise<Team[]>;
@@ -594,25 +596,25 @@ export interface IStorage {
   createTeam(team: InsertTeam): Promise<Team>;
   updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined>;
   deleteTeam(id: string): Promise<boolean>;
-  
+
   getTeamPlayer(id: string): Promise<TeamPlayer | undefined>;
   getTeamPlayersByTeam(teamId: string): Promise<TeamPlayer[]>;
   getTeamPlayersByPlayer(playerId: string): Promise<TeamPlayer[]>;
   createTeamPlayer(teamPlayer: InsertTeamPlayer): Promise<TeamPlayer>;
   updateTeamPlayer(id: string, updates: Partial<TeamPlayer>): Promise<TeamPlayer | undefined>;
   removeTeamPlayer(id: string): Promise<boolean>;
-  
+
   getTeamMatch(id: string): Promise<TeamMatch | undefined>;
   getTeamMatchesByTeam(teamId: string): Promise<TeamMatch[]>;
   getTeamMatchesByOperator(operatorId: string): Promise<TeamMatch[]>;
   createTeamMatch(teamMatch: InsertTeamMatch): Promise<TeamMatch>;
   updateTeamMatch(id: string, updates: Partial<TeamMatch>): Promise<TeamMatch | undefined>;
-  
+
   getTeamSet(id: string): Promise<TeamSet | undefined>;
   getTeamSetsByMatch(teamMatchId: string): Promise<TeamSet[]>;
   createTeamSet(teamSet: InsertTeamSet): Promise<TeamSet>;
   updateTeamSet(id: string, updates: Partial<TeamSet>): Promise<TeamSet | undefined>;
-  
+
   // Team Challenge System
   getTeamChallenge(id: string): Promise<TeamChallenge | undefined>;
   getAllTeamChallenges(): Promise<TeamChallenge[]>;
@@ -622,64 +624,64 @@ export interface IStorage {
   createTeamChallenge(challenge: InsertTeamChallenge): Promise<TeamChallenge>;
   updateTeamChallenge(id: string, updates: Partial<TeamChallenge>): Promise<TeamChallenge | undefined>;
   acceptTeamChallenge(challengeId: string, acceptingTeamId: string): Promise<TeamChallenge | undefined>;
-  
+
   getTeamChallengeParticipant(id: string): Promise<TeamChallengeParticipant | undefined>;
   getTeamChallengeParticipantsByChallenge(challengeId: string): Promise<TeamChallengeParticipant[]>;
   createTeamChallengeParticipant(participant: InsertTeamChallengeParticipant): Promise<TeamChallengeParticipant>;
   updateTeamChallengeParticipant(id: string, updates: Partial<TeamChallengeParticipant>): Promise<TeamChallengeParticipant | undefined>;
-  
+
   // Team Challenge Business Logic
   calculateTeamChallengeStake(challengeType: string, individualFee: number): number;
   validateProMembership(playerId: string): Promise<boolean>;
   createTeamChallengeWithParticipants(challengeData: InsertTeamChallenge, teamPlayers: string[]): Promise<{ challenge: TeamChallenge; participants: TeamChallengeParticipant[] }>;
-  
+
   // Team Stripe Accounts
   getTeamStripeAccount(teamId: string): Promise<TeamStripeAccount | undefined>;
   getTeamStripeAccounts(): Promise<TeamStripeAccount[]>;
   createTeamStripeAccount(account: InsertTeamStripeAccount): Promise<TeamStripeAccount>;
   updateTeamStripeAccount(teamId: string, updates: Partial<TeamStripeAccount>): Promise<TeamStripeAccount | undefined>;
-  
+
   // Team Registrations
   getTeamRegistration(id: string): Promise<TeamRegistration | undefined>;
   getTeamRegistrations(): Promise<TeamRegistration[]>;
   getTeamRegistrationsByDivision(divisionId: string): Promise<TeamRegistration[]>;
   createTeamRegistration(registration: InsertTeamRegistration): Promise<TeamRegistration>;
   updateTeamRegistration(id: string, updates: Partial<TeamRegistration>): Promise<TeamRegistration | undefined>;
-  
+
   // === SPORTSMANSHIP VOTE-OUT SYSTEM ===
-  
+
   // Check-in management
   checkinUser(data: InsertCheckin): Promise<Checkin>;
   getCheckinsBySession(sessionId: string): Promise<Checkin[]>;
   getCheckinsByVenue(venueId: string): Promise<Checkin[]>;
   getActiveCheckins(sessionId: string, venueId: string): Promise<Checkin[]>;
-  
+
   // Vote management
   createAttitudeVote(data: InsertAttitudeVote): Promise<AttitudeVote>;
   getAttitudeVote(id: string): Promise<AttitudeVote | undefined>;
   getActiveVotes(sessionId: string, venueId: string): Promise<AttitudeVote[]>;
   updateAttitudeVote(id: string, updates: Partial<AttitudeVote>): Promise<AttitudeVote | undefined>;
   closeAttitudeVote(id: string, result: string): Promise<AttitudeVote | undefined>;
-  
+
   // Ballot management
   createAttitudeBallot(data: InsertAttitudeBallot): Promise<AttitudeBallot>;
   getBallotsByVote(voteId: string): Promise<AttitudeBallot[]>;
   hasUserVoted(voteId: string, userId: string): Promise<boolean>;
-  
+
   // Vote calculation utilities
   calculateVoteWeights(voteId: string): Promise<{ totalWeight: number; outWeight: number; keepWeight: number }>;
   checkVoteQuorum(voteId: string): Promise<boolean>;
-  
+
   // Incident management
   createIncident(data: InsertIncident): Promise<Incident>;
   getIncidentsByUser(userId: string): Promise<Incident[]>;
   getRecentIncidents(venueId: string, hours: number): Promise<Incident[]>;
-  
+
   // User eligibility and cooldowns
   canUserBeVotedOn(userId: string, sessionId: string): Promise<boolean>;
   getLastVoteForUser(userId: string, sessionId: string): Promise<AttitudeVote | undefined>;
   isUserImmune(userId: string, sessionId: string): Promise<boolean>;
-  
+
   // File Upload Tracking
   getUploadedFile(id: string): Promise<UploadedFile | undefined>;
   getUploadedFileByPath(objectPath: string): Promise<UploadedFile | undefined>;
@@ -689,7 +691,7 @@ export interface IStorage {
   updateUploadedFile(id: string, updates: Partial<UploadedFile>): Promise<UploadedFile | undefined>;
   deleteUploadedFile(id: string): Promise<boolean>;
   incrementFileDownloadCount(id: string): Promise<void>;
-  
+
   // File Sharing
   getFileShare(id: string): Promise<FileShare | undefined>;
   getFileShares(fileId: string): Promise<FileShare[]>;
@@ -710,28 +712,28 @@ export interface IStorage {
   getTutoringSessionsByRookie(rookieId: string): Promise<TutoringSession[]>;
   createTutoringSession(session: InsertTutoringSession): Promise<TutoringSession>;
   updateTutoringSession(id: string, updates: Partial<TutoringSession>): Promise<TutoringSession | undefined>;
-  
+
   getTutoringCredits(id: string): Promise<TutoringCredits | undefined>;
   getTutoringCreditsByTutor(tutorId: string): Promise<TutoringCredits[]>;
   createTutoringCredits(credits: InsertTutoringCredits): Promise<TutoringCredits>;
-  
+
   // Commission and Earnings Tracking
   getCommissionRate(id: string): Promise<CommissionRate | undefined>;
   getCommissionRatesByOperator(operatorId: string): Promise<CommissionRate[]>;
   createCommissionRate(rate: InsertCommissionRate): Promise<CommissionRate>;
-  
+
   getPlatformEarnings(id: string): Promise<PlatformEarnings | undefined>;
   getPlatformEarningsByOperator(operatorId: string): Promise<PlatformEarnings[]>;
   createPlatformEarnings(earnings: InsertPlatformEarnings): Promise<PlatformEarnings>;
-  
+
   getMembershipEarnings(id: string): Promise<MembershipEarnings | undefined>;
   getMembershipEarningsByOperator(operatorId: string): Promise<MembershipEarnings[]>;
   createMembershipEarnings(earnings: InsertMembershipEarnings): Promise<MembershipEarnings>;
-  
+
   getOperatorPayout(id: string): Promise<OperatorPayout | undefined>;
   getOperatorPayoutsByOperator(operatorId: string): Promise<OperatorPayout[]>;
   createOperatorPayout(payout: InsertOperatorPayout): Promise<OperatorPayout>;
-  
+
   // === CHALLENGE CALENDAR ===
   getChallenge(id: string): Promise<Challenge | undefined>;
   createChallenge(challenge: InsertChallenge): Promise<Challenge>;
@@ -740,30 +742,30 @@ export interface IStorage {
   getChallengesByHall(hallId: string): Promise<Challenge[]>;
   getChallengesByDateRange(startDate: Date, endDate: Date): Promise<Challenge[]>;
   getUpcomingChallenges(limit?: number): Promise<Challenge[]>;
-  
+
   // Challenge Fees
   getChallengeFee(id: string): Promise<ChallengeFee | undefined>;
   createChallengeFee(fee: InsertChallengeFee): Promise<ChallengeFee>;
   updateChallengeFee(id: string, updates: Partial<ChallengeFee>): Promise<ChallengeFee | undefined>;
   getChallengeFeesByChallenge(challengeId: string): Promise<ChallengeFee[]>;
   getChallengeFeesByStatus(statuses: string[]): Promise<ChallengeFee[]>;
-  
+
   // Challenge Check-ins
   createChallengeCheckIn(checkIn: InsertChallengeCheckIn): Promise<ChallengeCheckIn>;
   getChallengeCheckInsByChallenge(challengeId: string): Promise<ChallengeCheckIn[]>;
-  
+
   // QR Code Nonce Management (Replay Protection)
   createQrCodeNonce(nonce: InsertQrCodeNonce): Promise<QrCodeNonce>;
   markNonceAsUsed(nonce: string, ipAddress?: string, userAgent?: string): Promise<QrCodeNonce | undefined>;
   isNonceUsed(nonce: string): Promise<boolean>;
   isNonceValid(nonce: string): Promise<boolean>; // Checks both used status and expiration
   cleanupExpiredNonces(): Promise<number>; // Returns count of cleaned up nonces
-  
+
   // Challenge Policies
   getChallengesPolicyByHall(hallId: string): Promise<ChallengePolicy | undefined>;
   createChallengePolicy(policy: InsertChallengePolicy): Promise<ChallengePolicy>;
   updateChallengePolicy(id: string, updates: Partial<ChallengePolicy>): Promise<ChallengePolicy | undefined>;
-  
+
   // iCal Feed Tokens - Secure personal calendar feed authentication
   getIcalFeedToken(id: string): Promise<IcalFeedToken | undefined>;
   getIcalFeedTokenByToken(token: string): Promise<IcalFeedToken | undefined>;
@@ -775,7 +777,7 @@ export interface IStorage {
   cleanupExpiredTokens(): Promise<number>;
 
   // === ENHANCED PAYMENT SYSTEM ===
-  
+
   // Payment Methods (SetupIntent collection)
   getPaymentMethod(id: string): Promise<PaymentMethod | undefined>;
   getPaymentMethodsByUser(userId: string): Promise<PaymentMethod[]>;
@@ -784,7 +786,7 @@ export interface IStorage {
   updatePaymentMethod(id: string, updates: Partial<PaymentMethod>): Promise<PaymentMethod | undefined>;
   setDefaultPaymentMethod(userId: string, paymentMethodId: string): Promise<PaymentMethod | undefined>;
   deactivatePaymentMethod(id: string): Promise<PaymentMethod | undefined>;
-  
+
   // Stakes Holds (manual capture system)
   getStakesHold(id: string): Promise<StakesHold | undefined>;
   getStakesHoldsByChallenge(challengeId: string): Promise<StakesHold[]>;
@@ -795,14 +797,14 @@ export interface IStorage {
   updateStakesHold(id: string, updates: Partial<StakesHold>): Promise<StakesHold | undefined>;
   captureStakesHold(id: string, reason: string): Promise<StakesHold | undefined>;
   releaseStakesHold(id: string, reason: string): Promise<StakesHold | undefined>;
-  
+
   // === NOTIFICATION SYSTEM ===
-  
+
   // Notification Settings
   getNotificationSettings(userId: string): Promise<NotificationSettings | undefined>;
   createNotificationSettings(settings: InsertNotificationSettings): Promise<NotificationSettings>;
   updateNotificationSettings(userId: string, updates: Partial<NotificationSettings>): Promise<NotificationSettings | undefined>;
-  
+
   // Notification Deliveries
   getNotificationDelivery(id: string): Promise<NotificationDelivery | undefined>;
   getNotificationDeliveriesByUser(userId: string): Promise<NotificationDelivery[]>;
@@ -812,9 +814,9 @@ export interface IStorage {
   updateNotificationDelivery(id: string, updates: Partial<NotificationDelivery>): Promise<NotificationDelivery | undefined>;
   markNotificationDelivered(id: string, providerId?: string): Promise<NotificationDelivery | undefined>;
   markNotificationFailed(id: string, errorMessage: string): Promise<NotificationDelivery | undefined>;
-  
+
   // === DISPUTE MANAGEMENT ===
-  
+
   // Dispute Resolutions
   getDisputeResolution(id: string): Promise<DisputeResolution | undefined>;
   getDisputeResolutionsByChallenge(challengeId: string): Promise<DisputeResolution[]>;
@@ -824,9 +826,9 @@ export interface IStorage {
   updateDisputeResolution(id: string, updates: Partial<DisputeResolution>): Promise<DisputeResolution | undefined>;
   resolveDispute(id: string, resolution: string, resolvedBy: string, action: string, refundAmount?: number): Promise<DisputeResolution | undefined>;
   addDisputeEvidence(id: string, evidenceUrls: string[], evidenceTypes: string[], notes?: string): Promise<DisputeResolution | undefined>;
-  
+
   // === ANTI-ABUSE SYSTEM ===
-  
+
   // Player Cooldowns
   getPlayerCooldown(id: string): Promise<PlayerCooldown | undefined>;
   getPlayerCooldownsByPlayer(playerId: string): Promise<PlayerCooldown[]>;
@@ -836,16 +838,16 @@ export interface IStorage {
   updatePlayerCooldown(id: string, updates: Partial<PlayerCooldown>): Promise<PlayerCooldown | undefined>;
   liftPlayerCooldown(id: string, liftedBy: string, reason: string): Promise<PlayerCooldown | undefined>;
   checkPlayerEligibility(playerId: string): Promise<{ eligible: boolean; reason?: string; cooldownId?: string }>;
-  
+
   // Device Attestations
   getDeviceAttestation(id: string): Promise<DeviceAttestation | undefined>;
   getDeviceAttestationsByPlayer(playerId: string): Promise<DeviceAttestation[]>;
   getDeviceAttestationsByChallenge(challengeId: string): Promise<DeviceAttestation[]>;
   getHighRiskAttestations(threshold?: number): Promise<DeviceAttestation[]>;
   createDeviceAttestation(attestation: InsertDeviceAttestation): Promise<DeviceAttestation>;
-  
+
   // === JOB QUEUE SYSTEM ===
-  
+
   // Job Queue
   getJob(id: string): Promise<JobQueue | undefined>;
   getJobsByType(jobType: string): Promise<JobQueue[]>;
@@ -859,16 +861,16 @@ export interface IStorage {
   markJobFailed(id: string, errorMessage: string): Promise<JobQueue | undefined>;
   requeueJob(id: string): Promise<JobQueue | undefined>;
   cleanupCompletedJobs(olderThanDays?: number): Promise<number>;
-  
+
   // === METRICS & MONITORING ===
-  
+
   // System Metrics
   getSystemMetric(id: string): Promise<SystemMetric | undefined>;
   getSystemMetricsByType(metricType: string, hallId?: string): Promise<SystemMetric[]>;
   getSystemMetricsByTimeWindow(windowStart: Date, windowEnd: Date, metricType?: string): Promise<SystemMetric[]>;
   createSystemMetric(metric: InsertSystemMetric): Promise<SystemMetric>;
   aggregateMetrics(metricType: string, timeWindow: string, startDate: Date, endDate: Date): Promise<SystemMetric[]>;
-  
+
   // System Alerts
   getSystemAlert(id: string): Promise<SystemAlert | undefined>;
   getSystemAlertsByType(alertType: string): Promise<SystemAlert[]>;
@@ -878,30 +880,30 @@ export interface IStorage {
   updateSystemAlert(id: string, updates: Partial<SystemAlert>): Promise<SystemAlert | undefined>;
   triggerAlert(id: string, currentValue: number): Promise<SystemAlert | undefined>;
   resolveAlert(id: string, resolvedBy?: string): Promise<SystemAlert | undefined>;
-  
+
   // === AI COACH TRAINING ANALYTICS ===
-  
+
   // Session Management
   createTrainingSession(session: InsertSessionAnalytics): Promise<SelectSessionAnalytics>;
   getTrainingSession(sessionId: string): Promise<SelectSessionAnalytics | null>;
   getPlayerSessions(playerId: string, limit?: number): Promise<SelectSessionAnalytics[]>;
-  
+
   // Shot Recording
   recordShots(sessionId: string, shots: InsertShot[]): Promise<SelectShot[]>;
   getSessionShots(sessionId: string): Promise<SelectShot[]>;
-  
+
   // Monthly Scores & Leaderboard
   calculateMonthlyScores(period: string): Promise<void>;
   getHallLeaderboard(hallId: string, period: string): Promise<SelectLadderTrainingScore[]>;
   getPlayerTrainingScore(playerId: string, period: string): Promise<SelectLadderTrainingScore | null>;
-  
+
   // Reward Management
   createReward(reward: InsertSubscriptionReward): Promise<SelectSubscriptionReward>;
   getRewardsForPeriod(period: string): Promise<SelectSubscriptionReward[]>;
   markRewardApplied(rewardId: string, stripeCouponId: string): Promise<void>;
-  
+
   // === PRIZE POOL AGGREGATION ===
-  
+
   // Prize Pool Management
   getPrizePool(id: string): Promise<PrizePool | undefined>;
   getPrizePoolByPoolId(poolId: string): Promise<PrizePool | undefined>;
@@ -911,14 +913,14 @@ export interface IStorage {
   createPrizePool(prizePool: InsertPrizePool): Promise<PrizePool>;
   updatePrizePool(id: string, updates: Partial<PrizePool>): Promise<PrizePool | undefined>;
   lockPrizePool(poolId: string): Promise<PrizePool | undefined>;
-  
+
   // Prize Pool Contributions
   getPrizePoolContribution(id: string): Promise<PrizePoolContribution | undefined>;
   getPrizePoolContributionsByPoolId(poolId: string): Promise<PrizePoolContribution[]>;
   getPrizePoolContributionsByPlayer(playerId: string): Promise<PrizePoolContribution[]>;
   createPrizePoolContribution(contribution: InsertPrizePoolContribution): Promise<PrizePoolContribution>;
   aggregatePrizePoolContributions(poolId: string): Promise<{ total: number; byType: Record<string, number> }>;
-  
+
   // Prize Pool Distributions
   getPrizePoolDistribution(id: string): Promise<PrizePoolDistribution | undefined>;
   getPrizePoolDistributionsByPoolId(poolId: string): Promise<PrizePoolDistribution[]>;
@@ -998,28 +1000,28 @@ export class MemStorage implements IStorage {
   private hallRosters = new Map<string, HallRoster>();
   private webhookEvents = new Map<string, WebhookEvent>();
   private operatorSettings = new Map<string, OperatorSettings>(); // keyed by operatorUserId
-  
+
   // Side Betting Storage
   private wallets = new Map<string, Wallet>(); // keyed by userId
   private sidePots = new Map<string, SidePot>();
   private sideBets = new Map<string, SideBet>();
   private ledgerEntries = new Map<string, LedgerEntry>();
   private resolutions = new Map<string, Resolution>();
-  
+
   // Operator Subscription Storage
   private operatorSubscriptions = new Map<string, OperatorSubscription>(); // keyed by operatorId
   private operatorSubscriptionSplits = new Map<string, OperatorSubscriptionSplit>(); // keyed by split id
-  
+
   // Team Division Storage
   private teams = new Map<string, Team>();
   private teamPlayers = new Map<string, TeamPlayer>();
   private teamMatches = new Map<string, TeamMatch>();
   private teamSets = new Map<string, TeamSet>();
-  
+
   // Team Challenge Storage
   private teamChallenges = new Map<string, TeamChallenge>();
   private teamChallengeParticipants = new Map<string, TeamChallengeParticipant>();
-  
+
   // === SPORTSMANSHIP VOTE-OUT SYSTEM ===
   private checkins = new Map<string, Checkin>();
   private attitudeVotes = new Map<string, AttitudeVote>();
@@ -1083,7 +1085,7 @@ export class MemStorage implements IStorage {
   private jobQueue = new Map<string, JobQueue>();
   private systemMetrics = new Map<string, SystemMetric>();
   private systemAlerts = new Map<string, SystemAlert>();
-  
+
   constructor() {
     // Initialize with seed data for demonstration (disabled in production)
     if (process.env.NODE_ENV === "development") {
@@ -1109,7 +1111,7 @@ export class MemStorage implements IStorage {
   }
 
   async getStaffUsers(): Promise<User[]> {
-    return Array.from(this.users.values()).filter(user => 
+    return Array.from(this.users.values()).filter(user =>
       user.globalRole === "STAFF" || user.globalRole === "OWNER"
     );
   }
@@ -1227,7 +1229,7 @@ export class MemStorage implements IStorage {
 
   // OperatorSettings methods
   async getOperatorSettings(operatorUserId: string): Promise<OperatorSettings | undefined> {
-    return Array.from(this.operatorSettings.values()).find(settings => 
+    return Array.from(this.operatorSettings.values()).find(settings =>
       settings.operatorUserId === operatorUserId
     );
   }
@@ -2017,7 +2019,7 @@ export class MemStorage implements IStorage {
   async updateTournament(id: string, updates: Partial<Tournament>): Promise<Tournament | undefined> {
     const tournament = this.tournaments.get(id);
     if (!tournament) return undefined;
-    
+
     const updatedTournament = { ...tournament, ...updates };
     this.tournaments.set(id, updatedTournament);
     return updatedTournament;
@@ -2057,7 +2059,7 @@ export class MemStorage implements IStorage {
   async updateTournamentCalcutta(id: string, updates: Partial<TournamentCalcutta>): Promise<TournamentCalcutta | undefined> {
     const calcutta = this.tournamentCalcuttas.get(id);
     if (!calcutta) return undefined;
-    
+
     const updatedCalcutta = { ...calcutta, ...updates };
     this.tournamentCalcuttas.set(id, updatedCalcutta);
     return updatedCalcutta;
@@ -2097,7 +2099,7 @@ export class MemStorage implements IStorage {
   async updateCalcuttaBid(id: string, updates: Partial<CalcuttaBid>): Promise<CalcuttaBid | undefined> {
     const bid = this.calcuttaBids.get(id);
     if (!bid) return undefined;
-    
+
     const updatedBid = { ...bid, ...updates };
     this.calcuttaBids.set(id, updatedBid);
     return updatedBid;
@@ -2144,7 +2146,7 @@ export class MemStorage implements IStorage {
   async updateSeasonPrediction(id: string, updates: Partial<SeasonPrediction>): Promise<SeasonPrediction | undefined> {
     const prediction = this.seasonPredictions.get(id);
     if (!prediction) return undefined;
-    
+
     const updatedPrediction = { ...prediction, ...updates };
     this.seasonPredictions.set(id, updatedPrediction);
     return updatedPrediction;
@@ -2184,7 +2186,7 @@ export class MemStorage implements IStorage {
   async updatePredictionEntry(id: string, updates: Partial<PredictionEntry>): Promise<PredictionEntry | undefined> {
     const entry = this.predictionEntries.get(id);
     if (!entry) return undefined;
-    
+
     const updatedEntry = { ...entry, ...updates };
     this.predictionEntries.set(id, updatedEntry);
     return updatedEntry;
@@ -2224,7 +2226,7 @@ export class MemStorage implements IStorage {
   async updateAddedMoneyFund(id: string, updates: Partial<AddedMoneyFund>): Promise<AddedMoneyFund | undefined> {
     const fund = this.addedMoneyFunds.get(id);
     if (!fund) return undefined;
-    
+
     const updatedFund = { ...fund, ...updates };
     this.addedMoneyFunds.set(id, updatedFund);
     return updatedFund;
@@ -2261,7 +2263,7 @@ export class MemStorage implements IStorage {
   async updateKellyPool(id: string, updates: Partial<KellyPool>): Promise<KellyPool | undefined> {
     const kellyPool = this.kellyPools.get(id);
     if (!kellyPool) return undefined;
-    
+
     const updatedKellyPool = { ...kellyPool, ...updates };
     this.kellyPools.set(id, updatedKellyPool);
     return updatedKellyPool;
@@ -2295,7 +2297,7 @@ export class MemStorage implements IStorage {
   async updateMoneyGame(id: string, updates: Partial<MoneyGame>): Promise<MoneyGame | undefined> {
     const moneyGame = this.moneyGames.get(id);
     if (!moneyGame) return undefined;
-    
+
     const updatedMoneyGame = { ...moneyGame, ...updates };
     this.moneyGames.set(id, updatedMoneyGame);
     return updatedMoneyGame;
@@ -2336,7 +2338,7 @@ export class MemStorage implements IStorage {
   async updateBounty(id: string, updates: Partial<Bounty>): Promise<Bounty | undefined> {
     const bounty = this.bounties.get(id);
     if (!bounty) return undefined;
-    
+
     const updatedBounty = { ...bounty, ...updates };
     this.bounties.set(id, updatedBounty);
     return updatedBounty;
@@ -2373,7 +2375,7 @@ export class MemStorage implements IStorage {
   async updateCharityEvent(id: string, updates: Partial<CharityEvent>): Promise<CharityEvent | undefined> {
     const charityEvent = this.charityEvents.get(id);
     if (!charityEvent) return undefined;
-    
+
     const updatedCharityEvent = { ...charityEvent, ...updates };
     this.charityEvents.set(id, updatedCharityEvent);
     return updatedCharityEvent;
@@ -2409,7 +2411,7 @@ export class MemStorage implements IStorage {
   async updateSupportRequest(id: string, updates: Partial<SupportRequest>): Promise<SupportRequest | undefined> {
     const supportRequest = this.supportRequests.get(id);
     if (!supportRequest) return undefined;
-    
+
     const updatedSupportRequest = { ...supportRequest, ...updates };
     this.supportRequests.set(id, updatedSupportRequest);
     return updatedSupportRequest;
@@ -2457,7 +2459,7 @@ export class MemStorage implements IStorage {
   async updateLiveStream(id: string, updates: Partial<LiveStream>): Promise<LiveStream | undefined> {
     const liveStream = this.liveStreams.get(id);
     if (!liveStream) return undefined;
-    
+
     const updatedLiveStream = { ...liveStream, ...updates };
     this.liveStreams.set(id, updatedLiveStream);
     return updatedLiveStream;
@@ -2481,19 +2483,19 @@ export class MemStorage implements IStorage {
     const liveStreams = allStreams.filter(s => s.isLive);
     const totalViewers = liveStreams.reduce((sum, stream) => sum + (stream.viewerCount || 0), 0);
     const peakViewers = allStreams.reduce((max, stream) => Math.max(max, stream.maxViewers || 0), 0);
-    
+
     const platformStats = allStreams.reduce((acc, stream) => {
       acc[stream.platform] = (acc[stream.platform] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    
+
     const locationStats = allStreams.reduce((acc, stream) => {
       if (stream.state) {
         acc[stream.state] = (acc[stream.state] || 0) + 1;
       }
       return acc;
     }, {} as Record<string, number>);
-    
+
     return {
       totalStreams: allStreams.length,
       liveStreams: liveStreams.length,
@@ -2557,7 +2559,7 @@ export class MemStorage implements IStorage {
   async updatePoolHall(id: string, updates: Partial<PoolHall>): Promise<PoolHall | undefined> {
     const poolHall = this.poolHalls.get(id);
     if (!poolHall) return undefined;
-    
+
     const updated = { ...poolHall, ...updates };
     this.poolHalls.set(id, updated);
     return updated;
@@ -2566,7 +2568,7 @@ export class MemStorage implements IStorage {
   async unlockHallBattles(hallId: string, unlockedBy: string): Promise<PoolHall | undefined> {
     const hall = this.poolHalls.get(hallId);
     if (!hall) return undefined;
-    
+
     const updated = {
       ...hall,
       battlesUnlocked: true,
@@ -2580,7 +2582,7 @@ export class MemStorage implements IStorage {
   async lockHallBattles(hallId: string): Promise<PoolHall | undefined> {
     const hall = this.poolHalls.get(hallId);
     if (!hall) return undefined;
-    
+
     const updated = {
       ...hall,
       battlesUnlocked: false,
@@ -2629,14 +2631,14 @@ export class MemStorage implements IStorage {
   async updateHallMatch(id: string, updates: Partial<HallMatch>): Promise<HallMatch | undefined> {
     const hallMatch = this.hallMatches.get(id);
     if (!hallMatch) return undefined;
-    
+
     const updated = { ...hallMatch, ...updates };
-    
+
     // If completing a match, update hall standings
     if (updates.status === "completed" && updates.winnerHallId && !hallMatch.winnerHallId) {
       const homeHall = await this.getPoolHall(hallMatch.homeHallId);
       const awayHall = await this.getPoolHall(hallMatch.awayHallId);
-      
+
       if (homeHall && awayHall) {
         if (updates.winnerHallId === hallMatch.homeHallId) {
           await this.updatePoolHall(homeHall.id, { wins: homeHall.wins + 1, points: homeHall.points + 100 });
@@ -2647,7 +2649,7 @@ export class MemStorage implements IStorage {
         }
       }
     }
-    
+
     this.hallMatches.set(id, updated);
     return updated;
   }
@@ -2689,7 +2691,7 @@ export class MemStorage implements IStorage {
   async updateHallRoster(id: string, updates: Partial<HallRoster>): Promise<HallRoster | undefined> {
     const hallRoster = this.hallRosters.get(id);
     if (!hallRoster) return undefined;
-    
+
     const updated = { ...hallRoster, ...updates };
     this.hallRosters.set(id, updated);
     return updated;
@@ -2701,7 +2703,7 @@ export class MemStorage implements IStorage {
   }
 
   async getAllRookieMatches(): Promise<RookieMatch[]> {
-    return Array.from(this.rookieMatches.values()).sort((a, b) => 
+    return Array.from(this.rookieMatches.values()).sort((a, b) =>
       (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)
     );
   }
@@ -2709,7 +2711,7 @@ export class MemStorage implements IStorage {
   async getRookieMatchesByPlayer(playerId: string): Promise<RookieMatch[]> {
     return Array.from(this.rookieMatches.values())
       .filter(match => match.challenger === playerId || match.opponent === playerId)
-      .sort((a, b) => 
+      .sort((a, b) =>
         (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)
       );
   }
@@ -2744,7 +2746,7 @@ export class MemStorage implements IStorage {
   }
 
   async getAllRookieEvents(): Promise<RookieEvent[]> {
-    return Array.from(this.rookieEvents.values()).sort((a, b) => 
+    return Array.from(this.rookieEvents.values()).sort((a, b) =>
       (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)
     );
   }
@@ -2781,7 +2783,7 @@ export class MemStorage implements IStorage {
   async getRookieAchievementsByPlayer(playerId: string): Promise<RookieAchievement[]> {
     return Array.from(this.rookieAchievements.values())
       .filter(achievement => achievement.playerId === playerId)
-      .sort((a, b) => 
+      .sort((a, b) =>
         (b.earnedAt?.getTime() || 0) - (a.earnedAt?.getTime() || 0)
       );
   }
@@ -2803,7 +2805,7 @@ export class MemStorage implements IStorage {
   }
 
   async getAllRookieSubscriptions(): Promise<RookieSubscription[]> {
-    return Array.from(this.rookieSubscriptions.values()).sort((a, b) => 
+    return Array.from(this.rookieSubscriptions.values()).sort((a, b) =>
       (b.startedAt?.getTime() || 0) - (a.startedAt?.getTime() || 0)
     );
   }
@@ -2840,7 +2842,7 @@ export class MemStorage implements IStorage {
         const bPoints = b.rookiePoints || 0;
         const aWins = a.rookieWins || 0;
         const bWins = b.rookieWins || 0;
-        
+
         if (bPoints !== aPoints) {
           return bPoints - aPoints;
         }
@@ -2894,7 +2896,7 @@ export class MemStorage implements IStorage {
   async creditWallet(userId: string, amount: number): Promise<Wallet | undefined> {
     const wallet = this.wallets.get(userId);
     if (!wallet) return undefined;
-    
+
     const currentBalance = wallet.balanceCredits ?? 0;
     const updatedWallet = {
       ...wallet,
@@ -2908,9 +2910,9 @@ export class MemStorage implements IStorage {
     const wallet = this.wallets.get(userId);
     const currentBalance = wallet?.balanceCredits ?? 0;
     const currentLocked = wallet?.balanceLockedCredits ?? 0;
-    
+
     if (!wallet || currentBalance < amount) return false;
-    
+
     const updatedWallet = {
       ...wallet,
       balanceCredits: currentBalance - amount,
@@ -2924,9 +2926,9 @@ export class MemStorage implements IStorage {
     const wallet = this.wallets.get(userId);
     const currentBalance = wallet?.balanceCredits ?? 0;
     const currentLocked = wallet?.balanceLockedCredits ?? 0;
-    
+
     if (!wallet || currentLocked < amount) return false;
-    
+
     const updatedWallet = {
       ...wallet,
       balanceCredits: currentBalance + amount,
@@ -2988,17 +2990,17 @@ export class MemStorage implements IStorage {
   async updateSidePot(id: string, updates: Partial<SidePot>): Promise<SidePot | undefined> {
     const pot = this.sidePots.get(id);
     if (!pot) return undefined;
-    
+
     const updatedPot = { ...pot, ...updates };
     this.sidePots.set(id, updatedPot);
     return updatedPot;
   }
 
   async getExpiredDisputePots(now: Date): Promise<SidePot[]> {
-    return Array.from(this.sidePots.values()).filter(pot => 
-      pot.status === "resolved" && 
-      pot.disputeDeadline && 
-      now > pot.disputeDeadline && 
+    return Array.from(this.sidePots.values()).filter(pot =>
+      pot.status === "resolved" &&
+      pot.disputeDeadline &&
+      now > pot.disputeDeadline &&
       pot.disputeStatus === "none" &&
       !pot.autoResolvedAt
     );
@@ -3012,26 +3014,26 @@ export class MemStorage implements IStorage {
     const bets = await this.getSideBetsByPot(potId);
     const winners = bets.filter(bet => bet.side === winningSide);
     const losers = bets.filter(bet => bet.side !== winningSide);
-    
+
     // Calculate total pot and service fee
     const totalPot = bets.reduce((sum, bet) => sum + (bet.amount || 0), 0);
     const serviceFee = Math.floor(totalPot * (pot.feeBps || 850) / 10000);
     const netPot = totalPot - serviceFee;
-    
+
     // Calculate winnings for each winner
     const totalWinnerStake = winners.reduce((sum, bet) => sum + (bet.amount || 0), 0);
     const payouts = [];
-    
+
     for (const winner of winners) {
       const winnerShare = totalWinnerStake > 0 ? (winner.amount || 0) / totalWinnerStake : 0;
       const winnings = Math.floor(winnerShare * netPot);
-      
+
       // Credit winner's wallet
       await this.creditWallet(winner.userId!, winnings);
-      
+
       // Update bet status
       await this.updateSideBet(winner.id, { status: "paid" });
-      
+
       // Create ledger entry
       await this.createLedgerEntry({
         userId: winner.userId!,
@@ -3047,7 +3049,7 @@ export class MemStorage implements IStorage {
         originalStake: winner.amount
       });
     }
-    
+
     // Mark losers as lost (no payout)
     for (const loser of losers) {
       await this.updateSideBet(loser.id, { status: "lost" });
@@ -3095,7 +3097,7 @@ export class MemStorage implements IStorage {
   async updateSideBet(id: string, updates: Partial<SideBet>): Promise<SideBet | undefined> {
     const bet = this.sideBets.get(id);
     if (!bet) return undefined;
-    
+
     const updatedBet = assignNoUndefined(bet, {
       ...updates,
       challengePoolId: updates.challengePoolId !== undefined ? nullifyUndefined(updates.challengePoolId) : bet.challengePoolId,
@@ -3206,7 +3208,7 @@ export class MemStorage implements IStorage {
 
   async createOperatorSubscription(insertSubscription: InsertOperatorSubscription): Promise<OperatorSubscription> {
     const id = randomUUID();
-    
+
     // Calculate pricing based on tier and player count
     const { basePriceMonthly, tier } = this.calculateSubscriptionPricing(
       insertSubscription.playerCount || 0,
@@ -3214,7 +3216,7 @@ export class MemStorage implements IStorage {
       insertSubscription.rookieModuleActive || false,
       insertSubscription.rookiePassesActive || 0
     );
-    
+
     const subscription: OperatorSubscription = {
       id,
       operatorId: insertSubscription.operatorId,
@@ -3238,7 +3240,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    
+
     this.operatorSubscriptions.set(insertSubscription.operatorId, subscription);
     return subscription;
   }
@@ -3246,7 +3248,7 @@ export class MemStorage implements IStorage {
   async updateOperatorSubscription(operatorId: string, updates: Partial<OperatorSubscription>): Promise<OperatorSubscription | undefined> {
     const subscription = this.operatorSubscriptions.get(operatorId);
     if (!subscription) return undefined;
-    
+
     const updatedSubscription = { ...subscription, ...updates, updatedAt: new Date() };
     this.operatorSubscriptions.set(operatorId, updatedSubscription);
     return updatedSubscription;
@@ -3270,7 +3272,7 @@ export class MemStorage implements IStorage {
       billingPeriodEnd: nullifyUndefined(split.billingPeriodEnd),
       createdAt: new Date(),
     };
-    
+
     this.operatorSubscriptionSplits.set(id, subscriptionSplit);
     return subscriptionSplit;
   }
@@ -3288,9 +3290,9 @@ export class MemStorage implements IStorage {
   async getTrusteeEarnings(trusteeId: string): Promise<{ totalEarnings: number; splitCount: number; splits: OperatorSubscriptionSplit[] }> {
     const splits = Array.from(this.operatorSubscriptionSplits.values())
       .filter(split => split.trusteeId === trusteeId);
-    
+
     const totalEarnings = splits.reduce((sum, split) => sum + split.trusteeAmount, 0);
-    
+
     return {
       totalEarnings,
       splitCount: splits.length,
@@ -3306,12 +3308,12 @@ export class MemStorage implements IStorage {
   private calculateSubscriptionPricing(playerCount: number, extraLadders: number, rookieModule: boolean, rookiePasses: number) {
     let tier: string;
     let basePriceMonthly: number;
-    
+
     if (playerCount <= 15) {
       tier = "small";
       basePriceMonthly = 19900; // $199
     } else if (playerCount <= 25) {
-      tier = "medium"; 
+      tier = "medium";
       basePriceMonthly = 29900; // $299
     } else if (playerCount <= 40) {
       tier = "large";
@@ -3320,28 +3322,28 @@ export class MemStorage implements IStorage {
       tier = "mega";
       basePriceMonthly = 49900; // $499
     }
-    
+
     return { basePriceMonthly, tier };
   }
 
   private calculateTotalMonthlyCharge(basePriceMonthly: number, subscription: InsertOperatorSubscription): number {
     let total = basePriceMonthly;
-    
+
     // Add extra ladder charges
     total += (subscription.extraLadders || 0) * 10000; // $100 per extra ladder
-    
+
     // Add rookie module charge
     if (subscription.rookieModuleActive) {
       total += 5000; // $50/mo
     }
-    
+
     // Add rookie pass charges
     total += (subscription.rookiePassesActive || 0) * 1500; // $15 per pass
-    
+
     // Add extra player charges for players beyond tier limit
     const tierLimits = { small: 15, medium: 25, large: 40, mega: 999 };
     const playerCount = subscription.playerCount || 0;
-    
+
     if (playerCount > 15 && subscription.tier === "small") {
       total += Math.max(0, playerCount - 15) * 800; // $8 per extra player
     } else if (playerCount > 25 && subscription.tier === "medium") {
@@ -3349,7 +3351,7 @@ export class MemStorage implements IStorage {
     } else if (playerCount > 40 && subscription.tier === "large") {
       total += Math.max(0, playerCount - 40) * 800;
     }
-    
+
     return total;
   }
 
@@ -3382,7 +3384,7 @@ export class MemStorage implements IStorage {
   async updateMembershipSubscription(id: string, updates: Partial<MembershipSubscription>): Promise<MembershipSubscription | undefined> {
     const subscription = this.membershipSubscriptions.get(id);
     if (!subscription) return undefined;
-    
+
     const updatedSubscription = { ...subscription, ...updates, updatedAt: new Date() };
     this.membershipSubscriptions.set(id, updatedSubscription);
     return updatedSubscription;
@@ -3430,7 +3432,7 @@ export class MemStorage implements IStorage {
   async updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined> {
     const team = this.teams.get(id);
     if (!team) return undefined;
-    
+
     const updatedTeam = { ...team, ...updates };
     this.teams.set(id, updatedTeam);
     return updatedTeam;
@@ -3473,7 +3475,7 @@ export class MemStorage implements IStorage {
   async updateTeamPlayer(id: string, updates: Partial<TeamPlayer>): Promise<TeamPlayer | undefined> {
     const teamPlayer = this.teamPlayers.get(id);
     if (!teamPlayer) return undefined;
-    
+
     const updatedTeamPlayer = { ...teamPlayer, ...updates };
     this.teamPlayers.set(id, updatedTeamPlayer);
     return updatedTeamPlayer;
@@ -3489,7 +3491,7 @@ export class MemStorage implements IStorage {
   }
 
   async getTeamMatchesByTeam(teamId: string): Promise<TeamMatch[]> {
-    return Array.from(this.teamMatches.values()).filter(match => 
+    return Array.from(this.teamMatches.values()).filter(match =>
       match.homeTeamId === teamId || match.awayTeamId === teamId
     );
   }
@@ -3530,7 +3532,7 @@ export class MemStorage implements IStorage {
   async updateTeamMatch(id: string, updates: Partial<TeamMatch>): Promise<TeamMatch | undefined> {
     const teamMatch = this.teamMatches.get(id);
     if (!teamMatch) return undefined;
-    
+
     const updatedTeamMatch = { ...teamMatch, ...updates };
     this.teamMatches.set(id, updatedTeamMatch);
     return updatedTeamMatch;
@@ -3570,7 +3572,7 @@ export class MemStorage implements IStorage {
   async updateTeamSet(id: string, updates: Partial<TeamSet>): Promise<TeamSet | undefined> {
     const teamSet = this.teamSets.get(id);
     if (!teamSet) return undefined;
-    
+
     const updatedTeamSet = { ...teamSet, ...updates };
     this.teamSets.set(id, updatedTeamSet);
     return updatedTeamSet;
@@ -3586,19 +3588,19 @@ export class MemStorage implements IStorage {
   }
 
   async getTeamChallengesByOperator(operatorId: string): Promise<TeamChallenge[]> {
-    return Array.from(this.teamChallenges.values()).filter(challenge => 
+    return Array.from(this.teamChallenges.values()).filter(challenge =>
       challenge.operatorId === operatorId
     );
   }
 
   async getTeamChallengesByType(challengeType: string): Promise<TeamChallenge[]> {
-    return Array.from(this.teamChallenges.values()).filter(challenge => 
+    return Array.from(this.teamChallenges.values()).filter(challenge =>
       challenge.challengeType === challengeType
     );
   }
 
   async getTeamChallengesByStatus(status: string): Promise<TeamChallenge[]> {
-    return Array.from(this.teamChallenges.values()).filter(challenge => 
+    return Array.from(this.teamChallenges.values()).filter(challenge =>
       challenge.status === status
     );
   }
@@ -3629,7 +3631,7 @@ export class MemStorage implements IStorage {
   async updateTeamChallenge(id: string, updates: Partial<TeamChallenge>): Promise<TeamChallenge | undefined> {
     const challenge = this.teamChallenges.get(id);
     if (!challenge) return undefined;
-    
+
     const updatedChallenge = { ...challenge, ...updates };
     this.teamChallenges.set(id, updatedChallenge);
     return updatedChallenge;
@@ -3638,9 +3640,9 @@ export class MemStorage implements IStorage {
   async acceptTeamChallenge(challengeId: string, acceptingTeamId: string): Promise<TeamChallenge | undefined> {
     const challenge = this.teamChallenges.get(challengeId);
     if (!challenge || challenge.status !== "open") return undefined;
-    
-    const updatedChallenge = { 
-      ...challenge, 
+
+    const updatedChallenge = {
+      ...challenge,
       acceptingTeamId,
       status: "accepted" as const
     };
@@ -3653,7 +3655,7 @@ export class MemStorage implements IStorage {
   }
 
   async getTeamChallengeParticipantsByChallenge(challengeId: string): Promise<TeamChallengeParticipant[]> {
-    return Array.from(this.teamChallengeParticipants.values()).filter(participant => 
+    return Array.from(this.teamChallengeParticipants.values()).filter(participant =>
       participant.teamChallengeId === challengeId
     );
   }
@@ -3676,7 +3678,7 @@ export class MemStorage implements IStorage {
   async updateTeamChallengeParticipant(id: string, updates: Partial<TeamChallengeParticipant>): Promise<TeamChallengeParticipant | undefined> {
     const participant = this.teamChallengeParticipants.get(id);
     if (!participant) return undefined;
-    
+
     const updatedParticipant = { ...participant, ...updates };
     this.teamChallengeParticipants.set(id, updatedParticipant);
     return updatedParticipant;
@@ -3702,7 +3704,7 @@ export class MemStorage implements IStorage {
   }
 
   async createTeamChallengeWithParticipants(
-    challengeData: InsertTeamChallenge, 
+    challengeData: InsertTeamChallenge,
     teamPlayers: string[]
   ): Promise<{ challenge: TeamChallenge; participants: TeamChallengeParticipant[] }> {
     // Validate Pro membership for all players
@@ -3715,7 +3717,7 @@ export class MemStorage implements IStorage {
 
     // Calculate total stake
     const totalStake = this.calculateTeamChallengeStake(challengeData.challengeType, challengeData.individualFee);
-    
+
     // Create the challenge
     const challenge = await this.createTeamChallenge({
       ...challengeData,
@@ -3727,7 +3729,7 @@ export class MemStorage implements IStorage {
     for (const playerId of teamPlayers) {
       const player = this.players.get(playerId);
       if (!player) throw new Error(`Player ${playerId} not found`);
-      
+
       const participant = await this.createTeamChallengeParticipant({
         teamChallengeId: challenge.id,
         teamId: challengeData.challengingTeamId,
@@ -3759,19 +3761,19 @@ export class MemStorage implements IStorage {
   }
 
   async getCheckinsBySession(sessionId: string): Promise<Checkin[]> {
-    return Array.from(this.checkins.values()).filter(checkin => 
+    return Array.from(this.checkins.values()).filter(checkin =>
       checkin.sessionId === sessionId
     );
   }
 
   async getCheckinsByVenue(venueId: string): Promise<Checkin[]> {
-    return Array.from(this.checkins.values()).filter(checkin => 
+    return Array.from(this.checkins.values()).filter(checkin =>
       checkin.venueId === venueId
     );
   }
 
   async getActiveCheckins(sessionId: string, venueId: string): Promise<Checkin[]> {
-    return Array.from(this.checkins.values()).filter(checkin => 
+    return Array.from(this.checkins.values()).filter(checkin =>
       checkin.sessionId === sessionId && checkin.venueId === venueId
     );
   }
@@ -3800,9 +3802,9 @@ export class MemStorage implements IStorage {
   }
 
   async getActiveVotes(sessionId: string, venueId: string): Promise<AttitudeVote[]> {
-    return Array.from(this.attitudeVotes.values()).filter(vote => 
-      vote.sessionId === sessionId && 
-      vote.venueId === venueId && 
+    return Array.from(this.attitudeVotes.values()).filter(vote =>
+      vote.sessionId === sessionId &&
+      vote.venueId === venueId &&
       vote.status === "open"
     );
   }
@@ -3810,7 +3812,7 @@ export class MemStorage implements IStorage {
   async updateAttitudeVote(id: string, updates: Partial<AttitudeVote>): Promise<AttitudeVote | undefined> {
     const vote = this.attitudeVotes.get(id);
     if (!vote) return undefined;
-    
+
     const updatedVote = { ...vote, ...updates };
     this.attitudeVotes.set(id, updatedVote);
     return updatedVote;
@@ -3837,13 +3839,13 @@ export class MemStorage implements IStorage {
   }
 
   async getBallotsByVote(voteId: string): Promise<AttitudeBallot[]> {
-    return Array.from(this.attitudeBallots.values()).filter(ballot => 
+    return Array.from(this.attitudeBallots.values()).filter(ballot =>
       ballot.voteId === voteId
     );
   }
 
   async hasUserVoted(voteId: string, userId: string): Promise<boolean> {
-    return Array.from(this.attitudeBallots.values()).some(ballot => 
+    return Array.from(this.attitudeBallots.values()).some(ballot =>
       ballot.voteId === voteId && ballot.voterUserId === userId
     );
   }
@@ -3851,10 +3853,10 @@ export class MemStorage implements IStorage {
   // Vote calculation utilities
   async calculateVoteWeights(voteId: string): Promise<{ totalWeight: number; outWeight: number; keepWeight: number }> {
     const ballots = await this.getBallotsByVote(voteId);
-    
+
     let outWeight = 0;
     let keepWeight = 0;
-    
+
     for (const ballot of ballots) {
       if (ballot.choice === "out") {
         outWeight += ballot.weight;
@@ -3862,7 +3864,7 @@ export class MemStorage implements IStorage {
         keepWeight += ballot.weight;
       }
     }
-    
+
     return {
       totalWeight: outWeight + keepWeight,
       outWeight,
@@ -3873,7 +3875,7 @@ export class MemStorage implements IStorage {
   async checkVoteQuorum(voteId: string): Promise<boolean> {
     const vote = await this.getAttitudeVote(voteId);
     if (!vote) return false;
-    
+
     const { totalWeight } = await this.calculateVoteWeights(voteId);
     return totalWeight >= vote.quorumRequired;
   }
@@ -3899,15 +3901,15 @@ export class MemStorage implements IStorage {
   }
 
   async getIncidentsByUser(userId: string): Promise<Incident[]> {
-    return Array.from(this.incidents.values()).filter(incident => 
+    return Array.from(this.incidents.values()).filter(incident =>
       incident.userId === userId
     );
   }
 
   async getRecentIncidents(venueId: string, hours: number): Promise<Incident[]> {
     const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
-    return Array.from(this.incidents.values()).filter(incident => 
-      incident.venueId === venueId && 
+    return Array.from(this.incidents.values()).filter(incident =>
+      incident.venueId === venueId &&
       incident.createdAt && incident.createdAt >= cutoffTime
     );
   }
@@ -3915,22 +3917,22 @@ export class MemStorage implements IStorage {
   // User eligibility and cooldowns
   async canUserBeVotedOn(userId: string, sessionId: string): Promise<boolean> {
     // Check for recent votes (15-minute cooldown)
-    const recentVotes = Array.from(this.attitudeVotes.values()).filter(vote => 
-      vote.targetUserId === userId && 
+    const recentVotes = Array.from(this.attitudeVotes.values()).filter(vote =>
+      vote.targetUserId === userId &&
       vote.sessionId === sessionId &&
       vote.startedAt && vote.startedAt > new Date(Date.now() - 15 * 60 * 1000) // 15 minutes ago
     );
-    
+
     // Can't be voted on if there was a recent vote
     if (recentVotes.length > 0) return false;
-    
+
     // Check if user was already ejected tonight
-    const todayIncidents = Array.from(this.incidents.values()).filter(incident => 
+    const todayIncidents = Array.from(this.incidents.values()).filter(incident =>
       incident.userId === userId &&
       incident.type === "ejection" &&
       incident.createdAt && incident.createdAt > new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
     );
-    
+
     return todayIncidents.length === 0;
   }
 
@@ -3938,18 +3940,18 @@ export class MemStorage implements IStorage {
     const userVotes = Array.from(this.attitudeVotes.values())
       .filter(vote => vote.targetUserId === userId && vote.sessionId === sessionId)
       .sort((a, b) => (b.startedAt?.getTime() || 0) - (a.startedAt?.getTime() || 0));
-    
+
     return userVotes[0];
   }
 
   async isUserImmune(userId: string, sessionId: string): Promise<boolean> {
     // Check if user is currently shooting in an active match
     // For now, implement basic logic - can be enhanced with actual match state
-    const activeMatches = Array.from(this.matches.values()).filter(match => 
-      (match.challenger === userId || match.opponent === userId) && 
+    const activeMatches = Array.from(this.matches.values()).filter(match =>
+      (match.challenger === userId || match.opponent === userId) &&
       match.status === "in_progress"
     );
-    
+
     // If user is in an active match, they have immunity (during their turn)
     // This is a simplified implementation - real implementation would check whose turn it is
     return activeMatches.length > 0;
@@ -4205,14 +4207,14 @@ export class MemStorage implements IStorage {
   }
 
   async getUserUploadedFiles(userId: string, category?: string): Promise<UploadedFile[]> {
-    const userFiles = Array.from(this.uploadedFiles.values()).filter(file => 
+    const userFiles = Array.from(this.uploadedFiles.values()).filter(file =>
       file.userId === userId && file.isActive
     );
-    
+
     if (category) {
       return userFiles.filter(file => file.category === category);
     }
-    
+
     return userFiles;
   }
 
@@ -4275,13 +4277,13 @@ export class MemStorage implements IStorage {
   }
 
   async getFileShares(fileId: string): Promise<FileShare[]> {
-    return Array.from(this.fileShares.values()).filter(share => 
+    return Array.from(this.fileShares.values()).filter(share =>
       share.fileId === fileId && share.isActive
     );
   }
 
   async getUserSharedFiles(userId: string): Promise<FileShare[]> {
-    return Array.from(this.fileShares.values()).filter(share => 
+    return Array.from(this.fileShares.values()).filter(share =>
       share.sharedWithUserId === userId && share.isActive
     );
   }
@@ -4720,7 +4722,7 @@ export class MemStorage implements IStorage {
       ipAddress: ipAddress || existingNonce.ipAddress,
       userAgent: userAgent || existingNonce.userAgent,
     };
-    
+
     this.qrCodeNonces.set(nonce, updatedNonce);
     return updatedNonce;
   }
@@ -4753,14 +4755,14 @@ export class MemStorage implements IStorage {
   async cleanupExpiredNonces(): Promise<number> {
     const now = new Date();
     let cleanedCount = 0;
-    
+
     for (const [nonceKey, nonceValue] of Array.from(this.qrCodeNonces.entries())) {
       if (nonceValue.expiresAt < now) {
         this.qrCodeNonces.delete(nonceKey);
         cleanedCount++;
       }
     }
-    
+
     return cleanedCount;
   }
 
@@ -4827,7 +4829,7 @@ export class MemStorage implements IStorage {
       lastUsedAt: new Date(),
       useCount: (feedToken.useCount || 0) + 1,
     };
-    
+
     const updated = await this.updateIcalFeedToken(feedToken.id, updates);
     return !!updated;
   }
@@ -4835,14 +4837,14 @@ export class MemStorage implements IStorage {
   async cleanupExpiredTokens(): Promise<number> {
     const now = new Date();
     let cleanedCount = 0;
-    
+
     for (const [tokenId, tokenValue] of Array.from(this.icalFeedTokens.entries())) {
       if (tokenValue.expiresAt && tokenValue.expiresAt < now) {
         this.icalFeedTokens.delete(tokenId);
         cleanedCount++;
       }
     }
-    
+
     return cleanedCount;
   }
 
@@ -4893,7 +4895,7 @@ export class MemStorage implements IStorage {
         this.paymentMethods.set(id, { ...pm, isDefault: false, updatedAt: new Date() });
       }
     }
-    
+
     // Set the specified payment method as default
     const paymentMethod = this.paymentMethods.get(paymentMethodId);
     if (paymentMethod && paymentMethod.userId === userId) {
@@ -5119,7 +5121,7 @@ export class MemStorage implements IStorage {
   }
 
   async getDisputesByPlayer(playerId: string): Promise<DisputeResolution[]> {
-    return Array.from(this.disputeResolutions.values()).filter(dispute => 
+    return Array.from(this.disputeResolutions.values()).filter(dispute =>
       dispute.filedBy === playerId || dispute.filedAgainst === playerId
     );
   }
@@ -5129,7 +5131,7 @@ export class MemStorage implements IStorage {
   }
 
   async getDisputeResolutionsByPlayer(playerId: string): Promise<DisputeResolution[]> {
-    return Array.from(this.disputeResolutions.values()).filter(dispute => 
+    return Array.from(this.disputeResolutions.values()).filter(dispute =>
       dispute.filedBy === playerId || dispute.filedAgainst === playerId
     );
   }
@@ -5193,13 +5195,13 @@ export class MemStorage implements IStorage {
 
   async checkPlayerEligibility(playerId: string): Promise<{ eligible: boolean; reason?: string; cooldownId?: string }> {
     const now = new Date();
-    const activeCooldowns = Array.from(this.playerCooldowns.values()).filter(cooldown => 
-      cooldown.playerId === playerId && 
-      cooldown.isActive && 
+    const activeCooldowns = Array.from(this.playerCooldowns.values()).filter(cooldown =>
+      cooldown.playerId === playerId &&
+      cooldown.isActive &&
       cooldown.endsAt > now &&
       !cooldown.liftedAt
     );
-    
+
     if (activeCooldowns.length > 0) {
       const cooldown = activeCooldowns[0];
       return {
@@ -5208,7 +5210,7 @@ export class MemStorage implements IStorage {
         cooldownId: cooldown.id
       };
     }
-    
+
     return { eligible: true };
   }
 
@@ -5218,8 +5220,8 @@ export class MemStorage implements IStorage {
 
   async getActiveCooldowns(): Promise<PlayerCooldown[]> {
     const now = new Date();
-    return Array.from(this.playerCooldowns.values()).filter(cooldown => 
-      cooldown.isActive && 
+    return Array.from(this.playerCooldowns.values()).filter(cooldown =>
+      cooldown.isActive &&
       cooldown.endsAt > now &&
       !cooldown.liftedAt
     );
@@ -5228,8 +5230,8 @@ export class MemStorage implements IStorage {
   async getExpiringCooldowns(hours: number = 24): Promise<PlayerCooldown[]> {
     const now = new Date();
     const expiryThreshold = new Date(now.getTime() + hours * 60 * 60 * 1000);
-    return Array.from(this.playerCooldowns.values()).filter(cooldown => 
-      cooldown.isActive && 
+    return Array.from(this.playerCooldowns.values()).filter(cooldown =>
+      cooldown.isActive &&
       cooldown.endsAt <= expiryThreshold &&
       cooldown.endsAt > now &&
       !cooldown.liftedAt
@@ -5359,7 +5361,7 @@ export class MemStorage implements IStorage {
   async markJobStarted(id: string, processedBy: string): Promise<JobQueue | undefined> {
     const job = this.jobQueue.get(id);
     if (!job) return undefined;
-    
+
     return this.updateJob(id, {
       status: "running",
       startedAt: new Date(),
@@ -5371,10 +5373,10 @@ export class MemStorage implements IStorage {
   async markJobFailed(id: string, errorMessage: string): Promise<JobQueue | undefined> {
     const job = this.jobQueue.get(id);
     if (!job) return undefined;
-    
+
     const currentAttempts = (job.attempts || 0);
     const shouldRetry = currentAttempts < (job.maxAttempts || 3);
-    
+
     return this.updateJob(id, {
       status: shouldRetry ? "pending" : "failed",
       errorMessage,
@@ -5396,16 +5398,16 @@ export class MemStorage implements IStorage {
   async cleanupCompletedJobs(olderThanDays: number = 7): Promise<number> {
     const cutoffDate = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
     let deletedCount = 0;
-    
+
     for (const [jobId, job] of Array.from(this.jobQueue.entries())) {
-      if ((job.status === "completed" || job.status === "failed") && 
-          job.completedAt && 
-          new Date(job.completedAt) < cutoffDate) {
+      if ((job.status === "completed" || job.status === "failed") &&
+        job.completedAt &&
+        new Date(job.completedAt) < cutoffDate) {
         this.jobQueue.delete(jobId);
         deletedCount++;
       }
     }
-    
+
     return deletedCount;
   }
 
@@ -5516,50 +5518,50 @@ export class MemStorage implements IStorage {
       acknowledgedAt: new Date()
     });
   }
-  
+
   // === AI COACH TRAINING ANALYTICS ===
   // These methods are not implemented in MemStorage - use DatabaseStorage instead
-  
+
   async createTrainingSession(session: InsertSessionAnalytics): Promise<SelectSessionAnalytics> {
     throw new Error("Training analytics requires database storage. Please use DatabaseStorage implementation.");
   }
-  
+
   async getTrainingSession(sessionId: string): Promise<SelectSessionAnalytics | null> {
     throw new Error("Training analytics requires database storage. Please use DatabaseStorage implementation.");
   }
-  
+
   async getPlayerSessions(playerId: string, limit?: number): Promise<SelectSessionAnalytics[]> {
     throw new Error("Training analytics requires database storage. Please use DatabaseStorage implementation.");
   }
-  
+
   async recordShots(sessionId: string, shots: InsertShot[]): Promise<SelectShot[]> {
     throw new Error("Training analytics requires database storage. Please use DatabaseStorage implementation.");
   }
-  
+
   async getSessionShots(sessionId: string): Promise<SelectShot[]> {
     throw new Error("Training analytics requires database storage. Please use DatabaseStorage implementation.");
   }
-  
+
   async calculateMonthlyScores(period: string): Promise<void> {
     throw new Error("Training analytics requires database storage. Please use DatabaseStorage implementation.");
   }
-  
+
   async getHallLeaderboard(hallId: string, period: string): Promise<SelectLadderTrainingScore[]> {
     throw new Error("Training analytics requires database storage. Please use DatabaseStorage implementation.");
   }
-  
+
   async getPlayerTrainingScore(playerId: string, period: string): Promise<SelectLadderTrainingScore | null> {
     throw new Error("Training analytics requires database storage. Please use DatabaseStorage implementation.");
   }
-  
+
   async createReward(reward: InsertSubscriptionReward): Promise<SelectSubscriptionReward> {
     throw new Error("Training analytics requires database storage. Please use DatabaseStorage implementation.");
   }
-  
+
   async getRewardsForPeriod(period: string): Promise<SelectSubscriptionReward[]> {
     throw new Error("Training analytics requires database storage. Please use DatabaseStorage implementation.");
   }
-  
+
   async markRewardApplied(rewardId: string, stripeCouponId: string): Promise<void> {
     throw new Error("Training analytics requires database storage. Please use DatabaseStorage implementation.");
   }
@@ -5614,16 +5616,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(user: any): Promise<any> {
-    const results = await db.insert(usersTable).values(user).returning();
+    const safeUser = this.sanitizeUserFields(user);
+    const results = await db.insert(usersTable).values(safeUser).returning();
     return results[0];
   }
 
   async updateUser(id: string, updates: any): Promise<any | undefined> {
-    const results = await db.update(usersTable).set(updates).where(eq(usersTable.id, id)).returning();
+    const safeUpdates = this.sanitizeUserFields(updates);
+    const results = await db.update(usersTable).set(safeUpdates).where(eq(usersTable.id, id)).returning();
     return results[0];
   }
 
   async upsertUser(userData: any): Promise<any> {
+    if (!userData.email) {
+      throw new Error("Email is required to create or update a user");
+    }
     const existingUser = await this.getUserByEmail(userData.email);
     if (existingUser) {
       return await this.updateUser(existingUser.id, userData) || existingUser;
@@ -5635,6 +5642,23 @@ export class DatabaseStorage implements IStorage {
         ...userData
       });
     }
+  }
+
+  private sanitizeUserFields(data: any): any {
+    const validColumns = [
+      "id", "email", "name", "passwordHash", "twoFactorEnabled", "twoFactorSecret",
+      "phoneNumber", "lastLoginAt", "loginAttempts", "lockedUntil", "globalRole",
+      "role", "profileComplete", "onboardingComplete", "accountStatus",
+      "stripeCustomerId", "stripeConnectId", "payoutShareBps", "hallName",
+      "city", "state", "subscriptionTier", "trusteeId", "createdAt", "updatedAt"
+    ];
+    const sanitized: any = {};
+    for (const key of validColumns) {
+      if (key in data && data[key] !== undefined) {
+        sanitized[key] = data[key];
+      }
+    }
+    return sanitized;
   }
 
   async getUserByStripeConnectId(stripeConnectId: string): Promise<any | undefined> {
@@ -5676,7 +5700,7 @@ export class DatabaseStorage implements IStorage {
   async createMatch(match: InsertMatch): Promise<Match> { return this.memStorage.createMatch(match); }
   async updateMatch(id: string, updates: Partial<InsertMatch>): Promise<Match | undefined> { return this.memStorage.updateMatch(id, updates); }
   async deleteMatch(id: string): Promise<boolean> { return this.memStorage.deleteMatch(id); }
-  
+
   async getTournaments(): Promise<Tournament[]> { return this.memStorage.getTournaments(); }
   async getTournament(id: string): Promise<Tournament | undefined> { return this.memStorage.getTournament(id); }
   async createTournament(tournament: InsertTournament): Promise<Tournament> { return this.memStorage.createTournament(tournament); }
@@ -5752,305 +5776,337 @@ export class DatabaseStorage implements IStorage {
   async createKellyPool(kellyPool: InsertKellyPool): Promise<KellyPool> { return this.memStorage.createKellyPool(kellyPool); }
   async updateKellyPool(id: string, updates: Partial<InsertKellyPool>): Promise<KellyPool | undefined> { return this.memStorage.updateKellyPool(id, updates); }
   async deleteKellyPool(id: string): Promise<boolean> { return this.memStorage.deleteKellyPool(id); }
-  
+
   async getMoneyGames(): Promise<MoneyGame[]> { return this.memStorage.getMoneyGames(); }
   async getMoneyGame(id: string): Promise<MoneyGame | undefined> { return this.memStorage.getMoneyGame(id); }
   async getMoneyGamesByStatus(status: string): Promise<MoneyGame[]> { return this.memStorage.getMoneyGamesByStatus(status); }
   async createMoneyGame(game: InsertMoneyGame): Promise<MoneyGame> { return this.memStorage.createMoneyGame(game); }
   async updateMoneyGame(id: string, updates: Partial<MoneyGame>): Promise<MoneyGame | undefined> { return this.memStorage.updateMoneyGame(id, updates); }
   async deleteMoneyGame(id: string): Promise<boolean> { return this.memStorage.deleteMoneyGame(id); }
-  
+
   async getBounties(): Promise<Bounty[]> { return this.memStorage.getBounties(); }
   async getBounty(id: string): Promise<Bounty | undefined> { return this.memStorage.getBounty(id); }
   async createBounty(bounty: InsertBounty): Promise<Bounty> { return this.memStorage.createBounty(bounty); }
   async updateBounty(id: string, updates: Partial<InsertBounty>): Promise<Bounty | undefined> { return this.memStorage.updateBounty(id, updates); }
   async deleteBounty(id: string): Promise<boolean> { return this.memStorage.deleteBounty(id); }
-  
+
   async getCharityEvents(): Promise<CharityEvent[]> { return this.memStorage.getCharityEvents(); }
   async getCharityEvent(id: string): Promise<CharityEvent | undefined> { return this.memStorage.getCharityEvent(id); }
   async createCharityEvent(event: InsertCharityEvent): Promise<CharityEvent> { return this.memStorage.createCharityEvent(event); }
   async updateCharityEvent(id: string, updates: Partial<InsertCharityEvent>): Promise<CharityEvent | undefined> { return this.memStorage.updateCharityEvent(id, updates); }
   async deleteCharityEvent(id: string): Promise<boolean> { return this.memStorage.deleteCharityEvent(id); }
-  
+
   async getSupportRequests(): Promise<SupportRequest[]> { return this.memStorage.getSupportRequests(); }
   async getSupportRequest(id: string): Promise<SupportRequest | undefined> { return this.memStorage.getSupportRequest(id); }
   async createSupportRequest(request: InsertSupportRequest): Promise<SupportRequest> { return this.memStorage.createSupportRequest(request); }
   async updateSupportRequest(id: string, updates: Partial<InsertSupportRequest>): Promise<SupportRequest | undefined> { return this.memStorage.updateSupportRequest(id, updates); }
   async deleteSupportRequest(id: string): Promise<boolean> { return this.memStorage.deleteSupportRequest(id); }
-  
+
   async getLiveStreams(): Promise<LiveStream[]> { return this.memStorage.getLiveStreams(); }
   async getLiveStream(id: string): Promise<LiveStream | undefined> { return this.memStorage.getLiveStream(id); }
   async createLiveStream(stream: InsertLiveStream): Promise<LiveStream> { return this.memStorage.createLiveStream(stream); }
   async updateLiveStream(id: string, updates: Partial<InsertLiveStream>): Promise<LiveStream | undefined> { return this.memStorage.updateLiveStream(id, updates); }
   async deleteLiveStream(id: string): Promise<boolean> { return this.memStorage.deleteLiveStream(id); }
-  
-  async getWebhookEvents(): Promise<WebhookEvent[]> { return this.memStorage.getWebhookEvents(); }
-  async getWebhookEvent(id: string): Promise<WebhookEvent | undefined> { return this.memStorage.getWebhookEvent(id); }
-  async createWebhookEvent(event: InsertWebhookEvent): Promise<WebhookEvent> { return this.memStorage.createWebhookEvent(event); }
-  async updateWebhookEvent(id: string, updates: Partial<InsertWebhookEvent>): Promise<WebhookEvent | undefined> { return this.memStorage.updateWebhookEvent(id, updates); }
-  async deleteWebhookEvent(id: string): Promise<boolean> { return this.memStorage.deleteWebhookEvent(id); }
-  
+
+  async getWebhookEvents(): Promise<WebhookEvent[]> {
+    return await db.select().from(webhookEvents);
+  }
+
+  async getWebhookEvent(stripeEventId: string): Promise<WebhookEvent | undefined> {
+    const results = await db.select().from(webhookEvents).where(eq(webhookEvents.stripeEventId, stripeEventId));
+    return results[0];
+  }
+
+  async createWebhookEvent(event: InsertWebhookEvent): Promise<WebhookEvent> {
+    const results = await db.insert(webhookEvents).values(event).returning();
+    return results[0];
+  }
+
+  async updateWebhookEvent(id: string, updates: Partial<InsertWebhookEvent>): Promise<WebhookEvent | undefined> {
+    const results = await db.update(webhookEvents).set(updates).where(eq(webhookEvents.id, id)).returning();
+    return results[0];
+  }
+
+  async deleteWebhookEvent(id: string): Promise<boolean> {
+    const result = await db.delete(webhookEvents).where(eq(webhookEvents.id, id));
+    return result.rowCount > 0;
+  }
+
   async getPoolHalls(): Promise<PoolHall[]> { return this.memStorage.getPoolHalls(); }
   async getAllPoolHalls(): Promise<PoolHall[]> { return this.memStorage.getAllPoolHalls(); }
   async getPoolHall(id: string): Promise<PoolHall | undefined> { return this.memStorage.getPoolHall(id); }
   async createPoolHall(hall: InsertPoolHall): Promise<PoolHall> { return this.memStorage.createPoolHall(hall); }
   async updatePoolHall(id: string, updates: Partial<InsertPoolHall>): Promise<PoolHall | undefined> { return this.memStorage.updatePoolHall(id, updates); }
   async deletePoolHall(id: string): Promise<boolean> { return this.memStorage.deletePoolHall(id); }
-  
+
   async getHallMatches(): Promise<HallMatch[]> { return this.memStorage.getHallMatches(); }
   async getHallMatch(id: string): Promise<HallMatch | undefined> { return this.memStorage.getHallMatch(id); }
   async createHallMatch(match: InsertHallMatch): Promise<HallMatch> { return this.memStorage.createHallMatch(match); }
   async updateHallMatch(id: string, updates: Partial<InsertHallMatch>): Promise<HallMatch | undefined> { return this.memStorage.updateHallMatch(id, updates); }
   async deleteHallMatch(id: string): Promise<boolean> { return this.memStorage.deleteHallMatch(id); }
-  
+
   async getHallRosters(): Promise<HallRoster[]> { return this.memStorage.getHallRosters(); }
   async getHallRoster(id: string): Promise<HallRoster | undefined> { return this.memStorage.getHallRoster(id); }
   async createHallRoster(roster: InsertHallRoster): Promise<HallRoster> { return this.memStorage.createHallRoster(roster); }
   async updateHallRoster(id: string, updates: Partial<InsertHallRoster>): Promise<HallRoster | undefined> { return this.memStorage.updateHallRoster(id, updates); }
   async deleteHallRoster(id: string): Promise<boolean> { return this.memStorage.deleteHallRoster(id); }
-  
+
   async getOperatorSettings(operatorUserId: string): Promise<OperatorSettings | undefined> { return this.memStorage.getOperatorSettings(operatorUserId); }
   async getAllOperatorSettings(): Promise<OperatorSettings[]> { return this.memStorage.getAllOperatorSettings(); }
   async getOperatorSetting(id: string): Promise<OperatorSettings | undefined> { return this.memStorage.getOperatorSetting(id); }
   async createOperatorSettings(settings: InsertOperatorSettings): Promise<OperatorSettings> { return this.memStorage.createOperatorSettings(settings); }
   async updateOperatorSettings(id: string, updates: Partial<InsertOperatorSettings>): Promise<OperatorSettings | undefined> { return this.memStorage.updateOperatorSettings(id, updates); }
   async deleteOperatorSettings(id: string): Promise<boolean> { return this.memStorage.deleteOperatorSettings(id); }
-  
+
   async getRookieMatches(): Promise<RookieMatch[]> { return this.memStorage.getRookieMatches(); }
   async getRookieMatch(id: string): Promise<RookieMatch | undefined> { return this.memStorage.getRookieMatch(id); }
   async createRookieMatch(match: InsertRookieMatch): Promise<RookieMatch> { return this.memStorage.createRookieMatch(match); }
   async updateRookieMatch(id: string, updates: Partial<InsertRookieMatch>): Promise<RookieMatch | undefined> { return this.memStorage.updateRookieMatch(id, updates); }
   async deleteRookieMatch(id: string): Promise<boolean> { return this.memStorage.deleteRookieMatch(id); }
-  
+
   async getRookieEvents(): Promise<RookieEvent[]> { return this.memStorage.getRookieEvents(); }
   async getRookieEvent(id: string): Promise<RookieEvent | undefined> { return this.memStorage.getRookieEvent(id); }
   async createRookieEvent(event: InsertRookieEvent): Promise<RookieEvent> { return this.memStorage.createRookieEvent(event); }
   async updateRookieEvent(id: string, updates: Partial<InsertRookieEvent>): Promise<RookieEvent | undefined> { return this.memStorage.updateRookieEvent(id, updates); }
   async deleteRookieEvent(id: string): Promise<boolean> { return this.memStorage.deleteRookieEvent(id); }
-  
+
   async getRookieAchievements(): Promise<RookieAchievement[]> { return this.memStorage.getRookieAchievements(); }
   async getRookieAchievement(id: string): Promise<RookieAchievement | undefined> { return this.memStorage.getRookieAchievement(id); }
   async createRookieAchievement(achievement: InsertRookieAchievement): Promise<RookieAchievement> { return this.memStorage.createRookieAchievement(achievement); }
   async updateRookieAchievement(id: string, updates: Partial<InsertRookieAchievement>): Promise<RookieAchievement | undefined> { return this.memStorage.updateRookieAchievement(id, updates); }
   async deleteRookieAchievement(id: string): Promise<boolean> { return this.memStorage.deleteRookieAchievement(id); }
-  
+
   async getRookieSubscriptions(): Promise<RookieSubscription[]> { return this.memStorage.getRookieSubscriptions(); }
   async getRookieSubscription(id: string): Promise<RookieSubscription | undefined> { return this.memStorage.getRookieSubscription(id); }
   async createRookieSubscription(subscription: InsertRookieSubscription): Promise<RookieSubscription> { return this.memStorage.createRookieSubscription(subscription); }
   async updateRookieSubscription(id: string, updates: Partial<InsertRookieSubscription>): Promise<RookieSubscription | undefined> { return this.memStorage.updateRookieSubscription(id, updates); }
   async deleteRookieSubscription(id: string): Promise<boolean> { return this.memStorage.deleteRookieSubscription(id); }
-  
+
   async getOperatorSubscriptions(): Promise<OperatorSubscription[]> { return this.memStorage.getOperatorSubscriptions(); }
   async getOperatorSubscription(id: string): Promise<OperatorSubscription | undefined> { return this.memStorage.getOperatorSubscription(id); }
   async createOperatorSubscription(subscription: InsertOperatorSubscription): Promise<OperatorSubscription> { return this.memStorage.createOperatorSubscription(subscription); }
   async updateOperatorSubscription(id: string, updates: Partial<InsertOperatorSubscription>): Promise<OperatorSubscription | undefined> { return this.memStorage.updateOperatorSubscription(id, updates); }
   async deleteOperatorSubscription(id: string): Promise<boolean> { return this.memStorage.deleteOperatorSubscription(id); }
   async getAllOperatorSubscriptions(): Promise<OperatorSubscription[]> { return this.memStorage.getAllOperatorSubscriptions(); }
-  
+
   async createOperatorSubscriptionSplit(split: InsertOperatorSubscriptionSplit): Promise<OperatorSubscriptionSplit> { return this.memStorage.createOperatorSubscriptionSplit(split); }
   async getOperatorSubscriptionSplits(operatorId: string): Promise<OperatorSubscriptionSplit[]> { return this.memStorage.getOperatorSubscriptionSplits(operatorId); }
   async getOperatorSubscriptionSplitsBySubscription(subscriptionId: string): Promise<OperatorSubscriptionSplit[]> { return this.memStorage.getOperatorSubscriptionSplitsBySubscription(subscriptionId); }
   async getTrusteeEarnings(trusteeId: string): Promise<{ totalEarnings: number; splitCount: number; splits: OperatorSubscriptionSplit[] }> { return this.memStorage.getTrusteeEarnings(trusteeId); }
   async getOperatorSubscriptionSplit(id: string): Promise<OperatorSubscriptionSplit | undefined> { return this.memStorage.getOperatorSubscriptionSplit(id); }
-  
+
   async getTeams(): Promise<Team[]> { return this.memStorage.getTeams(); }
   async getTeam(id: string): Promise<Team | undefined> { return this.memStorage.getTeam(id); }
   async createTeam(team: InsertTeam): Promise<Team> { return this.memStorage.createTeam(team); }
   async updateTeam(id: string, updates: Partial<InsertTeam>): Promise<Team | undefined> { return this.memStorage.updateTeam(id, updates); }
   async deleteTeam(id: string): Promise<boolean> { return this.memStorage.deleteTeam(id); }
-  
+
   async getTeamPlayers(): Promise<TeamPlayer[]> { return this.memStorage.getTeamPlayers(); }
   async getTeamPlayer(id: string): Promise<TeamPlayer | undefined> { return this.memStorage.getTeamPlayer(id); }
   async createTeamPlayer(teamPlayer: InsertTeamPlayer): Promise<TeamPlayer> { return this.memStorage.createTeamPlayer(teamPlayer); }
   async updateTeamPlayer(id: string, updates: Partial<InsertTeamPlayer>): Promise<TeamPlayer | undefined> { return this.memStorage.updateTeamPlayer(id, updates); }
   async deleteTeamPlayer(id: string): Promise<boolean> { return this.memStorage.deleteTeamPlayer(id); }
-  
+
   async getTeamMatches(): Promise<TeamMatch[]> { return this.memStorage.getTeamMatches(); }
   async getTeamMatch(id: string): Promise<TeamMatch | undefined> { return this.memStorage.getTeamMatch(id); }
   async createTeamMatch(match: InsertTeamMatch): Promise<TeamMatch> { return this.memStorage.createTeamMatch(match); }
   async updateTeamMatch(id: string, updates: Partial<InsertTeamMatch>): Promise<TeamMatch | undefined> { return this.memStorage.updateTeamMatch(id, updates); }
   async deleteTeamMatch(id: string): Promise<boolean> { return this.memStorage.deleteTeamMatch(id); }
-  
+
   async getTeamSets(): Promise<TeamSet[]> { return this.memStorage.getTeamSets(); }
   async getTeamSet(id: string): Promise<TeamSet | undefined> { return this.memStorage.getTeamSet(id); }
   async createTeamSet(set: InsertTeamSet): Promise<TeamSet> { return this.memStorage.createTeamSet(set); }
   async updateTeamSet(id: string, updates: Partial<InsertTeamSet>): Promise<TeamSet | undefined> { return this.memStorage.updateTeamSet(id, updates); }
   async deleteTeamSet(id: string): Promise<boolean> { return this.memStorage.deleteTeamSet(id); }
-  
+
   async getTeamChallenges(): Promise<TeamChallenge[]> { return this.memStorage.getTeamChallenges(); }
   async getTeamChallenge(id: string): Promise<TeamChallenge | undefined> { return this.memStorage.getTeamChallenge(id); }
   async createTeamChallenge(challenge: InsertTeamChallenge): Promise<TeamChallenge> { return this.memStorage.createTeamChallenge(challenge); }
   async updateTeamChallenge(id: string, updates: Partial<InsertTeamChallenge>): Promise<TeamChallenge | undefined> { return this.memStorage.updateTeamChallenge(id, updates); }
   async deleteTeamChallenge(id: string): Promise<boolean> { return this.memStorage.deleteTeamChallenge(id); }
-  
+
   async getTeamChallengeParticipants(): Promise<TeamChallengeParticipant[]> { return this.memStorage.getTeamChallengeParticipants(); }
   async getTeamChallengeParticipant(id: string): Promise<TeamChallengeParticipant | undefined> { return this.memStorage.getTeamChallengeParticipant(id); }
   async createTeamChallengeParticipant(participant: InsertTeamChallengeParticipant): Promise<TeamChallengeParticipant> { return this.memStorage.createTeamChallengeParticipant(participant); }
   async updateTeamChallengeParticipant(id: string, updates: Partial<InsertTeamChallengeParticipant>): Promise<TeamChallengeParticipant | undefined> { return this.memStorage.updateTeamChallengeParticipant(id, updates); }
   async deleteTeamChallengeParticipant(id: string): Promise<boolean> { return this.memStorage.deleteTeamChallengeParticipant(id); }
-  
+
   async getCheckins(): Promise<Checkin[]> { return this.memStorage.getCheckins(); }
   async getCheckin(id: string): Promise<Checkin | undefined> { return this.memStorage.getCheckin(id); }
   async createCheckin(checkin: InsertCheckin): Promise<Checkin> { return this.memStorage.createCheckin(checkin); }
   async updateCheckin(id: string, updates: Partial<InsertCheckin>): Promise<Checkin | undefined> { return this.memStorage.updateCheckin(id, updates); }
   async deleteCheckin(id: string): Promise<boolean> { return this.memStorage.deleteCheckin(id); }
-  
+
   async getAttitudeVotes(): Promise<AttitudeVote[]> { return this.memStorage.getAttitudeVotes(); }
   async getAttitudeVote(id: string): Promise<AttitudeVote | undefined> { return this.memStorage.getAttitudeVote(id); }
   async createAttitudeVote(vote: InsertAttitudeVote): Promise<AttitudeVote> { return this.memStorage.createAttitudeVote(vote); }
   async updateAttitudeVote(id: string, updates: Partial<InsertAttitudeVote>): Promise<AttitudeVote | undefined> { return this.memStorage.updateAttitudeVote(id, updates); }
   async deleteAttitudeVote(id: string): Promise<boolean> { return this.memStorage.deleteAttitudeVote(id); }
-  
+
   async getAttitudeBallots(): Promise<AttitudeBallot[]> { return this.memStorage.getAttitudeBallots(); }
   async getAttitudeBallot(id: string): Promise<AttitudeBallot | undefined> { return this.memStorage.getAttitudeBallot(id); }
   async createAttitudeBallot(ballot: InsertAttitudeBallot): Promise<AttitudeBallot> { return this.memStorage.createAttitudeBallot(ballot); }
   async updateAttitudeBallot(id: string, updates: Partial<InsertAttitudeBallot>): Promise<AttitudeBallot | undefined> { return this.memStorage.updateAttitudeBallot(id, updates); }
   async deleteAttitudeBallot(id: string): Promise<boolean> { return this.memStorage.deleteAttitudeBallot(id); }
-  
+
   async getIncidents(): Promise<Incident[]> { return this.memStorage.getIncidents(); }
   async getIncident(id: string): Promise<Incident | undefined> { return this.memStorage.getIncident(id); }
   async createIncident(incident: InsertIncident): Promise<Incident> { return this.memStorage.createIncident(incident); }
   async updateIncident(id: string, updates: Partial<InsertIncident>): Promise<Incident | undefined> { return this.memStorage.updateIncident(id, updates); }
   async deleteIncident(id: string): Promise<boolean> { return this.memStorage.deleteIncident(id); }
-  
+
   async getChallengeEntries(): Promise<ChallengeEntry[]> { return this.memStorage.getChallengeEntries(); }
   async getChallengeEntry(id: string): Promise<ChallengeEntry | undefined> { return this.memStorage.getChallengeEntry(id); }
   async createChallengeEntry(entry: InsertChallengeEntry): Promise<ChallengeEntry> { return this.memStorage.createChallengeEntry(entry); }
   async updateChallengeEntry(id: string, updates: Partial<InsertChallengeEntry>): Promise<ChallengeEntry | undefined> { return this.memStorage.updateChallengeEntry(id, updates); }
   async deleteChallengeEntry(id: string): Promise<boolean> { return this.memStorage.deleteChallengeEntry(id); }
-  
+
   async getLedgerEntries(): Promise<LedgerEntry[]> { return this.memStorage.getLedgerEntries(); }
   async getLedgerEntry(id: string): Promise<LedgerEntry | undefined> { return this.memStorage.getLedgerEntry(id); }
   async createLedgerEntry(entry: InsertLedgerEntry): Promise<LedgerEntry> { return this.memStorage.createLedgerEntry(entry); }
   async updateLedgerEntry(id: string, updates: Partial<InsertLedgerEntry>): Promise<LedgerEntry | undefined> { return this.memStorage.updateLedgerEntry(id, updates); }
   async deleteLedgerEntry(id: string): Promise<boolean> { return this.memStorage.deleteLedgerEntry(id); }
-  
+
   async getResolutions(): Promise<Resolution[]> { return this.memStorage.getResolutions(); }
   async getResolution(id: string): Promise<Resolution | undefined> { return this.memStorage.getResolution(id); }
   async createResolution(resolution: InsertResolution): Promise<Resolution> { return this.memStorage.createResolution(resolution); }
   async updateResolution(id: string, updates: Partial<InsertResolution>): Promise<Resolution | undefined> { return this.memStorage.updateResolution(id, updates); }
   async deleteResolution(id: string): Promise<boolean> { return this.memStorage.deleteResolution(id); }
-  
+
   async getMatchDivisions(): Promise<MatchDivision[]> { return this.memStorage.getMatchDivisions(); }
   async getMatchDivision(id: string): Promise<MatchDivision | undefined> { return this.memStorage.getMatchDivision(id); }
   async createMatchDivision(division: InsertMatchDivision): Promise<MatchDivision> { return this.memStorage.createMatchDivision(division); }
   async updateMatchDivision(id: string, updates: Partial<InsertMatchDivision>): Promise<MatchDivision | undefined> { return this.memStorage.updateMatchDivision(id, updates); }
   async deleteMatchDivision(id: string): Promise<boolean> { return this.memStorage.deleteMatchDivision(id); }
-  
+
   async getOperatorTiers(): Promise<OperatorTier[]> { return this.memStorage.getOperatorTiers(); }
   async getOperatorTier(id: string): Promise<OperatorTier | undefined> { return this.memStorage.getOperatorTier(id); }
   async createOperatorTier(tier: InsertOperatorTier): Promise<OperatorTier> { return this.memStorage.createOperatorTier(tier); }
   async updateOperatorTier(id: string, updates: Partial<InsertOperatorTier>): Promise<OperatorTier | undefined> { return this.memStorage.updateOperatorTier(id, updates); }
   async deleteOperatorTier(id: string): Promise<boolean> { return this.memStorage.deleteOperatorTier(id); }
-  
+
   async getTeamStripeAccounts(): Promise<TeamStripeAccount[]> { return this.memStorage.getTeamStripeAccounts(); }
   async getTeamStripeAccount(id: string): Promise<TeamStripeAccount | undefined> { return this.memStorage.getTeamStripeAccount(id); }
   async createTeamStripeAccount(account: InsertTeamStripeAccount): Promise<TeamStripeAccount> { return this.memStorage.createTeamStripeAccount(account); }
   async updateTeamStripeAccount(id: string, updates: Partial<InsertTeamStripeAccount>): Promise<TeamStripeAccount | undefined> { return this.memStorage.updateTeamStripeAccount(id, updates); }
   async deleteTeamStripeAccount(id: string): Promise<boolean> { return this.memStorage.deleteTeamStripeAccount(id); }
-  
+
   async getMatchEntries(): Promise<MatchEntry[]> { return this.memStorage.getMatchEntries(); }
   async getMatchEntry(id: string): Promise<MatchEntry | undefined> { return this.memStorage.getMatchEntry(id); }
   async createMatchEntry(entry: InsertMatchEntry): Promise<MatchEntry> { return this.memStorage.createMatchEntry(entry); }
   async updateMatchEntry(id: string, updates: Partial<InsertMatchEntry>): Promise<MatchEntry | undefined> { return this.memStorage.updateMatchEntry(id, updates); }
   async deleteMatchEntry(id: string): Promise<boolean> { return this.memStorage.deleteMatchEntry(id); }
-  
+
   async getPayoutDistributions(): Promise<PayoutDistribution[]> { return this.memStorage.getPayoutDistributions(); }
   async getPayoutDistribution(id: string): Promise<PayoutDistribution | undefined> { return this.memStorage.getPayoutDistribution(id); }
   async createPayoutDistribution(distribution: InsertPayoutDistribution): Promise<PayoutDistribution> { return this.memStorage.createPayoutDistribution(distribution); }
   async updatePayoutDistribution(id: string, updates: Partial<InsertPayoutDistribution>): Promise<PayoutDistribution | undefined> { return this.memStorage.updatePayoutDistribution(id, updates); }
   async deletePayoutDistribution(id: string): Promise<boolean> { return this.memStorage.deletePayoutDistribution(id); }
-  
+
   async getTeamRegistrations(): Promise<TeamRegistration[]> { return this.memStorage.getTeamRegistrations(); }
   async getTeamRegistration(id: string): Promise<TeamRegistration | undefined> { return this.memStorage.getTeamRegistration(id); }
   async createTeamRegistration(registration: InsertTeamRegistration): Promise<TeamRegistration> { return this.memStorage.createTeamRegistration(registration); }
   async updateTeamRegistration(id: string, updates: Partial<InsertTeamRegistration>): Promise<TeamRegistration | undefined> { return this.memStorage.updateTeamRegistration(id, updates); }
   async deleteTeamRegistration(id: string): Promise<boolean> { return this.memStorage.deleteTeamRegistration(id); }
-  
+
   async getUploadedFiles(): Promise<UploadedFile[]> { return this.memStorage.getUploadedFiles(); }
   async getUploadedFile(id: string): Promise<UploadedFile | undefined> { return this.memStorage.getUploadedFile(id); }
   async createUploadedFile(file: InsertUploadedFile): Promise<UploadedFile> { return this.memStorage.createUploadedFile(file); }
   async updateUploadedFile(id: string, updates: Partial<InsertUploadedFile>): Promise<UploadedFile | undefined> { return this.memStorage.updateUploadedFile(id, updates); }
   async deleteUploadedFile(id: string): Promise<boolean> { return this.memStorage.deleteUploadedFile(id); }
-  
+
   async getFileShares(): Promise<FileShare[]> { return this.memStorage.getFileShares(); }
   async getFileShare(id: string): Promise<FileShare | undefined> { return this.memStorage.getFileShare(id); }
   async createFileShare(share: InsertFileShare): Promise<FileShare> { return this.memStorage.createFileShare(share); }
   async updateFileShare(id: string, updates: Partial<InsertFileShare>): Promise<FileShare | undefined> { return this.memStorage.updateFileShare(id, updates); }
   async deleteFileShare(id: string): Promise<boolean> { return this.memStorage.deleteFileShare(id); }
-  
+
   async getWeightRules(): Promise<WeightRule[]> { return this.memStorage.getWeightRules(); }
   async getWeightRule(id: string): Promise<WeightRule | undefined> { return this.memStorage.getWeightRule(id); }
   async createWeightRule(rule: InsertWeightRule): Promise<WeightRule> { return this.memStorage.createWeightRule(rule); }
   async updateWeightRule(id: string, updates: Partial<InsertWeightRule>): Promise<WeightRule | undefined> { return this.memStorage.updateWeightRule(id, updates); }
   async deleteWeightRule(id: string): Promise<boolean> { return this.memStorage.deleteWeightRule(id); }
-  
+
   async getTutoringSessions(): Promise<TutoringSession[]> { return this.memStorage.getTutoringSessions(); }
   async getTutoringSession(id: string): Promise<TutoringSession | undefined> { return this.memStorage.getTutoringSession(id); }
   async createTutoringSession(session: InsertTutoringSession): Promise<TutoringSession> { return this.memStorage.createTutoringSession(session); }
   async updateTutoringSession(id: string, updates: Partial<InsertTutoringSession>): Promise<TutoringSession | undefined> { return this.memStorage.updateTutoringSession(id, updates); }
   async deleteTutoringSession(id: string): Promise<boolean> { return this.memStorage.deleteTutoringSession(id); }
-  
+
   async getTutoringCredits(): Promise<TutoringCredits[]> { return this.memStorage.getTutoringCredits(); }
   async getTutoringCredit(id: string): Promise<TutoringCredits | undefined> { return this.memStorage.getTutoringCredit(id); }
   async createTutoringCredits(credits: InsertTutoringCredits): Promise<TutoringCredits> { return this.memStorage.createTutoringCredits(credits); }
   async updateTutoringCredits(id: string, updates: Partial<InsertTutoringCredits>): Promise<TutoringCredits | undefined> { return this.memStorage.updateTutoringCredits(id, updates); }
   async deleteTutoringCredits(id: string): Promise<boolean> { return this.memStorage.deleteTutoringCredits(id); }
-  
+
   async getCommissionRates(): Promise<CommissionRate[]> { return this.memStorage.getCommissionRates(); }
   async getCommissionRate(id: string): Promise<CommissionRate | undefined> { return this.memStorage.getCommissionRate(id); }
   async createCommissionRate(rate: InsertCommissionRate): Promise<CommissionRate> { return this.memStorage.createCommissionRate(rate); }
   async updateCommissionRate(id: string, updates: Partial<InsertCommissionRate>): Promise<CommissionRate | undefined> { return this.memStorage.updateCommissionRate(id, updates); }
   async deleteCommissionRate(id: string): Promise<boolean> { return this.memStorage.deleteCommissionRate(id); }
-  
+
   async getPlatformEarnings(): Promise<PlatformEarnings[]> { return this.memStorage.getPlatformEarnings(); }
   async getPlatformEarning(id: string): Promise<PlatformEarnings | undefined> { return this.memStorage.getPlatformEarning(id); }
   async createPlatformEarnings(earnings: InsertPlatformEarnings): Promise<PlatformEarnings> { return this.memStorage.createPlatformEarnings(earnings); }
   async updatePlatformEarnings(id: string, updates: Partial<InsertPlatformEarnings>): Promise<PlatformEarnings | undefined> { return this.memStorage.updatePlatformEarnings(id, updates); }
   async deletePlatformEarnings(id: string): Promise<boolean> { return this.memStorage.deletePlatformEarnings(id); }
-  
+
   async getMembershipEarnings(): Promise<MembershipEarnings[]> { return this.memStorage.getMembershipEarnings(); }
   async getMembershipEarning(id: string): Promise<MembershipEarnings | undefined> { return this.memStorage.getMembershipEarning(id); }
   async createMembershipEarnings(earnings: InsertMembershipEarnings): Promise<MembershipEarnings> { return this.memStorage.createMembershipEarnings(earnings); }
   async updateMembershipEarnings(id: string, updates: Partial<InsertMembershipEarnings>): Promise<MembershipEarnings | undefined> { return this.memStorage.updateMembershipEarnings(id, updates); }
   async deleteMembershipEarnings(id: string): Promise<boolean> { return this.memStorage.deleteMembershipEarnings(id); }
-  
+
   async getOperatorPayouts(): Promise<OperatorPayout[]> { return this.memStorage.getOperatorPayouts(); }
   async getOperatorPayout(id: string): Promise<OperatorPayout | undefined> { return this.memStorage.getOperatorPayout(id); }
   async createOperatorPayout(payout: InsertOperatorPayout): Promise<OperatorPayout> { return this.memStorage.createOperatorPayout(payout); }
   async updateOperatorPayout(id: string, updates: Partial<InsertOperatorPayout>): Promise<OperatorPayout | undefined> { return this.memStorage.updateOperatorPayout(id, updates); }
   async deleteOperatorPayout(id: string): Promise<boolean> { return this.memStorage.deleteOperatorPayout(id); }
-  
-  async getMembershipSubscriptions(): Promise<MembershipSubscription[]> { return this.memStorage.getMembershipSubscriptions(); }
-  async getMembershipSubscription(id: string): Promise<MembershipSubscription | undefined> { return this.memStorage.getMembershipSubscription(id); }
-  async createMembershipSubscription(subscription: InsertMembershipSubscription): Promise<MembershipSubscription> { return this.memStorage.createMembershipSubscription(subscription); }
-  async updateMembershipSubscription(id: string, updates: Partial<InsertMembershipSubscription>): Promise<MembershipSubscription | undefined> { return this.memStorage.updateMembershipSubscription(id, updates); }
-  async deleteMembershipSubscription(id: string): Promise<boolean> { return this.memStorage.deleteMembershipSubscription(id); }
-  
+
+  async getMembershipSubscriptions(): Promise<MembershipSubscription[]> {
+    return await db.select().from(membershipSubscriptionsTable).orderBy(desc(membershipSubscriptionsTable.createdAt));
+  }
+  async getMembershipSubscription(id: string): Promise<MembershipSubscription | undefined> {
+    const results = await db.select().from(membershipSubscriptionsTable).where(eq(membershipSubscriptionsTable.id, id));
+    return results[0];
+  }
+  async createMembershipSubscription(subscription: InsertMembershipSubscription): Promise<MembershipSubscription> {
+    const results = await db.insert(membershipSubscriptionsTable).values(subscription).returning();
+    return results[0];
+  }
+  async updateMembershipSubscription(id: string, updates: Partial<InsertMembershipSubscription>): Promise<MembershipSubscription | undefined> {
+    const results = await db.update(membershipSubscriptionsTable).set({ ...updates, updatedAt: new Date() }).where(eq(membershipSubscriptionsTable.id, id)).returning();
+    return results[0];
+  }
+  async deleteMembershipSubscription(id: string): Promise<boolean> {
+    const result = await db.delete(membershipSubscriptionsTable).where(eq(membershipSubscriptionsTable.id, id));
+    return result.rowCount > 0;
+  }
+
   async getChallenges(): Promise<Challenge[]> { return this.memStorage.getChallenges(); }
   async getChallenge(id: string): Promise<Challenge | undefined> { return this.memStorage.getChallenge(id); }
   async createChallenge(challenge: InsertChallenge): Promise<Challenge> { return this.memStorage.createChallenge(challenge); }
   async updateChallenge(id: string, updates: Partial<InsertChallenge>): Promise<Challenge | undefined> { return this.memStorage.updateChallenge(id, updates); }
   async deleteChallenge(id: string): Promise<boolean> { return this.memStorage.deleteChallenge(id); }
-  
+
   async getChallengeFees(): Promise<ChallengeFee[]> { return this.memStorage.getChallengeFees(); }
   async getChallengeFee(id: string): Promise<ChallengeFee | undefined> { return this.memStorage.getChallengeFee(id); }
   async createChallengeFee(fee: InsertChallengeFee): Promise<ChallengeFee> { return this.memStorage.createChallengeFee(fee); }
   async updateChallengeFee(id: string, updates: Partial<InsertChallengeFee>): Promise<ChallengeFee | undefined> { return this.memStorage.updateChallengeFee(id, updates); }
   async deleteChallengeFee(id: string): Promise<boolean> { return this.memStorage.deleteChallengeFee(id); }
-  
+
   async getChallengeCheckIns(): Promise<ChallengeCheckIn[]> { return this.memStorage.getChallengeCheckIns(); }
   async getChallengeCheckIn(id: string): Promise<ChallengeCheckIn | undefined> { return this.memStorage.getChallengeCheckIn(id); }
   async createChallengeCheckIn(checkin: InsertChallengeCheckIn): Promise<ChallengeCheckIn> { return this.memStorage.createChallengeCheckIn(checkin); }
   async updateChallengeCheckIn(id: string, updates: Partial<InsertChallengeCheckIn>): Promise<ChallengeCheckIn | undefined> { return this.memStorage.updateChallengeCheckIn(id, updates); }
   async deleteChallengeCheckIn(id: string): Promise<boolean> { return this.memStorage.deleteChallengeCheckIn(id); }
-  
+
   async getChallengePolicies(): Promise<ChallengePolicy[]> { return this.memStorage.getChallengePolicies(); }
   async getChallengePolicy(id: string): Promise<ChallengePolicy | undefined> { return this.memStorage.getChallengePolicy(id); }
   async createChallengePolicy(policy: InsertChallengePolicy): Promise<ChallengePolicy> { return this.memStorage.createChallengePolicy(policy); }
   async updateChallengePolicy(id: string, updates: Partial<InsertChallengePolicy>): Promise<ChallengePolicy | undefined> { return this.memStorage.updateChallengePolicy(id, updates); }
   async deleteChallengePolicy(id: string): Promise<boolean> { return this.memStorage.deleteChallengePolicy(id); }
-  
+
   async getQrCodeNonces(): Promise<QrCodeNonce[]> { return this.memStorage.getQrCodeNonces(); }
   async getQrCodeNonce(id: string): Promise<QrCodeNonce | undefined> { return this.memStorage.getQrCodeNonce(id); }
   async createQrCodeNonce(nonce: InsertQrCodeNonce): Promise<QrCodeNonce> { return this.memStorage.createQrCodeNonce(nonce); }
@@ -6060,67 +6116,67 @@ export class DatabaseStorage implements IStorage {
   async isNonceUsed(nonce: string): Promise<boolean> { return this.memStorage.isNonceUsed(nonce); }
   async isNonceValid(nonce: string): Promise<boolean> { return this.memStorage.isNonceValid(nonce); }
   async cleanupExpiredNonces(): Promise<number> { return this.memStorage.cleanupExpiredNonces(); }
-  
+
   async getIcalFeedTokens(): Promise<IcalFeedToken[]> { return this.memStorage.getIcalFeedTokens(); }
   async getIcalFeedToken(id: string): Promise<IcalFeedToken | undefined> { return this.memStorage.getIcalFeedToken(id); }
   async createIcalFeedToken(token: InsertIcalFeedToken): Promise<IcalFeedToken> { return this.memStorage.createIcalFeedToken(token); }
   async updateIcalFeedToken(id: string, updates: Partial<InsertIcalFeedToken>): Promise<IcalFeedToken | undefined> { return this.memStorage.updateIcalFeedToken(id, updates); }
   async deleteIcalFeedToken(id: string): Promise<boolean> { return this.memStorage.deleteIcalFeedToken(id); }
-  
+
   async getPaymentMethods(): Promise<PaymentMethod[]> { return this.memStorage.getPaymentMethods(); }
   async getPaymentMethod(id: string): Promise<PaymentMethod | undefined> { return this.memStorage.getPaymentMethod(id); }
   async createPaymentMethod(method: InsertPaymentMethod): Promise<PaymentMethod> { return this.memStorage.createPaymentMethod(method); }
   async updatePaymentMethod(id: string, updates: Partial<InsertPaymentMethod>): Promise<PaymentMethod | undefined> { return this.memStorage.updatePaymentMethod(id, updates); }
   async deletePaymentMethod(id: string): Promise<boolean> { return this.memStorage.deletePaymentMethod(id); }
-  
+
   async getStakesHolds(): Promise<StakesHold[]> { return this.memStorage.getStakesHolds(); }
   async getStakesHold(id: string): Promise<StakesHold | undefined> { return this.memStorage.getStakesHold(id); }
   async createStakesHold(hold: InsertStakesHold): Promise<StakesHold> { return this.memStorage.createStakesHold(hold); }
   async updateStakesHold(id: string, updates: Partial<InsertStakesHold>): Promise<StakesHold | undefined> { return this.memStorage.updateStakesHold(id, updates); }
   async deleteStakesHold(id: string): Promise<boolean> { return this.memStorage.deleteStakesHold(id); }
-  
+
   async getNotificationSettings(): Promise<NotificationSettings[]> { return this.memStorage.getNotificationSettings(); }
   async getNotificationSetting(id: string): Promise<NotificationSettings | undefined> { return this.memStorage.getNotificationSetting(id); }
   async createNotificationSettings(settings: InsertNotificationSettings): Promise<NotificationSettings> { return this.memStorage.createNotificationSettings(settings); }
   async updateNotificationSettings(id: string, updates: Partial<InsertNotificationSettings>): Promise<NotificationSettings | undefined> { return this.memStorage.updateNotificationSettings(id, updates); }
   async deleteNotificationSettings(id: string): Promise<boolean> { return this.memStorage.deleteNotificationSettings(id); }
-  
+
   async getNotificationDeliveries(): Promise<NotificationDelivery[]> { return this.memStorage.getNotificationDeliveries(); }
   async getNotificationDelivery(id: string): Promise<NotificationDelivery | undefined> { return this.memStorage.getNotificationDelivery(id); }
   async createNotificationDelivery(delivery: InsertNotificationDelivery): Promise<NotificationDelivery> { return this.memStorage.createNotificationDelivery(delivery); }
   async updateNotificationDelivery(id: string, updates: Partial<InsertNotificationDelivery>): Promise<NotificationDelivery | undefined> { return this.memStorage.updateNotificationDelivery(id, updates); }
   async deleteNotificationDelivery(id: string): Promise<boolean> { return this.memStorage.deleteNotificationDelivery(id); }
-  
+
   async getDisputeResolutions(): Promise<DisputeResolution[]> { return this.memStorage.getDisputeResolutions(); }
   async getDisputeResolution(id: string): Promise<DisputeResolution | undefined> { return this.memStorage.getDisputeResolution(id); }
   async createDisputeResolution(resolution: InsertDisputeResolution): Promise<DisputeResolution> { return this.memStorage.createDisputeResolution(resolution); }
   async updateDisputeResolution(id: string, updates: Partial<InsertDisputeResolution>): Promise<DisputeResolution | undefined> { return this.memStorage.updateDisputeResolution(id, updates); }
   async deleteDisputeResolution(id: string): Promise<boolean> { return this.memStorage.deleteDisputeResolution(id); }
-  
+
   async getPlayerCooldowns(): Promise<PlayerCooldown[]> { return this.memStorage.getPlayerCooldowns(); }
   async getPlayerCooldown(id: string): Promise<PlayerCooldown | undefined> { return this.memStorage.getPlayerCooldown(id); }
   async createPlayerCooldown(cooldown: InsertPlayerCooldown): Promise<PlayerCooldown> { return this.memStorage.createPlayerCooldown(cooldown); }
   async updatePlayerCooldown(id: string, updates: Partial<InsertPlayerCooldown>): Promise<PlayerCooldown | undefined> { return this.memStorage.updatePlayerCooldown(id, updates); }
   async deletePlayerCooldown(id: string): Promise<boolean> { return this.memStorage.deletePlayerCooldown(id); }
-  
+
   async getDeviceAttestations(): Promise<DeviceAttestation[]> { return this.memStorage.getDeviceAttestations(); }
   async getDeviceAttestation(id: string): Promise<DeviceAttestation | undefined> { return this.memStorage.getDeviceAttestation(id); }
   async createDeviceAttestation(attestation: InsertDeviceAttestation): Promise<DeviceAttestation> { return this.memStorage.createDeviceAttestation(attestation); }
   async updateDeviceAttestation(id: string, updates: Partial<InsertDeviceAttestation>): Promise<DeviceAttestation | undefined> { return this.memStorage.updateDeviceAttestation(id, updates); }
   async deleteDeviceAttestation(id: string): Promise<boolean> { return this.memStorage.deleteDeviceAttestation(id); }
-  
+
   async getJobQueues(): Promise<JobQueue[]> { return this.memStorage.getJobQueues(); }
   async getJobQueue(id: string): Promise<JobQueue | undefined> { return this.memStorage.getJobQueue(id); }
   async createJobQueue(job: InsertJobQueue): Promise<JobQueue> { return this.memStorage.createJobQueue(job); }
   async updateJobQueue(id: string, updates: Partial<InsertJobQueue>): Promise<JobQueue | undefined> { return this.memStorage.updateJobQueue(id, updates); }
   async deleteJobQueue(id: string): Promise<boolean> { return this.memStorage.deleteJobQueue(id); }
-  
+
   async getSystemMetrics(): Promise<SystemMetric[]> { return this.memStorage.getSystemMetrics(); }
   async getSystemMetric(id: string): Promise<SystemMetric | undefined> { return this.memStorage.getSystemMetric(id); }
   async createSystemMetric(metric: InsertSystemMetric): Promise<SystemMetric> { return this.memStorage.createSystemMetric(metric); }
   async updateSystemMetric(id: string, updates: Partial<InsertSystemMetric>): Promise<SystemMetric | undefined> { return this.memStorage.updateSystemMetric(id, updates); }
   async deleteSystemMetric(id: string): Promise<boolean> { return this.memStorage.deleteSystemMetric(id); }
-  
+
   async getSystemAlerts(): Promise<SystemAlert[]> { return this.memStorage.getSystemAlerts(); }
   async getSystemAlert(id: string): Promise<SystemAlert | undefined> { return this.memStorage.getSystemAlert(id); }
   async createSystemAlert(alert: InsertSystemAlert): Promise<SystemAlert> { return this.memStorage.createSystemAlert(alert); }
@@ -6148,8 +6204,16 @@ export class DatabaseStorage implements IStorage {
   async getActiveLiveStreams(): Promise<LiveStream[]> { return this.memStorage.getActiveLiveStreams(); }
   async getLiveStreamsByPlatform(platform: string): Promise<LiveStream[]> { return this.memStorage.getLiveStreamsByPlatform(platform); }
   async getLiveStreamsByCity(city: string): Promise<LiveStream[]> { return this.memStorage.getLiveStreamsByCity(city); }
-  async getWebhookEventsByType(eventType: string): Promise<WebhookEvent[]> { return this.memStorage.getWebhookEventsByType(eventType); }
-  async getRecentWebhookEvents(hours: number): Promise<WebhookEvent[]> { return (this.memStorage as any).getRecentWebhookEvents(hours); }
+
+  async getWebhookEventsByType(eventType: string): Promise<WebhookEvent[]> {
+    return await db.select().from(webhookEvents).where(eq(webhookEvents.eventType, eventType));
+  }
+
+  async getRecentWebhookEvents(hours: number): Promise<WebhookEvent[]> {
+    const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
+    return await db.select().from(webhookEvents).orderBy(desc(webhookEvents.processedAt)).limit(100);
+  }
+
   async getPoolHallsByCity(city: string): Promise<PoolHall[]> { return (this.memStorage as any).getPoolHallsByCity(city); }
   async getActivePoolHalls(): Promise<PoolHall[]> { return (this.memStorage as any).getActivePoolHalls(); }
   async getHallMatchesByHall(hallId: string): Promise<HallMatch[]> { return this.memStorage.getHallMatchesByHall(hallId); }
@@ -6220,9 +6284,16 @@ export class DatabaseStorage implements IStorage {
   async getRecentMembershipEarnings(days: number): Promise<MembershipEarnings[]> { return (this.memStorage as any).getRecentMembershipEarnings(days); }
   async getOperatorPayoutsByOperator(operatorId: string): Promise<OperatorPayout[]> { return this.memStorage.getOperatorPayoutsByOperator(operatorId); }
   async getPendingOperatorPayouts(): Promise<OperatorPayout[]> { return (this.memStorage as any).getPendingOperatorPayouts(); }
-  async getMembershipSubscriptionByPlayerId(playerId: string): Promise<MembershipSubscription | undefined> { return this.memStorage.getMembershipSubscriptionByPlayerId(playerId); }
-  async getMembershipSubscriptionsByPlayer(playerId: string): Promise<MembershipSubscription[]> { return (this.memStorage as any).getMembershipSubscriptionsByPlayer(playerId); }
-  async getActiveMembershipSubscriptions(): Promise<MembershipSubscription[]> { return (this.memStorage as any).getActiveMembershipSubscriptions(); }
+  async getMembershipSubscriptionByPlayerId(playerId: string): Promise<MembershipSubscription | undefined> {
+    const results = await db.select().from(membershipSubscriptionsTable).where(eq(membershipSubscriptionsTable.playerId, playerId));
+    return results[0];
+  }
+  async getMembershipSubscriptionsByPlayer(playerId: string): Promise<MembershipSubscription[]> {
+    return await db.select().from(membershipSubscriptionsTable).where(eq(membershipSubscriptionsTable.playerId, playerId)).orderBy(desc(membershipSubscriptionsTable.createdAt));
+  }
+  async getActiveMembershipSubscriptions(): Promise<MembershipSubscription[]> {
+    return await db.select().from(membershipSubscriptionsTable).where(eq(membershipSubscriptionsTable.status, "active")).orderBy(desc(membershipSubscriptionsTable.createdAt));
+  }
   async getChallengesByStatus(status: string): Promise<Challenge[]> { return (this.memStorage as any).getChallengesByStatus(status); }
   async getChallengesByPlayer(playerId: string): Promise<Challenge[]> { return this.memStorage.getChallengesByPlayer(playerId); }
   async getChallengesByHall(hallId: string): Promise<Challenge[]> { return this.memStorage.getChallengesByHall(hallId); }
@@ -6262,20 +6333,20 @@ export class DatabaseStorage implements IStorage {
   async getFiringAlerts(): Promise<SystemAlert[]> { return this.memStorage.getFiringAlerts(); }
   async triggerAlert(alertId: string): Promise<SystemAlert | undefined> { return this.memStorage.triggerAlert(alertId); }
   async resolveAlert(alertId: string, resolvedBy: string): Promise<SystemAlert | undefined> { return this.memStorage.resolveAlert(alertId, resolvedBy); }
-  
+
   // === AI COACH TRAINING ANALYTICS ===
-  
+
   // Session Management
   async createTrainingSession(session: InsertSessionAnalytics): Promise<SelectSessionAnalytics> {
     const [created] = await db.insert(sessionAnalytics).values(session).returning();
     return created;
   }
-  
+
   async getTrainingSession(sessionId: string): Promise<SelectSessionAnalytics | null> {
     const results = await db.select().from(sessionAnalytics).where(eq(sessionAnalytics.id, sessionId));
     return results[0] || null;
   }
-  
+
   async getPlayerSessions(playerId: string, limit?: number): Promise<SelectSessionAnalytics[]> {
     const query = db.select().from(sessionAnalytics).where(eq(sessionAnalytics.playerId, playerId));
     if (limit) {
@@ -6283,25 +6354,25 @@ export class DatabaseStorage implements IStorage {
     }
     return await query;
   }
-  
+
   // Shot Recording
   async recordShots(sessionId: string, shotsData: InsertShot[]): Promise<SelectShot[]> {
     const shotsWithSession = shotsData.map(shot => ({ ...shot, sessionId }));
     const created = await db.insert(shots).values(shotsWithSession).returning();
     return created;
   }
-  
+
   async getSessionShots(sessionId: string): Promise<SelectShot[]> {
     return await db.select().from(shots).where(eq(shots.sessionId, sessionId));
   }
-  
+
   // Monthly Scores & Leaderboard
   async calculateMonthlyScores(period: string): Promise<void> {
     // This would involve complex aggregation logic
     // For now, this is a placeholder that would be implemented based on business logic
     // The actual implementation would aggregate session data and update ladderTrainingScores table
   }
-  
+
   async getHallLeaderboard(hallId: string, period: string): Promise<SelectLadderTrainingScore[]> {
     return await db
       .select()
@@ -6312,7 +6383,7 @@ export class DatabaseStorage implements IStorage {
       ))
       .orderBy(desc(ladderTrainingScores.rank));
   }
-  
+
   async getPlayerTrainingScore(playerId: string, period: string): Promise<SelectLadderTrainingScore | null> {
     const results = await db
       .select()
@@ -6323,21 +6394,21 @@ export class DatabaseStorage implements IStorage {
       ));
     return results[0] || null;
   }
-  
+
   // Reward Management
   async createReward(reward: InsertSubscriptionReward): Promise<SelectSubscriptionReward> {
     const [created] = await db.insert(subscriptionRewards).values(reward).returning();
     return created;
   }
-  
+
   async getRewardsForPeriod(period: string): Promise<SelectSubscriptionReward[]> {
     return await db.select().from(subscriptionRewards).where(eq(subscriptionRewards.period, period));
   }
-  
+
   async markRewardApplied(rewardId: string, stripeCouponId: string): Promise<void> {
     await db.update(subscriptionRewards)
-      .set({ 
-        appliedToStripe: true, 
+      .set({
+        appliedToStripe: true,
         stripeCouponId: stripeCouponId,
         appliedDate: new Date()
       })
@@ -6399,10 +6470,12 @@ export class DatabaseStorage implements IStorage {
   async calculateTeamChallengeStake(...args: any[]): Promise<any> { return (this.memStorage as any).calculateTeamChallengeStake(...args); }
   async validateProMembership(playerId: string): Promise<any> { return (this.memStorage as any).validateProMembership(playerId); }
   async createTeamChallengeWithParticipants(
-    challengeData: InsertTeamChallenge, 
+    challengeData: InsertTeamChallenge,
     teamPlayers: string[]
-  ): Promise<any> { return (this.memStorage as any).createTeamChallengeWithParticipants(
-    challengeData, teamPlayers); }
+  ): Promise<any> {
+    return (this.memStorage as any).createTeamChallengeWithParticipants(
+      challengeData, teamPlayers);
+  }
   async getTeamRegistrationsByDivision(divisionId: string): Promise<any> { return (this.memStorage as any).getTeamRegistrationsByDivision(divisionId); }
   async checkinUser(data: InsertCheckin): Promise<any> { return (this.memStorage as any).checkinUser(data); }
   async getCheckinsBySession(sessionId: string): Promise<any> { return (this.memStorage as any).getCheckinsBySession(sessionId); }
