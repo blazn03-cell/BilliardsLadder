@@ -648,7 +648,6 @@ export default function Dashboard() {
         while (!verified && sessionId && attempts < maxAttempts) {
           attempts += 1;
           try {
-            console.log(`[subscription-verify] attempt ${attempts}/${maxAttempts} for session ${sessionId}`);
             const resp = await fetch("/api/player-billing/verify-session", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -657,7 +656,6 @@ export default function Dashboard() {
             });
 
             const data = await resp.json();
-            console.log(`[subscription-verify] response status=${resp.status}`, data);
             if (resp.ok && data.hasSubscription === true) {
               verified = true;
 
@@ -670,12 +668,9 @@ export default function Dashboard() {
               });
               break;
             }
-
-            if (!resp.ok || data.hasSubscription !== true) {
-              console.warn(`[subscription-verify] verify did not confirm active subscription on attempt ${attempts}`);
-            }
           } catch (error) {
-            console.error(`[subscription-verify] request failed on attempt ${attempts}`, error);
+            // Keep a single failure signal in the console; retries continue below.
+            console.error("Subscription verification request failed", error);
           }
 
           if (attempts < maxAttempts) {
