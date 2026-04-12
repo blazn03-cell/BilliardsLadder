@@ -5,7 +5,7 @@ import { storage } from "../storage";
  * Calculates real monetary value premium users save through perks and reduced fees using actual user activity data
  */
 export class PremiumSavingsCalculator {
-  
+
   /**
    * Calculate total monthly savings for premium users using real activity data
    */
@@ -26,8 +26,27 @@ export class PremiumSavingsCalculator {
     };
   }> {
     const user = await storage.getUser(userId);
-    const subscription = await storage.getMembershipSubscriptionByPlayerId(userId);
-    
+    const player = await storage.getPlayerByUserId(userId);
+    if (!player) {
+      return {
+        subscriptionCost: 4500,
+        commissionSavings: 0,
+        tutoringValue: 0,
+        tournamentWinningsBonus: 0,
+        loyaltyDiscount: 0,
+        referralCredits: 0,
+        totalSavings: 0,
+        netCost: 4500,
+        activityMetrics: {
+          monthlySideBetAmount: 0,
+          monthlyTutoringSessions: 0,
+          monthlyTournamentWinnings: 0,
+          totalReferrals: 0
+        }
+      };
+    }
+    const subscription = await storage.getMembershipSubscriptionByPlayerId(player.id);
+
     if (!subscription || subscription.tier !== 'premium') {
       return {
         subscriptionCost: 4500,
@@ -67,8 +86,8 @@ export class PremiumSavingsCalculator {
 
     // Loyalty discount (10% off after 6 months)
     let loyaltyDiscount = 0;
-    if (user?.createdAt && 
-        new Date().getTime() - new Date(user.createdAt).getTime() > (6 * 30 * 24 * 60 * 60 * 1000)) {
+    if (user?.createdAt &&
+      new Date().getTime() - new Date(user.createdAt).getTime() > (6 * 30 * 24 * 60 * 60 * 1000)) {
       loyaltyDiscount = Math.round(subscriptionCost * 0.1); // $4.50/month
     }
 
@@ -105,31 +124,31 @@ export class PremiumSavingsCalculator {
 
     // Get real side betting activity
     const sideBets = await (storage as any).getSideBetsByUser(userId);
-    const recentSideBets = sideBets.filter((bet: any) => 
+    const recentSideBets = sideBets.filter((bet: any) =>
       bet.createdAt && new Date(bet.createdAt) >= thirtyDaysAgo
     );
     const monthlySideBetAmount = recentSideBets.reduce((total: any, bet: any) => total + (bet.amount || 0), 0);
 
     // Get real tutoring session usage
     const tutoringSessions = await (storage as any).getTutoringSessions(userId);
-    const recentTutoringSessions = tutoringSessions.filter((session: any) => 
+    const recentTutoringSessions = tutoringSessions.filter((session: any) =>
       session.createdAt && new Date(session.createdAt) >= thirtyDaysAgo
     );
     const monthlyTutoringSessions = recentTutoringSessions.length;
 
     // Get real tournament winnings (we'll need to calculate from match wins)
     const matches = await (storage as any).getMatches();
-    const userWinningMatches = matches.filter((match: any) => 
+    const userWinningMatches = matches.filter((match: any) =>
       match.winner === userId &&
       match.createdAt && new Date(match.createdAt) >= thirtyDaysAgo
     );
-    const monthlyTournamentWinnings = userWinningMatches.reduce((total: any, match: any) => 
+    const monthlyTournamentWinnings = userWinningMatches.reduce((total: any, match: any) =>
       total + (match.prizePoolAmount || match.stake || 0), 0
     );
 
     // Calculate total referrals (users who joined through this user's referral)
     const allUsers = await storage.getAllUsers();
-    const totalReferrals = allUsers.filter(user => 
+    const totalReferrals = allUsers.filter(user =>
       user.email?.includes(`ref=${userId}`) || // Simple referral tracking
       user.name?.includes(`Referred by ${userId}`) // Alternative tracking method
     ).length;
@@ -148,10 +167,10 @@ export class PremiumSavingsCalculator {
   static calculateCommissionSavings(betAmount: number, premiumTier: boolean = true): number {
     const rookieRate = 0.10; // 10%
     const premiumRate = 0.05; // 5%
-    
+
     const rookieCommission = betAmount * rookieRate;
     const premiumCommission = betAmount * premiumRate;
-    
+
     return rookieCommission - premiumCommission; // Savings amount
   }
 
@@ -161,7 +180,7 @@ export class PremiumSavingsCalculator {
   static async qualifiesForLoyaltyDiscount(userId: string): Promise<boolean> {
     const user = await storage.getUser(userId);
     if (!user?.createdAt) return false;
-    
+
     const sixMonthsAgo = new Date().getTime() - (6 * 30 * 24 * 60 * 60 * 1000);
     return new Date(user.createdAt).getTime() < sixMonthsAgo;
   }
@@ -179,7 +198,7 @@ export class PremiumSavingsCalculator {
     };
   }> {
     const realSavings = await this.calculateMonthlySavings(userId);
-    
+
     // Calculate estimated savings using old method for comparison
     const estimatedSavings = {
       commissionSavings: 1000, // $10 estimated
@@ -253,7 +272,7 @@ export class PremiumSavingsCalculator {
       const firstMonth = monthlyTrends[0].totalSavings;
       const lastMonth = monthlyTrends[monthlyTrends.length - 1].totalSavings;
       const growthRate = (lastMonth - firstMonth) / Math.max(firstMonth, 1);
-      
+
       if (growthRate > 0.1) growthTrend = 'increasing';
       else if (growthRate < -0.1) growthTrend = 'decreasing';
     }
@@ -277,30 +296,30 @@ export class PremiumSavingsCalculator {
   }> {
     // Get side betting activity for the month
     const sideBets = await (storage as any).getSideBetsByUser(userId);
-    const monthSideBets = sideBets.filter((bet: any) => 
-      bet.createdAt && 
-      new Date(bet.createdAt) >= startDate && 
+    const monthSideBets = sideBets.filter((bet: any) =>
+      bet.createdAt &&
+      new Date(bet.createdAt) >= startDate &&
       new Date(bet.createdAt) <= endDate
     );
     const sideBetAmount = monthSideBets.reduce((total: any, bet: any) => total + (bet.amount || 0), 0);
 
     // Get tutoring sessions for the month
     const tutoringSessions = await (storage as any).getTutoringSessions(userId);
-    const monthSessions = tutoringSessions.filter((session: any) => 
-      session.createdAt && 
-      new Date(session.createdAt) >= startDate && 
+    const monthSessions = tutoringSessions.filter((session: any) =>
+      session.createdAt &&
+      new Date(session.createdAt) >= startDate &&
       new Date(session.createdAt) <= endDate
     );
 
     // Get tournament winnings for the month
     const matches = await (storage as any).getMatches();
-    const monthWinningMatches = matches.filter((match: any) => 
+    const monthWinningMatches = matches.filter((match: any) =>
       match.winner === userId &&
-      match.createdAt && 
-      new Date(match.createdAt) >= startDate && 
+      match.createdAt &&
+      new Date(match.createdAt) >= startDate &&
       new Date(match.createdAt) <= endDate
     );
-    const tournamentWinnings = monthWinningMatches.reduce((total: any, match: any) => 
+    const tournamentWinnings = monthWinningMatches.reduce((total: any, match: any) =>
       total + (match.prizePoolAmount || match.stake || 0), 0
     );
 

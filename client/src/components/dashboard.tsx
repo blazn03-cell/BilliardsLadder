@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,8 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { generateQRCodeUrl, generateJoinUrl } from "@/lib/qr-generator";
 import { generateFightNightPoster } from "@/lib/poster-generator";
 import { useToast } from "@/hooks/use-toast";
-import { Brain, TrendingUp, Zap, Settings, Users, Shield } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Brain, TrendingUp, Zap, Settings, Users, Shield, Crown, Star, AlertCircle, Building2, Rocket, CheckCircle2 } from "lucide-react";
 import type {
   Player,
   Match,
@@ -156,6 +157,182 @@ function AIInsightsSection({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function SubscriptionStatus() {
+  const { user } = useAuth();
+  const [isHovered, setIsHovered] = useState(false);
+
+  const { data: billingStatus, isLoading } = useQuery<{
+    hasSubscription: boolean;
+    tier: string | null;
+    status: string;
+    tierInfo?: { name: string; monthlyPrice: number };
+    currentPeriodEnd?: string;
+    cancelAtPeriodEnd?: boolean;
+    monthlyPrice?: number;
+    perks?: string[];
+  }>({
+    queryKey: ["/api/player-billing/status"],
+    enabled: !!user,
+  });
+
+  const hasActive = billingStatus?.hasSubscription && billingStatus?.status === "active";
+  const tierKey = billingStatus?.tier || null;
+
+  const tierConfig: Record<string, { icon: typeof Users; color: string; label: string }> = {
+    rookie: { icon: Users, color: "text-blue-400", label: "Rookie" },
+    standard: { icon: Star, color: "text-purple-400", label: "Standard" },
+    basic: { icon: Star, color: "text-purple-400", label: "Standard" },
+    premium: { icon: Crown, color: "text-yellow-400", label: "Premium" },
+    pro: { icon: Crown, color: "text-yellow-400", label: "Premium" },
+  };
+
+  const inactiveIconConfig = { icon: AlertCircle, color: "text-red-400", label: "No Active Plan" };
+  const inactiveColors = { borderColor: "rgba(248,113,113,0.5)", hoverBorderColor: "rgba(248,113,113,0.8)", shadowColor: "rgba(239,68,68,0.2)", hoverShadowColor: "rgba(239,68,68,0.4)" };
+
+  const tierColors: Record<string, { borderColor: string; hoverBorderColor: string; shadowColor: string; hoverShadowColor: string }> = {
+    rookie: { borderColor: "rgba(96,165,250,0.5)", hoverBorderColor: "rgba(96,165,250,0.8)", shadowColor: "rgba(59,130,246,0.2)", hoverShadowColor: "rgba(59,130,246,0.4)" },
+    standard: { borderColor: "rgba(192,132,252,0.5)", hoverBorderColor: "rgba(192,132,252,0.8)", shadowColor: "rgba(168,85,247,0.2)", hoverShadowColor: "rgba(168,85,247,0.4)" },
+    basic: { borderColor: "rgba(192,132,252,0.5)", hoverBorderColor: "rgba(192,132,252,0.8)", shadowColor: "rgba(168,85,247,0.2)", hoverShadowColor: "rgba(168,85,247,0.4)" },
+    premium: { borderColor: "rgba(250,204,21,0.5)", hoverBorderColor: "rgba(250,204,21,0.8)", shadowColor: "rgba(234,179,8,0.2)", hoverShadowColor: "rgba(234,179,8,0.4)" },
+    pro: { borderColor: "rgba(250,204,21,0.5)", hoverBorderColor: "rgba(250,204,21,0.8)", shadowColor: "rgba(234,179,8,0.2)", hoverShadowColor: "rgba(234,179,8,0.4)" },
+  };
+
+  const config = hasActive && tierKey ? (tierConfig[tierKey] || inactiveIconConfig) : inactiveIconConfig;
+  const colors = hasActive && tierKey ? (tierColors[tierKey] || inactiveColors) : inactiveColors;
+  const IconComponent = config.icon;
+
+  if (isLoading) {
+    return (
+      <div className="w-44 h-20 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)" }}>
+        <LoadingSpinner size="sm" color="neon" />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="w-44 rounded-xl cursor-pointer flex flex-col items-center justify-center gap-2 px-4 py-3 transition-all duration-300 ease-out"
+      style={{
+        background: "rgba(255,255,255,0.05)",
+        WebkitBackdropFilter: "blur(12px)",
+        backdropFilter: "blur(12px)",
+        border: `1px solid ${isHovered ? colors.hoverBorderColor : colors.borderColor}`,
+        boxShadow: isHovered
+          ? `0 10px 25px -5px ${colors.hoverShadowColor}, 0 8px 10px -6px ${colors.hoverShadowColor}`
+          : `0 4px 15px -3px ${colors.shadowColor}, 0 2px 6px -4px ${colors.shadowColor}`,
+        transform: isHovered ? "scale(1.05)" : "scale(1)",
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={() => window.location.href = "/app?tab=player-subscription"}
+      data-testid="subscription-status-card"
+    >
+      <IconComponent className={`h-6 w-6 ${config.color}`} />
+      <span className={`text-sm font-semibold ${config.color} text-center leading-tight`}>
+        {config.label}
+      </span>
+    </div>
+  );
+}
+
+function DashboardSubscriptionStatus() {
+  const { user } = useAuth();
+  const role = user?.globalRole;
+
+  if (role === "OPERATOR" || role === "OWNER" || role === "TRUSTEE") {
+    return <OperatorSubscriptionStatus />;
+  }
+  return <SubscriptionStatus />;
+}
+
+function OperatorSubscriptionStatus() {
+  const { user } = useAuth();
+  const [isHovered, setIsHovered] = useState(false);
+
+  const { data: currentSubscription, isLoading } = useQuery<{
+    hasSubscription: boolean;
+    tier?: string;
+    status?: string;
+    hallName?: string;
+  }>({
+    queryKey: ["/api/operator-subscriptions", user?.id],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/operator-subscriptions/${user?.id}`, { credentials: "include" });
+        if (!res.ok) return { hasSubscription: false };
+        const sub = await res.json();
+        if (sub && sub.id) {
+          return { hasSubscription: true, tier: sub.tier, status: sub.status, hallName: sub.hallName };
+        }
+        return { hasSubscription: false };
+      } catch {
+        return { hasSubscription: false };
+      }
+    },
+    enabled: !!user,
+  });
+
+  const hasActive = currentSubscription?.hasSubscription && currentSubscription?.status === "active";
+  const tierKey = currentSubscription?.tier || null;
+
+  const tierConfig: Record<string, { icon: typeof Building2; color: string; label: string; price: number }> = {
+    small: { icon: Building2, color: "text-green-400", label: "Small Hall", price: 199 },
+    medium: { icon: Star, color: "text-blue-400", label: "Medium Hall", price: 299 },
+    large: { icon: Crown, color: "text-purple-400", label: "Large Hall", price: 399 },
+    mega: { icon: Rocket, color: "text-yellow-400", label: "Mega Hall", price: 799 },
+  };
+
+  const tierColors: Record<string, { borderColor: string; hoverBorderColor: string; shadowColor: string; hoverShadowColor: string }> = {
+    small: { borderColor: "rgba(74,222,128,0.5)", hoverBorderColor: "rgba(74,222,128,0.8)", shadowColor: "rgba(34,197,94,0.2)", hoverShadowColor: "rgba(34,197,94,0.4)" },
+    medium: { borderColor: "rgba(96,165,250,0.5)", hoverBorderColor: "rgba(96,165,250,0.8)", shadowColor: "rgba(59,130,246,0.2)", hoverShadowColor: "rgba(59,130,246,0.4)" },
+    large: { borderColor: "rgba(192,132,252,0.5)", hoverBorderColor: "rgba(192,132,252,0.8)", shadowColor: "rgba(168,85,247,0.2)", hoverShadowColor: "rgba(168,85,247,0.4)" },
+    mega: { borderColor: "rgba(250,204,21,0.5)", hoverBorderColor: "rgba(250,204,21,0.8)", shadowColor: "rgba(234,179,8,0.2)", hoverShadowColor: "rgba(234,179,8,0.4)" },
+  };
+
+  const inactiveIconConfig = { icon: AlertCircle, color: "text-red-400", label: "No Active Plan", price: 0 };
+  const inactiveColors = { borderColor: "rgba(248,113,113,0.5)", hoverBorderColor: "rgba(248,113,113,0.8)", shadowColor: "rgba(239,68,68,0.2)", hoverShadowColor: "rgba(239,68,68,0.4)" };
+
+  const config = hasActive && tierKey ? (tierConfig[tierKey] || inactiveIconConfig) : inactiveIconConfig;
+  const colors = hasActive && tierKey ? (tierColors[tierKey] || inactiveColors) : inactiveColors;
+  const IconComponent = config.icon;
+
+  if (isLoading) {
+    return (
+      <div className="w-44 h-20 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)" }}>
+        <LoadingSpinner size="sm" color="neon" />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="w-44 rounded-xl cursor-pointer flex flex-col items-center justify-center gap-2 px-4 py-3 transition-all duration-300 ease-out"
+      style={{
+        background: "rgba(255,255,255,0.05)",
+        WebkitBackdropFilter: "blur(12px)",
+        backdropFilter: "blur(12px)",
+        border: `1px solid ${isHovered ? colors.hoverBorderColor : colors.borderColor}`,
+        boxShadow: isHovered
+          ? `0 10px 25px -5px ${colors.hoverShadowColor}, 0 8px 10px -6px ${colors.hoverShadowColor}`
+          : `0 4px 15px -3px ${colors.shadowColor}, 0 2px 6px -4px ${colors.shadowColor}`,
+        transform: isHovered ? "scale(1.05)" : "scale(1)",
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={() => window.location.href = "/app?tab=operator-subscriptions"}
+      data-testid="operator-subscription-status-card"
+    >
+      <IconComponent className={`h-6 w-6 ${config.color}`} />
+      <span className={`text-sm font-semibold ${config.color} text-center leading-tight`}>
+        {config.label}
+      </span>
+      {hasActive && tierKey && (
+        <span className="text-xs text-gray-400">${config.price}/mo</span>
+      )}
+    </div>
   );
 }
 
@@ -454,6 +631,80 @@ function RecentMatches({
 }
 
 export default function Dashboard() {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("subscription") === "success") {
+      const sessionId = params.get("session_id");
+      const verifyAndShow = async () => {
+        let verified = false;
+        let attempts = 0;
+        const maxAttempts = 5;
+
+        while (!verified && sessionId && attempts < maxAttempts) {
+          attempts += 1;
+          try {
+            const resp = await fetch("/api/player-billing/verify-session", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ sessionId }),
+            });
+
+            const data = await resp.json();
+            if (resp.ok && data.hasSubscription === true) {
+              verified = true;
+
+              // Prime the cache immediately so the status card updates without waiting on another round-trip.
+              queryClient.setQueryData(["/api/player-billing/status"], {
+                hasSubscription: true,
+                tier: data.tier,
+                status: data.status || "active",
+                tierInfo: data.tierInfo,
+              });
+              break;
+            }
+          } catch (error) {
+            // Keep a single failure signal in the console; retries continue below.
+            console.error("Subscription verification request failed", error);
+          }
+
+          if (attempts < maxAttempts) {
+            await new Promise((resolve) => setTimeout(resolve, 1200));
+          }
+        }
+
+        // Avoid immediately overwriting the verified cache with a stale read.
+        if (!verified) {
+          await queryClient.refetchQueries({ queryKey: ["/api/player-billing/status"], type: "all" });
+          await queryClient.refetchQueries({ queryKey: ["/api/operator-subscriptions", user?.id], type: "all" });
+        }
+
+        if (verified || sessionId) {
+          setShowSuccessBanner(true);
+          toast({
+            title: "Subscription Activated!",
+            description: verified
+              ? "Your membership is now active. Welcome to the ladder!"
+              : "Payment completed. Subscription status may take a few seconds to update.",
+          });
+        }
+
+        // Clear URL params only after verification attempts complete.
+        const url = new URL(window.location.href);
+        url.searchParams.delete("subscription");
+        url.searchParams.delete("session_id");
+        window.history.replaceState({}, "", url.toString());
+      };
+
+      void verifyAndShow();
+    }
+  }, []);
+
   const { data: players = [], isLoading: playersLoading } = useQuery<Player[]>({
     queryKey: ["/api/players"],
   });
@@ -488,8 +739,38 @@ export default function Dashboard() {
     jackpotLoading
   ) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <LoadingSpinner size="lg" color="neon" />
+      <div className="space-y-8">
+        {showSuccessBanner && (
+          <div
+            className="flex items-center gap-3 px-5 py-4 rounded-xl border"
+            style={{
+              background: "rgba(16,185,129,0.1)",
+              borderColor: "rgba(16,185,129,0.4)",
+            }}
+            data-testid="subscription-success-banner"
+          >
+            <CheckCircle2 className="h-6 w-6 text-emerald-400 flex-shrink-0" />
+            <div>
+              <p className="text-emerald-400 font-semibold">Subscription Activated!</p>
+              <p className="text-gray-300 text-sm">Your membership is now active. Your subscription status has been updated below.</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto text-gray-400 hover:text-white"
+              onClick={() => setShowSuccessBanner(false)}
+              data-testid="button-dismiss-success"
+            >
+              Dismiss
+            </Button>
+          </div>
+        )}
+
+        <DashboardSubscriptionStatus />
+
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner size="lg" color="neon" />
+        </div>
       </div>
     );
   }
@@ -508,6 +789,35 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
+      {showSuccessBanner && (
+        <div
+          className="flex items-center gap-3 px-5 py-4 rounded-xl border"
+          style={{
+            background: "rgba(16,185,129,0.1)",
+            borderColor: "rgba(16,185,129,0.4)",
+          }}
+          data-testid="subscription-success-banner"
+        >
+          <CheckCircle2 className="h-6 w-6 text-emerald-400 flex-shrink-0" />
+          <div>
+            <p className="text-emerald-400 font-semibold">Subscription Activated!</p>
+            <p className="text-gray-300 text-sm">Your membership is now active. Your subscription status has been updated below.</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto text-gray-400 hover:text-white"
+            onClick={() => setShowSuccessBanner(false)}
+            data-testid="button-dismiss-success"
+          >
+            Dismiss
+          </Button>
+        </div>
+      )}
+
+      {/* Subscription Status */}
+      <DashboardSubscriptionStatus />
+
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatsCard

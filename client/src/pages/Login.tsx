@@ -56,20 +56,15 @@ export default function Login() {
           description: "Login successful.",
         });
         
-        // Role-based redirect
-        let redirectUrl = "/app?tab=dashboard";
-        
         if (user?.globalRole === "OWNER") {
-          redirectUrl = "/app?tab=admin";
+          window.location.href = "/app?tab=admin";
         } else if (user?.globalRole === "TRUSTEE") {
-          redirectUrl = "/app?tab=admin";
+          window.location.href = "/app?tab=admin";
         } else if (user?.globalRole === "OPERATOR") {
-          redirectUrl = "/app?tab=operator-settings";
-        } else if (user?.globalRole === "PLAYER") {
-          redirectUrl = "/app?tab=dashboard";
+          window.location.href = "/app?tab=dashboard";
+        } else {
+          window.location.href = "/app?tab=dashboard";
         }
-        
-        window.location.href = redirectUrl;
       }
     },
     onError: (error: any) => {

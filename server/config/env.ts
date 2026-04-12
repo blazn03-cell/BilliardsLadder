@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 /**
  * env.ts — Validates all required environment variables at startup.
  * If anything is missing, the server fails fast with a clear message.

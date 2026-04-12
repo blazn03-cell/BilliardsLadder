@@ -7,6 +7,20 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : (null as unknown as Stripe);
 
+function getAppBaseUrl(): string {
+  const configuredBaseUrl = process.env.APP_BASE_URL?.trim();
+  if (configuredBaseUrl) {
+    return configuredBaseUrl.replace(/\/+$/, "");
+  }
+
+  const replitDomain = process.env.REPLIT_DOMAINS?.split(",")[0]?.trim();
+  if (replitDomain) {
+    return `https://${replitDomain.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
+  }
+
+  return "http://localhost:5000";
+}
+
 // Player subscription tiers - designed to compete with traditional leagues
 export function getPlayerSubscriptionTier(tier: string) {
   switch (tier) {
@@ -16,8 +30,8 @@ export function getPlayerSubscriptionTier(tier: string) {
         name: "Rookie",
         monthlyPrice: 2500, // $25/month
         yearlyPrice: 25500, // $255/year (save $45)
-        priceId: process.env.PLAYER_ROOKIE_MONTHLY_PRICE_ID || "price_rookie_monthly",
-        yearlyPriceId: process.env.PLAYER_ROOKIE_YEARLY_PRICE_ID || "price_rookie_yearly",
+        priceId: process.env.PLAYER_ROOKIE_MONTHLY_PRICE_ID || "price_1THmhwDvTG8XWAaKP5IdXAic",
+        yearlyPriceId: process.env.PLAYER_ROOKIE_YEARLY_PRICE_ID || "price_1THmhwDvTG8XWAaKP5IdXAic",
         traditionalLeagueCost: 3700, // $37/month typical league cost
         monthlySavings: 1200, // $12/month savings
         yearlySavings: 18500, // $185/year savings
@@ -36,12 +50,12 @@ export function getPlayerSubscriptionTier(tier: string) {
       };
     case "standard":
       return {
-        tier: "standard", 
+        tier: "standard",
         name: "Standard",
         monthlyPrice: 3500, // $35/month
         yearlyPrice: 35700, // $357/year (save $63)
-        priceId: process.env.PLAYER_STANDARD_MONTHLY_PRICE_ID || "price_standard_monthly",
-        yearlyPriceId: process.env.PLAYER_STANDARD_YEARLY_PRICE_ID || "price_standard_yearly",
+        priceId: process.env.PLAYER_STANDARD_MONTHLY_PRICE_ID || "price_1THmi0DvTG8XWAaKGZwVO8WR",
+        yearlyPriceId: process.env.PLAYER_STANDARD_YEARLY_PRICE_ID || "price_1THmi0DvTG8XWAaKGZwVO8WR",
         traditionalLeagueCost: 3700, // $37/month typical league cost
         monthlySavings: 200, // $2/month savings
         yearlySavings: 2300, // $23/year savings
@@ -63,11 +77,11 @@ export function getPlayerSubscriptionTier(tier: string) {
     case "premium":
       return {
         tier: "premium",
-        name: "Premium", 
+        name: "Premium",
         monthlyPrice: 4500, // $45/month
         yearlyPrice: 45900, // $459/year (save $81)
-        priceId: process.env.PLAYER_PREMIUM_MONTHLY_PRICE_ID || "price_premium_monthly",
-        yearlyPriceId: process.env.PLAYER_PREMIUM_YEARLY_PRICE_ID || "price_premium_yearly",
+        priceId: process.env.PLAYER_PREMIUM_MONTHLY_PRICE_ID || "price_1THmi2DvTG8XWAaKpyx6VNyR",
+        yearlyPriceId: process.env.PLAYER_PREMIUM_YEARLY_PRICE_ID || "price_1THmi2DvTG8XWAaKpyx6VNyR",
         traditionalLeagueCost: 3700, // $37/month typical league cost
         monthlySavings: -800, // $8/month more but saves $40+ through perks
         yearlySavings: -1900, // $19/year more but saves $400+ annually through perks
@@ -97,7 +111,8 @@ export function getPlayerSubscriptionTier(tier: string) {
 }
 
 export function registerPlayerBillingRoutes(app: Express) {
-  
+  const appBaseUrl = getAppBaseUrl();
+
   // Get player subscription tiers and pricing
   app.get("/api/player-billing/tiers", (req, res) => {
     const tiers = ["rookie", "standard", "premium"].map(tier => getPlayerSubscriptionTier(tier));
@@ -112,8 +127,13 @@ export function registerPlayerBillingRoutes(app: Express) {
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const subscription = await storage.getMembershipSubscriptionByPlayerId(userId);
-      
+      const player = await storage.getPlayerByUserId(userId);
+      if (!player) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
+      const subscription = await storage.getMembershipSubscriptionByPlayerId(player.id);
+
       if (!subscription || subscription.tier !== 'premium') {
         return res.json({
           isPremium: false,
@@ -127,12 +147,12 @@ export function registerPlayerBillingRoutes(app: Express) {
       const tutoringValue = 3000; // $30/month free tutoring session
       const tournamentBonus = 100 * 0.05 * 100; // $5/month from 95% vs 90% tournament winnings on $100 avg
       const referralCredits = 1000; // $10/month average referral bonus
-      
+
       // Check loyalty discount eligibility
       const user = await storage.getUser(userId);
       let loyaltyDiscount = 0;
       let loyaltyEligible = false;
-      
+
       if (user?.createdAt) {
         const sixMonthsAgo = new Date().getTime() - (6 * 30 * 24 * 60 * 60 * 1000);
         loyaltyEligible = new Date(user.createdAt).getTime() < sixMonthsAgo;
@@ -158,11 +178,11 @@ export function registerPlayerBillingRoutes(app: Express) {
         netCost,
         loyaltyEligible,
         breakdown: {
-          "Lower Commission (5% vs 10%)": `$${(commissionSavings/100).toFixed(0)}/month`,
-          "Free Monthly Tutoring": `$${(tutoringValue/100).toFixed(0)}/month`,
-          "Tournament Winnings Bonus": `$${(tournamentBonus/100).toFixed(0)}/month`,
-          "Referral Credits": `$${(referralCredits/100).toFixed(0)}/month`,
-          ...(loyaltyEligible && {"Loyalty Discount": `$${(loyaltyDiscount/100).toFixed(2)}/month`})
+          "Lower Commission (5% vs 10%)": `$${(commissionSavings / 100).toFixed(0)}/month`,
+          "Free Monthly Tutoring": `$${(tutoringValue / 100).toFixed(0)}/month`,
+          "Tournament Winnings Bonus": `$${(tournamentBonus / 100).toFixed(0)}/month`,
+          "Referral Credits": `$${(referralCredits / 100).toFixed(0)}/month`,
+          ...(loyaltyEligible && { "Loyalty Discount": `$${(loyaltyDiscount / 100).toFixed(2)}/month` })
         }
       });
 
@@ -176,7 +196,7 @@ export function registerPlayerBillingRoutes(app: Express) {
   app.post("/api/player-billing/checkout", requireAnyAuth, async (req, res) => {
     try {
       const { tier, billingPeriod = "monthly" } = req.body;
-      
+
       if (!tier) {
         return res.status(400).json({ error: "tier required" });
       }
@@ -209,17 +229,17 @@ export function registerPlayerBillingRoutes(app: Express) {
           }
         });
         customerId = customer.id;
-        
+
         // Update user with Stripe customer ID
         await storage.updateUser(userId, { stripeCustomerId: customerId });
       }
 
       // Calculate amount based on billing period
       let amount = billingPeriod === "yearly" ? subscription.yearlyPrice : subscription.monthlyPrice;
-      
+
       // Apply loyalty discount for Premium users (10% off after 6 months)
-      if (tier === "premium" && user.createdAt && 
-          new Date().getTime() - new Date(user.createdAt).getTime() > (6 * 30 * 24 * 60 * 60 * 1000)) {
+      if (tier === "premium" && user.createdAt &&
+        new Date().getTime() - new Date(user.createdAt).getTime() > (6 * 30 * 24 * 60 * 60 * 1000)) {
         amount = Math.floor(amount * 0.9); // 10% loyalty discount
       }
 
@@ -243,8 +263,8 @@ export function registerPlayerBillingRoutes(app: Express) {
           },
           quantity: 1
         }],
-        success_url: `${process.env.APP_BASE_URL || 'http://localhost:5000'}/app?tab=dashboard&subscription=success`,
-        cancel_url: `${process.env.APP_BASE_URL || 'http://localhost:5000'}/app?tab=dashboard&subscription=cancelled`,
+        success_url: `${appBaseUrl}/app?tab=dashboard&subscription=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${appBaseUrl}/app?tab=dashboard&subscription=cancelled`,
         client_reference_id: userId,
         subscription_data: {
           metadata: {
@@ -262,8 +282,8 @@ export function registerPlayerBillingRoutes(app: Express) {
         }
       });
 
-      res.json({ 
-        url: session.url, 
+      res.json({
+        url: session.url,
         sessionId: session.id,
         subscription: {
           tier: subscription.name,
@@ -287,12 +307,18 @@ export function registerPlayerBillingRoutes(app: Express) {
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
       }
-      
+
+      // Get player from user ID
+      const player = await storage.getPlayerByUserId(userId);
+      if (!player) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
       // Check if user has active subscription in our database
-      const subscription = await storage.getMembershipSubscriptionByPlayerId(userId);
-      
+      const subscription = await storage.getMembershipSubscriptionByPlayerId(player.id);
+
       if (!subscription) {
-        return res.json({ 
+        return res.json({
           hasSubscription: false,
           tier: null,
           status: "none"
@@ -300,7 +326,7 @@ export function registerPlayerBillingRoutes(app: Express) {
       }
 
       const tierInfo = getPlayerSubscriptionTier(subscription.tier);
-      
+
       res.json({
         hasSubscription: true,
         tier: subscription.tier,
@@ -320,6 +346,148 @@ export function registerPlayerBillingRoutes(app: Express) {
     }
   });
 
+  app.post("/api/player-billing/verify-session", requireAnyAuth, async (req, res) => {
+    try {
+      const { sessionId } = req.body;
+      if (!sessionId || !stripe) {
+        console.error("❌ Verify session: Missing sessionId or stripe not initialized");
+        return res.status(400).json({ error: "Session ID required" });
+      }
+
+      const userId = (req as any).dbUser.id;
+      if (!userId) {
+        console.error("❌ Verify session: No userId in dbUser");
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const player = await storage.getPlayerByUserId(userId);
+      if (!player) {
+        console.error(`❌ Verify session: No player found for userId ${userId}`);
+        return res.status(404).json({ error: "Player not found" });
+      }
+
+      console.log(`🔍 Verify session: Found player ${player.id} for userId ${userId}`);
+
+      const existing = await storage.getMembershipSubscriptionByPlayerId(player.id);
+      if (existing && existing.status === "active") {
+        console.log(`✅ Verify session: Found existing active subscription for player ${player.id}`);
+        const tierInfo = getPlayerSubscriptionTier(existing.tier);
+        return res.json({
+          hasSubscription: true,
+          tier: existing.tier,
+          status: existing.status,
+          tierInfo,
+        });
+      }
+
+      console.log(`🔍 Verify session: Retrieving session ${sessionId} from Stripe...`);
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      console.log(`📦 Session status: ${session?.status}, payment_status: ${session?.payment_status}, metadata: ${JSON.stringify(session?.metadata)}`);
+
+      // Check if session is in a successful state
+      // Stripe sessions can be: "open", "complete", "expired"
+      // payment_status can be: "unpaid", "paid", "no_payment_required"
+      const isSuccessful = session?.payment_status === "paid" || session?.payment_status === "no_payment_required" || session?.status === "complete";
+
+      if (!session || !isSuccessful) {
+        console.warn(`⚠️  Verify session: Session not successful (status: ${session?.status}, payment_status: ${session?.payment_status})`);
+        return res.json({
+          hasSubscription: false,
+          error: "Session not complete",
+          sessionStatus: session?.status,
+          paymentStatus: session?.payment_status
+        });
+      }
+
+      let stripeSubId = session.subscription as string || null;
+      let periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      let tier = session.metadata?.tier || null;
+
+      if (stripeSubId) {
+        try {
+          console.log(`📦 Retrieving subscription ${stripeSubId} from Stripe...`);
+          const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
+          const currentPeriodEnd = stripeSub.current_period_end;
+          if (typeof currentPeriodEnd === "number" && currentPeriodEnd > 0) {
+            const parsedPeriodEnd = new Date(currentPeriodEnd * 1000);
+            if (!Number.isNaN(parsedPeriodEnd.getTime())) {
+              periodEnd = parsedPeriodEnd;
+            }
+          }
+          if (!tier) {
+            tier = stripeSub.metadata?.tier || null;
+          }
+          console.log(`✅ Subscription period ends: ${periodEnd.toISOString()}`);
+        } catch (err) {
+          periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          console.error(`⚠️  Failed to retrieve subscription:`, err);
+        }
+      }
+
+      if (!tier) {
+        console.error(`❌ Verify session: No tier found in session or subscription metadata for sessionId ${sessionId}`);
+        console.error(`   Session metadata: ${JSON.stringify(session.metadata)}`);
+        return res.json({ hasSubscription: false, error: "No tier in session", metadata: session.metadata });
+      }
+
+      console.log(`✅ Verify session: Complete session found with tier ${tier}`);
+
+      const tierInfo = getPlayerSubscriptionTier(tier);
+
+      try {
+        const subscription = await storage.createMembershipSubscription({
+          playerId: player.id,
+          tier,
+          status: "active",
+          stripeSubscriptionId: stripeSubId,
+          stripeCustomerId: session.customer as string || null,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: periodEnd,
+          cancelAtPeriodEnd: false,
+          monthlyPrice: tierInfo?.monthlyPrice || 0,
+          perks: tierInfo?.perks || [],
+          commissionRate: tierInfo?.commissionRate || 1000,
+        });
+        console.log(`✅ Created membership subscription:`, subscription);
+
+        await storage.updatePlayer(player.id, { member: true });
+        console.log(`✅ Updated player.member = true for player ${player.id}`);
+      } catch (dbErr: any) {
+        // Idempotency: duplicate insert can happen on retries if a previous attempt already persisted.
+        if (dbErr?.code === "23505") {
+          const existingAfterConflict = await storage.getMembershipSubscriptionByPlayerId(player.id);
+          if (existingAfterConflict && existingAfterConflict.status === "active") {
+            console.warn(`⚠️ Verify session: Duplicate insert for player ${player.id}; returning existing subscription`);
+            const tierInfoFromExisting = getPlayerSubscriptionTier(existingAfterConflict.tier);
+            await storage.updatePlayer(player.id, { member: true });
+            return res.json({
+              hasSubscription: true,
+              tier: existingAfterConflict.tier,
+              status: existingAfterConflict.status,
+              tierInfo: tierInfoFromExisting,
+            });
+          }
+        }
+
+        console.error(`❌ Database error creating subscription:`, dbErr);
+        throw dbErr;
+      }
+
+      console.log(`✅ Verified and created subscription for player ${player.id} tier ${tier}`);
+
+      res.json({
+        hasSubscription: true,
+        tier,
+        status: "active",
+        tierInfo,
+      });
+
+    } catch (error: any) {
+      console.error(`❌ Verify session error:`, error.message || error);
+      res.status(500).json({ error: error.message || "Unknown error" });
+    }
+  });
+
   // Cancel player subscription
   app.post("/api/player-billing/cancel", requireAnyAuth, async (req, res) => {
     try {
@@ -329,7 +497,12 @@ export function registerPlayerBillingRoutes(app: Express) {
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const subscription = await storage.getMembershipSubscriptionByPlayerId(userId);
+      const player = await storage.getPlayerByUserId(userId);
+      if (!player) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
+      const subscription = await storage.getMembershipSubscriptionByPlayerId(player.id);
       if (!subscription || !subscription.stripeSubscriptionId) {
         return res.status(404).json({ error: "No active subscription found" });
       }
@@ -361,7 +534,12 @@ export function registerPlayerBillingRoutes(app: Express) {
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const subscription = await storage.getMembershipSubscriptionByPlayerId(userId);
+      const player = await storage.getPlayerByUserId(userId);
+      if (!player) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
+      const subscription = await storage.getMembershipSubscriptionByPlayerId(player.id);
       if (!subscription || !subscription.stripeSubscriptionId) {
         return res.status(404).json({ error: "No subscription found" });
       }
@@ -400,7 +578,7 @@ export function registerPlayerBillingRoutes(app: Express) {
 
       const session = await stripe.billingPortal.sessions.create({
         customer: user.stripeCustomerId,
-        return_url: `${process.env.APP_BASE_URL || 'http://localhost:5000'}/app?tab=dashboard`
+        return_url: `${appBaseUrl}/app?tab=dashboard`
       });
 
       res.json({ url: session.url });

@@ -15,24 +15,37 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : (null as unknown as Stripe);
 
-// Stripe Price IDs for ActionLadder Commission System
+function getAppBaseUrl(): string {
+  const configuredBaseUrl = process.env.APP_BASE_URL?.trim();
+  if (configuredBaseUrl) {
+    return configuredBaseUrl.replace(/\/+$/, "");
+  }
+
+  const replitDomain = process.env.REPLIT_DOMAINS?.split(",")[0]?.trim();
+  if (replitDomain) {
+    return `https://${replitDomain.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
+  }
+
+  return "http://localhost:5000";
+}
+
 const prices = {
-  rookie_monthly: "price_1S36UcDc2BliYufwVpgpOph9",
-  basic_monthly: "price_1S36UcDc2BliYufwF8R8w5BY",
-  pro_monthly: "price_1S36UdDc2BliYufwGZmAEVPq",
-  small: process.env.SMALL_PRICE_ID,
-  medium: process.env.MEDIUM_PRICE_ID,
-  large: process.env.LARGE_PRICE_ID,
-  mega: process.env.MEGA_PRICE_ID,
-  charity_product: "prod_Sz4wWq0exnJOBv",
+  rookie_monthly: process.env.PLAYER_ROOKIE_MONTHLY_PRICE_ID || "price_1THmhwDvTG8XWAaKP5IdXAic",
+  basic_monthly: process.env.PLAYER_STANDARD_MONTHLY_PRICE_ID || "price_1THmi0DvTG8XWAaKGZwVO8WR",
+  pro_monthly: process.env.PLAYER_PREMIUM_MONTHLY_PRICE_ID || "price_1THmi2DvTG8XWAaKpyx6VNyR",
+  small: process.env.SMALL_PRICE_ID || "price_1THmiLDvTG8XWAaKhXE4JvZq",
+  medium: process.env.MEDIUM_PRICE_ID || "price_1THmiPDvTG8XWAaKkeveuEqq",
+  large: process.env.LARGE_PRICE_ID || "price_1THmiRDvTG8XWAaK39Gg3Nb9",
+  mega: process.env.MEGA_PRICE_ID || "price_1THmiUDvTG8XWAaKa43Y9Bm9",
+  charity_product: "prod_UGJKFusMczHWQ3",
   charity_donations: {
-    "5": "price_1S36mVDc2BliYufwKkppBTdZ",
-    "10": "price_1S36mWDc2BliYufw9SnYauG6", 
-    "25": "price_1S36mWDc2BliYufwdLec5IH6",
-    "50": "price_1S36mWDc2BliYufwnyruktLt",
-    "100": "price_1S36mWDc2BliYufwMMQxtrpd",
-    "250": "price_1S36mXDc2BliYufw8KoRGk5g",
-    "500": "price_1S36mXDc2BliYufwhW9OUZng"
+    "5": "price_1THmi4DvTG8XWAaKLE6mESxA",
+    "10": "price_1THmi7DvTG8XWAaKdKDzSjXE",
+    "25": "price_1THmi9DvTG8XWAaKY0S3p2Cf",
+    "50": "price_1THmiCDvTG8XWAaKbUxZQUnc",
+    "100": "price_1THmiEDvTG8XWAaK0aXNtqxB",
+    "250": "price_1THmiGDvTG8XWAaK1Lh1RO9i",
+    "500": "price_1THmiJDvTG8XWAaKPVETvXvR"
   }
 };
 
@@ -51,7 +64,7 @@ export function getPricingTiers() {
         perks: config.perks,
         description: config.description,
       }));
-      
+
       res.json({ tiers, commission: COMMISSION_CONFIG });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -63,7 +76,7 @@ export function calculateCommissionAmount() {
   return async (req: Request, res: Response) => {
     try {
       const { amount, membershipTier = "none" } = req.body;
-      
+
       if (!amount || amount < 0) {
         return res.status(400).json({ message: "Valid amount required" });
       }
@@ -80,7 +93,7 @@ export function calculateMembershipSavings() {
   return async (req: Request, res: Response) => {
     try {
       const { tier, monthlyMatches = 4 } = req.body;
-      
+
       if (!tier) {
         return res.status(400).json({ message: "Membership tier required" });
       }
@@ -98,18 +111,19 @@ export function calculateMembershipSavings() {
 export function createCheckoutSession() {
   return async (req: Request, res: Response) => {
     try {
-      const { priceIds = [], mode = 'subscription', quantities = [], metadata = {}, userId } = req.body;
-      
+      const appBaseUrl = getAppBaseUrl();
+      const { priceIds = [], mode = 'subscription', quantities = [], metadata = {}, userId, customerId } = req.body;
+
       const line_items = priceIds.map((priceId: string, i: number) => ({
         price: priceId,
         quantity: quantities[i] ?? 1,
       }));
 
-      const session = await createSafeCheckoutSession({
+      const sessionPayload: any = {
         mode,
         line_items,
-        success_url: `${process.env.APP_BASE_URL || 'http://localhost:5000'}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.APP_BASE_URL || 'http://localhost:5000'}/billing/cancel`,
+        success_url: `${appBaseUrl}/app?tab=dashboard&subscription=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${appBaseUrl}/app?tab=dashboard&subscription=cancelled`,
         allow_promotion_codes: true,
         automatic_tax: { enabled: false },
         client_reference_id: userId,
@@ -120,7 +134,28 @@ export function createCheckoutSession() {
           hall_id: metadata.hallId || metadata.hall_id || "",
           ...metadata
         }
-      });
+      };
+
+      let resolvedCustomerId = customerId;
+      if (!resolvedCustomerId && stripe) {
+        const dbUser = (req as any).dbUser;
+        if (dbUser?.stripeCustomerId) {
+          resolvedCustomerId = dbUser.stripeCustomerId;
+        } else if (dbUser) {
+          const customer = await stripe.customers.create({
+            email: dbUser.email,
+            name: dbUser.name,
+            metadata: { userId: dbUser.id, userRole: dbUser.globalRole },
+          });
+          resolvedCustomerId = customer.id;
+        }
+      }
+
+      if (resolvedCustomerId) {
+        sessionPayload.customer = resolvedCustomerId;
+      }
+
+      const session = await createSafeCheckoutSession(sessionPayload);
 
       res.json({ url: session.url });
     } catch (error: any) {
@@ -132,15 +167,16 @@ export function createCheckoutSession() {
 export function createBillingPortalSession() {
   return async (req: Request, res: Response) => {
     try {
+      const appBaseUrl = getAppBaseUrl();
       const { customerId } = req.body;
-      
+
       if (!customerId) {
         return res.status(400).json({ message: "Customer ID required" });
       }
 
       const portalSession = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: `${process.env.APP_BASE_URL || 'http://localhost:5000'}/dashboard`,
+        return_url: `${appBaseUrl}/dashboard`,
       });
 
       res.json({ url: portalSession.url });
@@ -178,7 +214,7 @@ export function refundDepositController(storage: IStorage) {
   return async (req: Request, res: Response) => {
     try {
       const { paymentIntentId, amountCents, reason, userId, metadata } = req.body;
-      
+
       if (!paymentIntentId) {
         return res.status(400).json({ message: "Payment Intent ID required" });
       }
@@ -201,10 +237,10 @@ export function refundMatchEntryController(storage: IStorage) {
   return async (req: Request, res: Response) => {
     try {
       const { paymentIntentId, matchId, userId, amountCents } = req.body;
-      
+
       if (!paymentIntentId || !matchId || !userId) {
-        return res.status(400).json({ 
-          message: "Payment Intent ID, match ID, and user ID are required" 
+        return res.status(400).json({
+          message: "Payment Intent ID, match ID, and user ID are required"
         });
       }
 
@@ -220,10 +256,10 @@ export function refundTournamentEntryController(storage: IStorage) {
   return async (req: Request, res: Response) => {
     try {
       const { paymentIntentId, tournamentId, userId, reason } = req.body;
-      
+
       if (!paymentIntentId || !tournamentId || !userId) {
-        return res.status(400).json({ 
-          message: "Payment Intent ID, tournament ID, and user ID are required" 
+        return res.status(400).json({
+          message: "Payment Intent ID, tournament ID, and user ID are required"
         });
       }
 
@@ -283,7 +319,7 @@ export function topUpWallet() {
     try {
       const { amount } = req.body;
       const userId = req.params.userId;
-      
+
       if (!amount || amount < 5) {
         return res.status(400).json({ message: "Minimum top-up is $5" });
       }
@@ -297,7 +333,7 @@ export function topUpWallet() {
         },
       });
 
-      res.json({ 
+      res.json({
         clientSecret: paymentIntent.client_secret,
         amount: amount
       });
@@ -312,15 +348,15 @@ export function completeTopUp(storage: IStorage) {
     try {
       const { paymentIntentId, amount } = req.body;
       const userId = req.params.userId;
-      
+
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      
+
       if (paymentIntent.status !== 'succeeded') {
         return res.status(400).json({ message: "Payment not completed" });
       }
 
       const wallet = await storage.creditWallet(userId, amount * 100);
-      
+
       await storage.createLedgerEntry({
         userId,
         type: "credit_topup",
@@ -395,18 +431,18 @@ export function calculateOperatorSubscriptionCost() {
   return async (req: Request, res: Response) => {
     try {
       const { playerCount, extraLadders = 0, rookieModuleActive = false, rookiePassesActive = 0 } = req.body;
-      
+
       if (!playerCount || playerCount < 1) {
         return res.status(400).json({ message: "Player count is required and must be at least 1" });
       }
-      
+
       const pricing = OperatorSubscriptionCalculator.calculateTotalCost({
         playerCount,
         extraLadders,
         rookieModuleActive,
         rookiePassesActive
       });
-      
+
       res.json(pricing);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -495,7 +531,7 @@ async function markProcessed(storage: IStorage, eventId: string, eventType: stri
 // Webhook event handlers
 async function handleCheckoutCompleted(storage: IStorage, session: any): Promise<void> {
   const userId = session.client_reference_id || session.metadata?.userId;
-  
+
   if (session.mode === 'payment') {
     if (session.metadata?.tournamentId) {
       const tournamentId = session.metadata.tournamentId;
@@ -506,7 +542,7 @@ async function handleCheckoutCompleted(storage: IStorage, session: any): Promise
         });
       }
     }
-    
+
     if (session.metadata?.kellyPoolId) {
       const kellyPoolId = session.metadata.kellyPoolId;
       const kellyPool = await storage.getKellyPool(kellyPoolId);
@@ -517,31 +553,62 @@ async function handleCheckoutCompleted(storage: IStorage, session: any): Promise
       }
     }
   }
-  
+
   if (session.mode === 'subscription') {
     const playerId = session.metadata?.playerId;
     const subscriptionType = session.metadata?.subscriptionType;
     const type = session.metadata?.type;
     const tier = session.metadata?.tier;
-    
+
     if (subscriptionType === 'rookie_pass' && playerId) {
       const expiresAt = new Date();
       expiresAt.setMonth(expiresAt.getMonth() + 1);
-      
+
       await storage.createRookieSubscription({
         playerId,
         stripeSubscriptionId: session.subscription as string,
         expiresAt,
       });
-      
+
       await storage.updatePlayer(playerId, {
         rookiePassActive: true,
         rookiePassExpiresAt: expiresAt,
       });
     } else if (type === 'player_subscription' && tier && userId) {
       console.log(`Player subscription checkout completed for user ${userId} with tier ${tier}`);
+      const resolvedPlayerId = await resolvePlayerId(storage, userId, playerId);
+      if (resolvedPlayerId) {
+        const existing = await storage.getMembershipSubscriptionByPlayerId(resolvedPlayerId);
+        if (!existing) {
+          const { getPlayerSubscriptionTier } = await import("../services/playerBilling");
+          const tierInfo = getPlayerSubscriptionTier(tier);
+          const user = await storage.getUser(userId);
+          await storage.createMembershipSubscription({
+            playerId: resolvedPlayerId,
+            tier,
+            status: "active",
+            stripeSubscriptionId: session.subscription as string || null,
+            stripeCustomerId: (user?.stripeCustomerId || session.customer as string) || null,
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            cancelAtPeriodEnd: false,
+            monthlyPrice: tierInfo?.monthlyPrice || 0,
+            perks: tierInfo?.perks || [],
+            commissionRate: tierInfo?.commissionRate || 1000,
+          });
+          await storage.updatePlayer(resolvedPlayerId, { member: true });
+          console.log(`✅ Created membership subscription for player ${resolvedPlayerId} tier ${tier}`);
+        }
+      }
     } else if (userId) {
-      await storage.updatePlayer(userId, {
+      const resolvedPlayerId = await resolvePlayerId(storage, userId, playerId);
+
+      if (!resolvedPlayerId) {
+        console.error(`❌ Player not found for checkout-complete user ${userId}`);
+        return;
+      }
+
+      await storage.updatePlayer(resolvedPlayerId, {
         member: true,
         stripeCustomerId: session.customer as string
       });
@@ -549,21 +616,34 @@ async function handleCheckoutCompleted(storage: IStorage, session: any): Promise
   }
 }
 
+async function resolvePlayerId(storage: IStorage, userId?: string, playerId?: string): Promise<string | undefined> {
+  if (playerId) {
+    return playerId;
+  }
+
+  if (!userId) {
+    return undefined;
+  }
+
+  const player = await storage.getPlayerByUserId(userId);
+  return player?.id;
+}
+
 async function handleSubscription(storage: IStorage, subscription: any): Promise<void> {
   const userId = subscription.metadata?.userId;
   const playerId = subscription.metadata?.playerId;
   const subscriptionType = subscription.metadata?.subscriptionType;
   const tier = subscription.metadata?.tier;
-  
+
   if (subscriptionType === 'rookie_pass' && playerId) {
     const isActive = subscription.status === 'active';
     const expiresAt = isActive ? new Date((subscription as any).current_period_end * 1000) : null;
-    
+
     await storage.updatePlayer(playerId, {
       rookiePassActive: isActive,
       rookiePassExpiresAt: expiresAt,
     });
-    
+
     const existingSubscription = await storage.getRookieSubscription(playerId);
     if (existingSubscription) {
       await storage.updateRookieSubscription(playerId, {
@@ -576,9 +656,15 @@ async function handleSubscription(storage: IStorage, subscription: any): Promise
     const currentPeriodStart = new Date(subscription.current_period_start * 1000);
     const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
     const cancelAtPeriodEnd = subscription.cancel_at_period_end || false;
-    
-    const existingSubscription = await storage.getMembershipSubscriptionByPlayerId(userId);
-    
+    const resolvedPlayerId = await resolvePlayerId(storage, userId, playerId);
+
+    if (!resolvedPlayerId) {
+      console.error(`❌ Player not found for subscription user ${userId}`);
+      return;
+    }
+
+    const existingSubscription = await storage.getMembershipSubscriptionByPlayerId(resolvedPlayerId);
+
     if (existingSubscription) {
       console.log(`✅ Updating player subscription for user ${userId}: ${tier} (${subscription.status})`);
       await storage.updateMembershipSubscription(existingSubscription.id, {
@@ -588,13 +674,14 @@ async function handleSubscription(storage: IStorage, subscription: any): Promise
         cancelAtPeriodEnd,
         tier
       });
+      await storage.updatePlayer(resolvedPlayerId, { member: isActive });
     } else {
       const user = await storage.getUser(userId);
       if (user) {
         console.log(`✅ Creating new player subscription for user ${userId}: ${tier}`);
         try {
           await storage.createMembershipSubscription({
-            playerId: userId,
+            playerId: resolvedPlayerId,
             tier,
             status: subscription.status,
             stripeSubscriptionId: subscription.id,
@@ -606,6 +693,7 @@ async function handleSubscription(storage: IStorage, subscription: any): Promise
             perks: [],
             commissionRate: tier === 'rookie' ? 1000 : tier === 'standard' ? 800 : 500
           });
+          await storage.updatePlayer(resolvedPlayerId, { member: isActive });
         } catch (error: any) {
           console.error(`❌ Failed to create membership subscription for user ${userId}:`, error.message);
           throw error;
@@ -616,7 +704,14 @@ async function handleSubscription(storage: IStorage, subscription: any): Promise
     }
   } else if (userId) {
     const isActive = subscription.status === 'active';
-    await storage.updatePlayer(userId, {
+    const resolvedPlayerId = await resolvePlayerId(storage, userId, playerId);
+
+    if (!resolvedPlayerId) {
+      console.error(`❌ Player not found for subscription user ${userId}`);
+      return;
+    }
+
+    await storage.updatePlayer(resolvedPlayerId, {
       member: isActive
     });
   }
@@ -630,15 +725,15 @@ async function handleInvoicePaid(storage: IStorage, invoice: any): Promise<void>
     const subscriptionType = subscription.metadata?.subscriptionType;
     const operatorId = subscription.metadata?.operatorId;
     const hallId = subscription.metadata?.hallId;
-    
+
     if (subscriptionType === 'rookie_pass' && playerId) {
       const expiresAt = new Date((subscription as any).current_period_end * 1000);
-      
+
       await storage.updatePlayer(playerId, {
         rookiePassActive: true,
         rookiePassExpiresAt: expiresAt,
       });
-      
+
       const existingSubscription = await storage.getRookieSubscription(playerId);
       if (existingSubscription) {
         await storage.updateRookieSubscription(playerId, {
@@ -647,15 +742,15 @@ async function handleInvoicePaid(storage: IStorage, invoice: any): Promise<void>
       }
     } else if (operatorId && hallId) {
       const amountCents = invoice.amount_paid;
-      
+
       const operator = await storage.getUser(operatorId);
       const trusteeId = (operator as any)?.trusteeId;
-      
+
       const split = calculateOperatorSubscriptionSplit(amountCents);
-      
+
       const billingPeriodStart = new Date((subscription as any).current_period_start * 1000);
       const billingPeriodEnd = new Date((subscription as any).current_period_end * 1000);
-      
+
       await storage.createOperatorSubscriptionSplit({
         subscriptionId: subscription.id,
         operatorId,
@@ -669,16 +764,23 @@ async function handleInvoicePaid(storage: IStorage, invoice: any): Promise<void>
         billingPeriodStart,
         billingPeriodEnd,
       });
-      
+
       console.log(`✅ Operator subscription split recorded for operator ${operatorId}: $${(amountCents / 100).toFixed(2)}`);
       console.log(`   Pot: $${(split.potAmount / 100).toFixed(2)} | Trustee: $${(split.trusteeAmount / 100).toFixed(2)} | Founder: $${(split.founderAmount / 100).toFixed(2)} | Payroll: $${(split.payrollAmount / 100).toFixed(2)}`);
     } else if (userId) {
-      await storage.updatePlayer(userId, {
+      const resolvedPlayerId = await resolvePlayerId(storage, userId, playerId);
+
+      if (!resolvedPlayerId) {
+        console.error(`❌ Player not found for invoice subscription user ${userId}`);
+        return;
+      }
+
+      await storage.updatePlayer(resolvedPlayerId, {
         member: true
       });
     }
   }
-  
+
   try {
     await payStaffFromInvoice(invoice);
     console.log(`✅ Revenue split processed for invoice ${invoice.id}`);
@@ -702,7 +804,7 @@ async function handleOneTime(paymentIntent: any): Promise<void> {
 
 async function handleCharityDonation(storage: IStorage, paymentIntent: any): Promise<void> {
   const { charity_event_id, amount } = paymentIntent.metadata;
-  
+
   if (charity_event_id && amount) {
     try {
       const charityEvent = await storage.getCharityEvent(charity_event_id);
@@ -726,7 +828,7 @@ async function handleRefund(charge: any): Promise<void> {
 export function stripeWebhookHandler(storage: IStorage) {
   return async (req: Request, res: Response) => {
     const sig = req.headers['stripe-signature'] as string;
-    
+
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
       return res.status(400).json({ message: "Missing webhook secret" });
     }
