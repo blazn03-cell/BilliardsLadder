@@ -435,6 +435,128 @@ export function updateOperatorSubscription(storage: IStorage) {
   };
 }
 
+export function verifyOperatorSession(storage: IStorage) {
+  return async (req: Request, res: Response) => {
+    try {
+      const { sessionId } = req.body;
+      if (!sessionId || !stripe) {
+        return res.status(400).json({ error: "Session ID required" });
+      }
+
+      const userId = (req as any).dbUser?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const existing = await storage.getOperatorSubscription(userId);
+      if (existing && existing.status === "active") {
+        return res.json({
+          hasSubscription: true,
+          tier: existing.tier,
+          status: existing.status,
+          hallName: existing.hallName,
+        });
+      }
+
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      const isSuccessful = session?.payment_status === "paid" || session?.payment_status === "no_payment_required" || session?.status === "complete";
+
+      if (!session || !isSuccessful) {
+        return res.json({
+          hasSubscription: false,
+          error: "Session not complete",
+          sessionStatus: session?.status,
+          paymentStatus: session?.payment_status,
+        });
+      }
+
+      const sessionOwner = session.client_reference_id || session.metadata?.operatorId || session.metadata?.userId;
+      if (sessionOwner !== userId) {
+        return res.status(403).json({ error: "Session does not belong to this user" });
+      }
+
+      const tier = session.metadata?.tier || null;
+      if (!tier) {
+        return res.json({ hasSubscription: false, error: "No tier in session metadata" });
+      }
+
+      const tierPrices: Record<string, number> = {
+        small: 19900,
+        medium: 29900,
+        large: 39900,
+        mega: 79900,
+      };
+
+      const user = await storage.getUser(userId);
+      const hallName = user?.hallName || "My Pool Hall";
+      const stripeSubId = (session.subscription as string) || null;
+      const stripeCustomerId = (session.customer as string) || null;
+
+      if (existing && (existing.status === "cancelled" || existing.status === "past_due")) {
+        const updated = await storage.updateOperatorSubscription(userId, {
+          tier,
+          basePriceMonthly: tierPrices[tier] || 19900,
+          totalMonthlyCharge: tierPrices[tier] || 19900,
+          stripeSubscriptionId: stripeSubId,
+          stripeCustomerId: stripeCustomerId,
+          status: "active",
+          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        });
+
+        await storage.updateUser(userId, { subscriptionTier: tier });
+
+        return res.json({
+          hasSubscription: true,
+          tier: updated?.tier || tier,
+          status: "active",
+          hallName: updated?.hallName || hallName,
+        });
+      }
+
+      try {
+        const subscription = await storage.createOperatorSubscription({
+          operatorId: userId,
+          hallName,
+          playerCount: 0,
+          tier,
+          basePriceMonthly: tierPrices[tier] || 19900,
+          totalMonthlyCharge: tierPrices[tier] || 19900,
+          stripeSubscriptionId: stripeSubId,
+          stripeCustomerId: stripeCustomerId,
+          status: "active",
+          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        });
+
+        await storage.updateUser(userId, { subscriptionTier: tier });
+
+        return res.json({
+          hasSubscription: true,
+          tier: subscription.tier,
+          status: subscription.status,
+          hallName: subscription.hallName,
+        });
+      } catch (dbErr: any) {
+        if (dbErr?.code === "23505") {
+          const existingAfterConflict = await storage.getOperatorSubscription(userId);
+          if (existingAfterConflict && existingAfterConflict.status === "active") {
+            return res.json({
+              hasSubscription: true,
+              tier: existingAfterConflict.tier,
+              status: existingAfterConflict.status,
+              hallName: existingAfterConflict.hallName,
+            });
+          }
+          return res.json({ hasSubscription: false, error: "Subscription exists but is not active" });
+        }
+        throw dbErr;
+      }
+    } catch (error: any) {
+      console.error("Operator verify session error:", error.message || error);
+      res.status(500).json({ error: error.message || "Unknown error" });
+    }
+  };
+}
+
 export function calculateOperatorSubscriptionCost() {
   return async (req: Request, res: Response) => {
     try {

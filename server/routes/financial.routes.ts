@@ -90,6 +90,11 @@ export function setupFinancialRoutes(app: Express, storage: IStorage) {
     financialController.updateOperatorSubscription(storage)
   );
 
+  app.post("/api/operator-subscriptions/verify-session",
+    requireAnyAuth,
+    financialController.verifyOperatorSession(storage)
+  );
+
   app.post("/api/operator-subscriptions/calculate",
     financialController.calculateOperatorSubscriptionCost()
   );

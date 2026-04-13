@@ -637,9 +637,15 @@ export default function Dashboard() {
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
 
   useEffect(() => {
+    if (!user) return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("subscription") === "success") {
       const sessionId = params.get("session_id");
+      const isOperator = user.globalRole === "OPERATOR";
+      const verifyEndpoint = isOperator
+        ? "/api/operator-subscriptions/verify-session"
+        : "/api/player-billing/verify-session";
+
       const verifyAndShow = async () => {
         let verified = false;
         let attempts = 0;
@@ -648,7 +654,7 @@ export default function Dashboard() {
         while (!verified && sessionId && attempts < maxAttempts) {
           attempts += 1;
           try {
-            const resp = await fetch("/api/player-billing/verify-session", {
+            const resp = await fetch(verifyEndpoint, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               credentials: "include",
@@ -659,17 +665,24 @@ export default function Dashboard() {
             if (resp.ok && data.hasSubscription === true) {
               verified = true;
 
-              // Prime the cache immediately so the status card updates without waiting on another round-trip.
-              queryClient.setQueryData(["/api/player-billing/status"], {
-                hasSubscription: true,
-                tier: data.tier,
-                status: data.status || "active",
-                tierInfo: data.tierInfo,
-              });
+              if (isOperator) {
+                queryClient.setQueryData(["/api/operator-subscriptions", user?.id], {
+                  hasSubscription: true,
+                  tier: data.tier,
+                  status: data.status || "active",
+                  hallName: data.hallName,
+                });
+              } else {
+                queryClient.setQueryData(["/api/player-billing/status"], {
+                  hasSubscription: true,
+                  tier: data.tier,
+                  status: data.status || "active",
+                  tierInfo: data.tierInfo,
+                });
+              }
               break;
             }
           } catch (error) {
-            // Keep a single failure signal in the console; retries continue below.
             console.error("Subscription verification request failed", error);
           }
 
@@ -678,10 +691,12 @@ export default function Dashboard() {
           }
         }
 
-        // Avoid immediately overwriting the verified cache with a stale read.
         if (!verified) {
-          await queryClient.refetchQueries({ queryKey: ["/api/player-billing/status"], type: "all" });
-          await queryClient.refetchQueries({ queryKey: ["/api/operator-subscriptions", user?.id], type: "all" });
+          if (isOperator) {
+            await queryClient.refetchQueries({ queryKey: ["/api/operator-subscriptions", user?.id], type: "all" });
+          } else {
+            await queryClient.refetchQueries({ queryKey: ["/api/player-billing/status"], type: "all" });
+          }
         }
 
         if (verified || sessionId) {
@@ -694,7 +709,6 @@ export default function Dashboard() {
           });
         }
 
-        // Clear URL params only after verification attempts complete.
         const url = new URL(window.location.href);
         url.searchParams.delete("subscription");
         url.searchParams.delete("session_id");
@@ -703,7 +717,7 @@ export default function Dashboard() {
 
       void verifyAndShow();
     }
-  }, []);
+  }, [user?.globalRole]);
 
   const { data: players = [], isLoading: playersLoading } = useQuery<Player[]>({
     queryKey: ["/api/players"],
