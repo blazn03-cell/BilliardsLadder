@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 
 interface EmailOptions {
   to: string;
@@ -22,36 +22,44 @@ interface OnboardingEmailData {
   platformUrl: string;
 }
 
+const DEFAULT_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'ositafelix1212@gmail.com';
+const DEFAULT_FROM_NAME = 'BilliardsLadder';
+
 class EmailService {
-  private transporter: nodemailer.Transporter;
+  private initialized = false;
 
   constructor() {
-    // Configure nodemailer (using SMTP or service like SendGrid)
-    this.transporter = nodemailer.createTransport({
-      // For development, use ethereal email (test emails)
-      host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
-        pass: process.env.SMTP_PASS || 'ethereal.pass'
-      }
-    });
+    const apiKey = process.env.SENDGRID_API_KEY;
+    if (apiKey) {
+      sgMail.setApiKey(apiKey);
+      this.initialized = true;
+      console.log('[EmailService] SendGrid configured successfully');
+    } else {
+      console.warn('[EmailService] SENDGRID_API_KEY not set — emails will not be sent');
+    }
   }
 
   async sendEmail(options: EmailOptions): Promise<void> {
+    if (!this.initialized) {
+      console.warn('[EmailService] Skipping email send — SendGrid not configured');
+      return;
+    }
+
     try {
-      const mailOptions = {
-        from: options.from || '"Action Ladder" <noreply@actionladder.net>',
+      const msg = {
         to: options.to,
+        from: {
+          email: options.from || DEFAULT_FROM_EMAIL,
+          name: DEFAULT_FROM_NAME,
+        },
         subject: options.subject,
         html: options.html,
       };
 
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log('Email sent:', info.messageId);
-    } catch (error) {
-      console.error('Email sending failed:', error);
+      await sgMail.send(msg);
+      console.log(`[EmailService] Email sent to ${options.to}`);
+    } catch (error: any) {
+      console.error('[EmailService] Email sending failed:', error?.response?.body || error.message || error);
       throw error;
     }
   }
