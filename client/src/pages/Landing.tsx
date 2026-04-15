@@ -179,6 +179,16 @@ export default function Landing() {
               </Card>
 
             </div>
+
+            <div className="text-center mt-10">
+              <a
+                href="/login"
+                className="text-gray-400 hover:text-emerald-400 transition-colors text-lg"
+                data-testid="link-login-landing"
+              >
+                Already have an account? <span className="text-emerald-400 font-medium underline underline-offset-4">Let's log you back in</span>
+              </a>
+            </div>
           </div>
         </section>
 
