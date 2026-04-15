@@ -24,3 +24,15 @@ id = "eyacu1F1Un5WWxNOfETH9"
 uri = "file://BilliardsLadder_Fixes_Report_Apr11.md"
 type = "text"
 title = "BilliardsLadder Technical Engineering Report — April 11, 2026"
+
+[[outputs]]
+id = "1aFo5ofeTM7nUPlRnljzI"
+uri = "file://exports/BilliardsLadder_Competition_Assessment.md"
+type = "text"
+title = "Competition Assessment Report (.md)"
+
+[[outputs]]
+id = "HwhInH9T-kSw96x4l-qML"
+uri = "file://exports/BilliardsLadder_Competition_Assessment.docx"
+type = "word_document"
+title = "Competition Assessment Report (.docx)"
