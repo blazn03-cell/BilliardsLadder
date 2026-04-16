@@ -59,7 +59,7 @@ const prices = {
 type OperatorTier = "small" | "medium" | "large" | "mega";
 
 const OPERATOR_TIER_ORDER: OperatorTier[] = ["small", "medium", "large", "mega"];
-const OPERATOR_SUBSCRIPTION_MIN_PLAYERS = 20;
+const OPERATOR_SUBSCRIPTION_MIN_PLAYERS = 7;
 
 function normalizeOperatorTier(value: unknown): OperatorTier | null {
   if (typeof value !== "string") return null;
