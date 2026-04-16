@@ -668,6 +668,9 @@ export function acceptEscrowChallenge(storage: IStorage) {
   return async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
+      const { touchUserActivity } = await import("../utils/activity");
+      const userId = (req as any).user?.id || (req as any).user?.claims?.sub;
+      touchUserActivity(storage, userId);
       res.json({ message: "Challenge accepted", challengeId: id });
     } catch (error: any) {
       res.status(500).json({ message: error.message });

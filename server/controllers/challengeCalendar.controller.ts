@@ -12,6 +12,7 @@ import stripe from "stripe";
 import { sanitizeResponse } from "../middleware/sanitizeMiddleware";
 import { getFeeScheduler } from "../services/feeScheduler";
 import { QRCodeService } from "../services/qrCodeService";
+import { touchUserActivity } from "../utils/activity";
 
 export function getChallenges(storage: IStorage) {
   return async (req: Request, res: Response) => {
@@ -105,7 +106,14 @@ export function createChallenge(storage: IStorage) {
       }
       
       const challenge = await storage.createChallenge(validatedData);
-      
+
+      const userId = (req as any).user?.id || (req as any).user?.claims?.sub;
+      touchUserActivity(storage, userId);
+      for (const playerId of [validatedData.aPlayerId, validatedData.bPlayerId]) {
+        const player = await storage.getPlayer(playerId);
+        if (player?.userId) touchUserActivity(storage, player.userId);
+      }
+
       res.status(201).json(challenge);
     } catch (error: any) {
       console.error("Create challenge error:", error);
@@ -267,6 +275,9 @@ export function checkInToChallenge(storage: IStorage) {
         checkedInBy,
         location
       });
+
+      const checkInPlayer = await storage.getPlayer(playerId);
+      if (checkInPlayer?.userId) touchUserActivity(storage, checkInPlayer.userId);
       
       const allCheckIns = await storage.getChallengeCheckInsByChallenge(id);
       if (allCheckIns.length === 2) {

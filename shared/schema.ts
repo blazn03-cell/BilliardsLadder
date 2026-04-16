@@ -28,6 +28,7 @@ export const users = pgTable("users", {
   twoFactorSecret: text("two_factor_secret"), // TOTP secret
   phoneNumber: text("phone_number"), // For SMS 2FA
   lastLoginAt: timestamp("last_login_at"),
+  lastActivityAt: timestamp("last_activity_at"),
   loginAttempts: integer("login_attempts").default(0),
   lockedUntil: timestamp("locked_until"),
   
