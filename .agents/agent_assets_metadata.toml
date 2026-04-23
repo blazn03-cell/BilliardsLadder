@@ -42,3 +42,9 @@ id = "CRiHU3MKD51go7KjMHc_C"
 uri = "file://CHANGES_REPORT.md"
 type = "text"
 title = "BilliardsLadder — 4-Day Changes Report"
+
+[[outputs]]
+id = "qu3QyPlaBr1b3tMDBKjeN"
+uri = "file://exports/BilliardsLadder-Rewards-and-Streaks.docx"
+type = "word_document"
+title = "Rewards & Streaks Plan (Plain English)"
