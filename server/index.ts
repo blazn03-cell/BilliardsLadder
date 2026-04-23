@@ -52,6 +52,9 @@ registerWebhookRoutes(app);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Static downloads (reports, exports)
+app.use("/downloads", express.static("exports"));
+
 // Exclude webhooks from rate limiting (machine-to-machine traffic)
 const isWebhookRoute = (req: express.Request) => {
   return req.path.includes('/webhook') ||
