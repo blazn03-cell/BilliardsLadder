@@ -48,3 +48,9 @@ id = "qu3QyPlaBr1b3tMDBKjeN"
 uri = "file://exports/BilliardsLadder-Rewards-and-Streaks.docx"
 type = "word_document"
 title = "Rewards & Streaks Plan (Plain English)"
+
+[[outputs]]
+id = "GXf1AmZYXMPWtDapxfhwS"
+uri = "file://exports/BilliardsLadder-Rewards-Phase1-Starter.docx"
+type = "word_document"
+title = "Rewards & Streaks — Phase 1 Starter Plan"
