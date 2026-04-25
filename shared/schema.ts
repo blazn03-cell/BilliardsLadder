@@ -61,7 +61,12 @@ export const users = pgTable("users", {
   state: text("state"),
   subscriptionTier: text("subscription_tier"), // "small", "medium", "large", "mega"
   trusteeId: text("trustee_id"), // ID of trustee who signed up this operator (receives 53% of subscription)
-  
+
+  // Rack Points (gamification — non-cashable promotional currency)
+  rackPoints: integer("rack_points").notNull().default(0),
+  streakDays: integer("streak_days").notNull().default(0),
+  streakLastDay: text("streak_last_day"), // YYYY-MM-DD (UTC) — last day the streak was extended
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1206,6 +1211,26 @@ export const ledger = pgTable("ledger", {
   metaJson: varchar("meta_json"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Rack Points ledger — permanent audit trail of every points event
+export const rackPointsLedger = pgTable("rack_points_ledger", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  delta: integer("delta").notNull(), // signed: + for earn, - for spend/adjustment
+  balanceAfter: integer("balance_after").notNull(),
+  reason: text("reason").notNull(), // "login_streak" | "match_win" | "upset_bonus" | "admin_adjustment" | future codes
+  refType: text("ref_type"), // "match" | "challenge" | "admin" | null
+  refId: text("ref_id"),     // ID of the related entity, when applicable
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertRackPointsLedgerSchema = createInsertSchema(rackPointsLedger).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertRackPointsLedger = z.infer<typeof insertRackPointsLedgerSchema>;
+export type RackPointsLedgerEntry = typeof rackPointsLedger.$inferSelect;
 
 // Challenge pool resolutions
 export const resolutions = pgTable("resolutions", {
