@@ -12,7 +12,8 @@ import HallBattlesAdmin from "@/components/hall-battles-admin";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, DollarSign, Shield, TrendingUp, Trophy, Settings, Gift, Ban, ShieldOff, ShieldCheck, MessageSquare, Check, X } from "lucide-react";
+import { Users, DollarSign, Shield, TrendingUp, Trophy, Settings, Gift, Ban, ShieldOff, ShieldCheck, MessageSquare, Check, X, Coins } from "lucide-react";
+import { RackPointsAdminPanel } from "@/components/admin/RackPointsAdminPanel";
 
 interface User {
   id: string;
@@ -205,7 +206,7 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="staff" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-9 bg-black/40">
+        <TabsList className="grid w-full grid-cols-10 bg-black/40">
           <TabsTrigger value="staff" className="data-[state=active]:bg-green-600">
             <Users className="w-4 h-4 mr-2" />
             Staff
@@ -241,6 +242,14 @@ export default function AdminDashboard() {
           <TabsTrigger value="free-months" className="data-[state=active]:bg-green-600">
             <Gift className="w-4 h-4 mr-2" />
             Free Months
+          </TabsTrigger>
+          <TabsTrigger
+            value="rack-points"
+            className="data-[state=active]:bg-emerald-600"
+            data-testid="tab-rack-points"
+          >
+            <Coins className="w-4 h-4 mr-2" />
+            Rack Points
           </TabsTrigger>
         </TabsList>
 
@@ -681,6 +690,10 @@ export default function AdminDashboard() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="rack-points" className="space-y-6">
+          <RackPointsAdminPanel />
         </TabsContent>
 
       </Tabs>

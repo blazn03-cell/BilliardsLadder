@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { requireOwner, requireStaffOrOwner } from "../replitAuth";
 import { requireAnyAuth } from "../middleware/auth";
 import * as adminController from "../controllers/admin.controller";
+import * as rackPointsAdminController from "../controllers/rackPointsAdmin.controller";
 
 const appealRateLimits = new Map<string, { count: number; resetAt: number }>();
 const APPEAL_RATE_WINDOW_MS = 15 * 60 * 1000;
@@ -30,6 +31,18 @@ export function registerAdminRoutes(app: Express) {
   app.get("/api/admin/organization/seats", requireOwner, adminController.getOrganizationSeats);
   app.post("/api/admin/organization/seats", requireOwner, adminController.updateOrganizationSeats);
   app.get("/api/admin/subscription-details", requireOwner, adminController.getSubscriptionDetails);
+
+  // Rack Points admin tools — manual grants/revokes with a full audit trail
+  app.post(
+    "/api/admin/rack-points/adjust",
+    requireStaffOrOwner,
+    rackPointsAdminController.adjustRackPoints,
+  );
+  app.get(
+    "/api/admin/rack-points/adjustments",
+    requireStaffOrOwner,
+    rackPointsAdminController.getRecentAdjustments,
+  );
 
   app.post("/api/admin/users/:id/ban", requireStaffOrOwner, adminController.banUser);
   app.post("/api/admin/users/:id/suspend", requireStaffOrOwner, adminController.suspendUser);
