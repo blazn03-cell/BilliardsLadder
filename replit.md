@@ -36,6 +36,7 @@ The system is built on a modern web stack designed for performance, scalability,
 - **Side Betting System**: Credit-based wagering with closed-loop funds.
 - **Financial Features**: Entry ranges from $60 to $500,000 for high-stakes players. League fees are 5% for members, 15% for non-members. Membership tiers include Basic ($25/month) and Pro ($60/month).
 - **Automated Rewards**: The AI Coach system includes automated monthly rewards for top trainers, offering Stripe subscription discounts.
+- **Rack Points (Phase 1)**: Lightweight gamification layer. `users.rackPoints/streakDays/streakLastDay` track per-user balance and daily streak; `rack_points_ledger` is the append-only audit trail with a `UNIQUE(user_id, reason, ref_id)` partial index for idempotency. Phase 1 earn events: login (+10 once per UTC day), match win (+50 on challenge completion), upset bonus (+50 when winner's rating < loser's rating). Service: `server/services/rackPointsService.ts` exposes `award`, `deduct`, `extendStreak`, `recordLogin`, `recordMatchWin`, `getRackPointsState`, `getLedger`. Wired into password login (`auth.controller.ts`), Replit OAuth (`replitAuth.ts`), and challenge completion (`challengeCalendar.controller.ts`). All hooks fire-and-forget — never block the request.
 
 ## External Dependencies
 - **Payment Processing**: Stripe (Checkout Sessions API for one-time payments, subscriptions, and webhooks).

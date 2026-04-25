@@ -19,6 +19,7 @@ import {
 } from "@shared/schema";
 import { emailService } from "../services/email-service";
 import { touchUserActivity } from "../utils/activity";
+import { recordLogin } from "../services/rackPointsService";
 
 const APPEAL_TOKEN_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
 const APPEAL_TOKEN_EXPIRY_MS = 30 * 60 * 1000;
@@ -151,6 +152,7 @@ export async function login(req: Request, res: Response) {
       }
 
       touchUserActivity(storage, user.id);
+      recordLogin(user.id);
 
       res.json({
         user: {

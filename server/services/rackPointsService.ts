@@ -71,9 +71,50 @@ export async function award(
 
   try {
     return await db.transaction(async (tx) => {
+      // Lock the user row first so concurrent awards on the same user serialize.
+      const [current] = await tx
+        .select({
+          rackPoints: users.rackPoints,
+          streakDays: users.streakDays,
+          streakLastDay: users.streakLastDay,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .for("update");
+
+      if (!current) return null;
+
+      const newBalance = current.rackPoints + delta;
+
+      // Insert the ledger row first; ON CONFLICT DO NOTHING enforces idempotency
+      // for any (userId, reason, refId) tuple that's already been awarded.
+      const inserted = await tx
+        .insert(rackPointsLedger)
+        .values({
+          userId,
+          delta,
+          balanceAfter: newBalance,
+          reason,
+          refType: opts.refType ?? null,
+          refId: opts.refId ?? null,
+          metadata: opts.metadata ?? null,
+        })
+        .onConflictDoNothing()
+        .returning({ id: rackPointsLedger.id });
+
+      if (inserted.length === 0) {
+        // Already awarded for this event — return current state, no balance change.
+        return {
+          rackPoints: current.rackPoints,
+          streakDays: current.streakDays,
+          streakLastDay: current.streakLastDay,
+        };
+      }
+
+      // Apply the balance change only after the ledger row was actually inserted.
       const [updated] = await tx
         .update(users)
-        .set({ rackPoints: sql`${users.rackPoints} + ${delta}` })
+        .set({ rackPoints: newBalance })
         .where(eq(users.id, userId))
         .returning({
           rackPoints: users.rackPoints,
@@ -81,23 +122,13 @@ export async function award(
           streakLastDay: users.streakLastDay,
         });
 
-      if (!updated) return null;
-
-      await tx.insert(rackPointsLedger).values({
-        userId,
-        delta,
-        balanceAfter: updated.rackPoints,
-        reason,
-        refType: opts.refType ?? null,
-        refId: opts.refId ?? null,
-        metadata: opts.metadata ?? null,
-      });
-
-      return {
-        rackPoints: updated.rackPoints,
-        streakDays: updated.streakDays,
-        streakLastDay: updated.streakLastDay,
-      };
+      return updated
+        ? {
+            rackPoints: updated.rackPoints,
+            streakDays: updated.streakDays,
+            streakLastDay: updated.streakLastDay,
+          }
+        : null;
     });
   } catch (err: any) {
     console.warn(`[rackPoints.award] failed for user ${userId}:`, err?.message);
@@ -224,6 +255,72 @@ export async function extendStreak(
     console.warn(`[rackPoints.extendStreak] failed for user ${userId}:`, err?.message);
     return null;
   }
+}
+
+/**
+ * Phase 1 reward amounts. Centralized here so future tuning is one-line.
+ */
+export const REWARDS = {
+  loginStreakBonus: 10,
+  matchWin: 50,
+  upsetBonus: 50,
+} as const;
+
+/**
+ * Convenience wrapper called from login flows.
+ *
+ * Extends the streak (if it's a new day) and awards the login bonus when the
+ * streak actually moved forward. Same-day re-logins do nothing.
+ *
+ * Fire-and-forget — never blocks login.
+ */
+export function recordLogin(userId: string | undefined | null): void {
+  if (!userId) return;
+  (async () => {
+    const streak = await extendStreak(userId);
+    if (!streak) return;
+    if (streak.result === "started" || streak.result === "extended") {
+      await award(userId, REWARDS.loginStreakBonus, "login_streak", {
+        metadata: { streakDays: streak.streakDays, result: streak.result },
+      });
+    }
+  })().catch((err) => {
+    console.warn(`[rackPoints.recordLogin] failed for user ${userId}:`, err?.message);
+  });
+}
+
+/**
+ * Convenience wrapper called from match completion flows.
+ *
+ * Awards the win and (if the loser was higher-rated) the upset bonus.
+ * Fire-and-forget — never blocks the match-completion request.
+ */
+export function recordMatchWin(opts: {
+  winnerUserId: string | undefined | null;
+  winnerRating: number | null | undefined;
+  loserRating: number | null | undefined;
+  matchId?: string | null;
+}): void {
+  if (!opts.winnerUserId) return;
+  (async () => {
+    await award(opts.winnerUserId!, REWARDS.matchWin, "match_win", {
+      refType: "match",
+      refId: opts.matchId ?? null,
+    });
+    if (
+      typeof opts.winnerRating === "number" &&
+      typeof opts.loserRating === "number" &&
+      opts.loserRating > opts.winnerRating
+    ) {
+      await award(opts.winnerUserId!, REWARDS.upsetBonus, "upset_bonus", {
+        refType: "match",
+        refId: opts.matchId ?? null,
+        metadata: { winnerRating: opts.winnerRating, loserRating: opts.loserRating },
+      });
+    }
+  })().catch((err) => {
+    console.warn(`[rackPoints.recordMatchWin] failed:`, err?.message);
+  });
 }
 
 /**

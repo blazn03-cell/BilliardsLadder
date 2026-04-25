@@ -75,6 +75,8 @@ async function upsertUser(
   });
   const { touchUserActivity } = await import("./utils/activity");
   touchUserActivity(storage, userId);
+  const { recordLogin } = await import("./services/rackPointsService");
+  recordLogin(userId);
 }
 
 export async function setupAuth(app: Express) {
