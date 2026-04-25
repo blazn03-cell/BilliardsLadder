@@ -58,6 +58,7 @@ import { PlayerSubscription } from "@/pages/PlayerSubscription";
 import { ChallengeCalendar } from "@/pages/ChallengeCalendar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MobileNav } from "@/components/MobileNav";
+import { RackPointsBadge } from "@/components/RackPointsBadge";
 import { WebVitals } from "@/components/WebVitals";
 import RevenueAdmin from "@/pages/RevenueAdmin";
 import HallLeaderboard from "@/pages/HallLeaderboard";
@@ -346,19 +347,22 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
             Join via QR
           </button>
           {isAuthenticated ? (
-            <button
-              onClick={() => {
-                fetch("/api/auth/logout", { method: "POST", credentials: "include" })
-                  .then(() => { window.location.href = "/"; })
-                  .catch(() => { window.location.href = "/"; });
-              }}
-              className="hidden md:inline-flex whitespace-nowrap rounded-xl px-3 md:px-4 py-2 text-xs md:text-sm font-semibold
-                         bg-emerald-600 hover:bg-emerald-700 text-white transition items-center gap-2"
-              data-testid="button-logout-desktop"
-            >
-              <LogOut className="h-4 w-4" />
-              Log Out
-            </button>
+            <>
+              <RackPointsBadge />
+              <button
+                onClick={() => {
+                  fetch("/api/auth/logout", { method: "POST", credentials: "include" })
+                    .then(() => { window.location.href = "/"; })
+                    .catch(() => { window.location.href = "/"; });
+                }}
+                className="hidden md:inline-flex whitespace-nowrap rounded-xl px-3 md:px-4 py-2 text-xs md:text-sm font-semibold
+                           bg-emerald-600 hover:bg-emerald-700 text-white transition items-center gap-2"
+                data-testid="button-logout-desktop"
+              >
+                <LogOut className="h-4 w-4" />
+                Log Out
+              </button>
+            </>
           ) : (
             <>
               <button
