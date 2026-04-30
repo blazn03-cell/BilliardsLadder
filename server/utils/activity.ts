@@ -1,4 +1,6 @@
-import type { IStorage } from "../storage";
+type ActivityStorage = {
+  touchUserActivity: (id: string) => Promise<void>;
+};
 
 /**
  * Fire-and-forget helper that records a user's most recent activity.
@@ -7,7 +9,7 @@ import type { IStorage } from "../storage";
  *
  * Never throws — activity tracking should never block a user's request.
  */
-export function touchUserActivity(storage: IStorage, userId: string | undefined | null): void {
+export function touchUserActivity(storage: ActivityStorage, userId: string | undefined | null): void {
   if (!userId) return;
   Promise.resolve(storage.touchUserActivity(userId)).catch((err) => {
     console.warn(`[activity] Failed to touch user ${userId}:`, err?.message || err);

@@ -18,7 +18,6 @@ import {
   loginSchema
 } from "@shared/schema";
 import { emailService } from "../services/email-service";
-import { touchUserActivity } from "../utils/activity";
 import { recordLogin } from "../services/rackPointsService";
 
 const APPEAL_TOKEN_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
@@ -155,7 +154,9 @@ export async function login(req: Request, res: Response) {
         return res.status(500).json({ message: "Login failed" });
       }
 
-      touchUserActivity(storage, user.id);
+      void storage.touchUserActivity(user.id).catch((err) => {
+        console.warn(`[activity] Failed to touch user ${user.id}:`, err?.message || err);
+      });
       recordLogin(user.id);
 
       res.json({
@@ -259,7 +260,9 @@ export async function signupOperator(req: Request, res: Response) {
       profileComplete: false,
     });
 
-    touchUserActivity(storage, newUser.id);
+    void storage.touchUserActivity(newUser.id).catch((err) => {
+      console.warn(`[activity] Failed to touch user ${newUser.id}:`, err?.message || err);
+    });
 
     emailService.sendVerificationEmail(
       operatorData.email,
@@ -315,7 +318,9 @@ export async function signupPlayer(req: Request, res: Response) {
       profileComplete: false,
     });
 
-    touchUserActivity(storage, newUser.id);
+    void storage.touchUserActivity(newUser.id).catch((err) => {
+      console.warn(`[activity] Failed to touch user ${newUser.id}:`, err?.message || err);
+    });
 
     const player = await storage.createPlayer({
       name: playerData.name,
