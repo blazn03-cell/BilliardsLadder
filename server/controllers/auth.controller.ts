@@ -1,21 +1,21 @@
 import { Request, Response } from "express";
 import crypto from "crypto";
 import { storage } from "../storage";
-import { 
-  hashPassword, 
-  verifyPassword, 
-  checkAccountLockout, 
-  incrementLoginAttempts, 
+import {
+  hashPassword,
+  verifyPassword,
+  checkAccountLockout,
+  incrementLoginAttempts,
   resetLoginAttempts,
   createUserSession,
   generateTwoFactorSecret,
   verifyTwoFactor
 } from "../middleware/auth";
-import { 
-  createOwnerSchema, 
-  createOperatorSchema, 
-  createPlayerSchema, 
-  loginSchema 
+import {
+  createOwnerSchema,
+  createOperatorSchema,
+  createPlayerSchema,
+  loginSchema
 } from "@shared/schema";
 import { emailService } from "../services/email-service";
 
@@ -50,24 +50,28 @@ function generateVerificationToken(): string {
 }
 
 function getAppBaseUrl(): string {
-  if (process.env.NODE_ENV !== "production") {
-    const replitDomain = process.env.REPLIT_DOMAINS?.split(",")[0]?.trim();
-    if (replitDomain) {
-      return `https://${replitDomain.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
-    }
+  const configuredBaseUrl = process.env.APP_BASE_URL?.trim();
+  if (configuredBaseUrl) {
+    return configuredBaseUrl.replace(/\/+$/, "");
   }
-  return (process.env.APP_BASE_URL || "http://localhost:5000").replace(/\/+$/, "");
+
+  const replitDomain = process.env.REPLIT_DOMAINS?.split(",")[0]?.trim();
+  if (replitDomain) {
+    return `https://${replitDomain.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
+  }
+
+  return "http://localhost:5000";
 }
 
 // Password-based login for all user types
 export async function login(req: Request, res: Response) {
   try {
     const { email, password, twoFactorCode } = loginSchema.parse(req.body);
-    
+
     // Check if account is locked
     if (await checkAccountLockout(email)) {
-      return res.status(423).json({ 
-        message: "Account temporarily locked due to multiple failed login attempts" 
+      return res.status(423).json({
+        message: "Account temporarily locked due to multiple failed login attempts"
       });
     }
 
@@ -133,7 +137,7 @@ export async function login(req: Request, res: Response) {
       if (!twoFactorCode) {
         return res.status(200).json({ requires2FA: true });
       }
-      
+
       if (!verifyTwoFactor(twoFactorCode, user.twoFactorSecret)) {
         await incrementLoginAttempts(email);
         return res.status(401).json({ message: "Invalid two-factor code" });
@@ -142,13 +146,13 @@ export async function login(req: Request, res: Response) {
 
     // Reset login attempts and create session
     await resetLoginAttempts(email);
-    
+
     const userSession = createUserSession(user);
     req.login(userSession, (err) => {
       if (err) {
         return res.status(500).json({ message: "Login failed" });
       }
-      
+
       res.json({
         user: {
           id: user.id,
@@ -161,7 +165,7 @@ export async function login(req: Request, res: Response) {
         }
       });
     });
-    
+
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
@@ -171,7 +175,7 @@ export async function login(req: Request, res: Response) {
 export async function createOwner(req: Request, res: Response) {
   try {
     const userData = createOwnerSchema.parse(req.body);
-    
+
     // Check if email already exists
     const existingUser = await storage.getUserByEmail(userData.email);
     if (existingUser) {
@@ -180,7 +184,7 @@ export async function createOwner(req: Request, res: Response) {
 
     // Hash password
     const passwordHash = await hashPassword(userData.password);
-    
+
     // Generate 2FA secret if enabled
     let twoFactorSecret;
     if (userData.twoFactorEnabled) {
@@ -210,7 +214,7 @@ export async function createOwner(req: Request, res: Response) {
       },
       ...(twoFactorSecret && { twoFactorSecret })
     });
-    
+
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
@@ -220,7 +224,7 @@ export async function createOwner(req: Request, res: Response) {
 export async function signupOperator(req: Request, res: Response) {
   try {
     const operatorData = createOperatorSchema.parse(req.body);
-    
+
     // Check if email already exists
     const existingUser = await storage.getUserByEmail(operatorData.email);
     if (existingUser) {
@@ -269,7 +273,7 @@ export async function signupOperator(req: Request, res: Response) {
       message: "Account created! Please check your email to verify your address before logging in.",
       requiresVerification: true,
     });
-    
+
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
@@ -279,7 +283,7 @@ export async function signupOperator(req: Request, res: Response) {
 export async function signupPlayer(req: Request, res: Response) {
   try {
     const playerData = createPlayerSchema.parse(req.body);
-    
+
     // Check if email already exists
     const existingUser = await storage.getUserByEmail(playerData.email);
     if (existingUser) {
@@ -335,7 +339,7 @@ export async function signupPlayer(req: Request, res: Response) {
       message: "Account created! Please check your email to verify your address before logging in.",
       requiresVerification: true,
     });
-    
+
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
@@ -375,7 +379,7 @@ export async function getCurrentUser(req: Request, res: Response) {
       onboardingComplete: dbUser.onboardingComplete,
       emailVerified: dbUser.emailVerified ?? true,
     });
-    
+
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -400,7 +404,7 @@ export async function changePassword(req: Request, res: Response) {
 
     const { currentPassword, newPassword } = req.body;
     const user = req.user as any;
-    
+
     let dbUser;
     if (user.claims?.sub) {
       dbUser = await storage.getUser(user.claims.sub);
@@ -420,14 +424,14 @@ export async function changePassword(req: Request, res: Response) {
 
     // Hash new password and update
     const newPasswordHash = await hashPassword(newPassword);
-    await storage.updateUser(dbUser.id, { 
+    await storage.updateUser(dbUser.id, {
       passwordHash: newPasswordHash,
       loginAttempts: 0,
-      lockedUntil: undefined 
+      lockedUntil: undefined
     });
 
     res.json({ message: "Password changed successfully" });
-    
+
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
@@ -441,7 +445,7 @@ export async function authMe(req: Request, res: Response) {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    
+
     const user = req.user as any;
     let dbUser;
 
@@ -480,13 +484,13 @@ export async function authSuccess(req: Request, res: Response) {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    
+
     const session = req.session as any;
     const intendedRole = session.intendedRole || "player";
-    
+
     // Clear the intended role from session
     delete session.intendedRole;
-    
+
     // Update user role in database if needed
     const user = req.user as any;
     if (user?.claims?.sub) {
@@ -500,7 +504,7 @@ export async function authSuccess(req: Request, res: Response) {
             name: `${user.claims.first_name || ""} ${user.claims.last_name || ""}`.trim() || user.claims.email || "Unknown User",
           });
         }
-        
+
         // Set role based on intended role
         let globalRole: import("@shared/schema").GlobalRole = "PLAYER";
         if (intendedRole === "admin") {
@@ -508,7 +512,7 @@ export async function authSuccess(req: Request, res: Response) {
         } else if (intendedRole === "operator") {
           globalRole = "STAFF";
         }
-        
+
         // Update user with role if different
         if (dbUser.globalRole !== globalRole) {
           await storage.updateUser(user.claims.sub, { globalRole });
@@ -517,10 +521,10 @@ export async function authSuccess(req: Request, res: Response) {
         console.error("Error updating user role:", error);
       }
     }
-    
-    res.json({ 
+
+    res.json({
       role: intendedRole,
-      success: true 
+      success: true
     });
   } catch (error) {
     console.error("Auth success error:", error);

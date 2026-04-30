@@ -33,6 +33,7 @@ interface EnvConfig {
 
   // Email
   SENDGRID_API_KEY?: string;
+  SENDGRID_FROM_EMAIL?: string;
   EMAIL_FROM?: string;
 }
 
@@ -92,6 +93,7 @@ function validateEnv(): EnvConfig {
 
     // Email
     SENDGRID_API_KEY: optionalEnv("SENDGRID_API_KEY"),
+    SENDGRID_FROM_EMAIL: optionalEnv("SENDGRID_FROM_EMAIL") || optionalEnv("EMAIL_FROM", "noreply@actionladder.com"),
     EMAIL_FROM: optionalEnv("EMAIL_FROM", "noreply@actionladder.com"),
   };
 

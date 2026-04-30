@@ -22,7 +22,7 @@ interface OnboardingEmailData {
   platformUrl: string;
 }
 
-const DEFAULT_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'osiraogene@gmail.com';
+const DEFAULT_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_FROM || 'noreply@actionladder.com';
 const DEFAULT_FROM_NAME = 'BilliardsLadder';
 
 class EmailService {
@@ -34,6 +34,9 @@ class EmailService {
       sgMail.setApiKey(apiKey);
       this.initialized = true;
       console.log('[EmailService] SendGrid configured successfully');
+      if (!process.env.SENDGRID_FROM_EMAIL && !process.env.EMAIL_FROM) {
+        console.warn('[EmailService] SENDGRID_FROM_EMAIL not set — using fallback sender noreply@actionladder.com');
+      }
     } else {
       console.warn('[EmailService] SENDGRID_API_KEY not set — emails will not be sent');
     }
@@ -450,7 +453,7 @@ class EmailService {
     appBaseUrl: string = process.env.APP_BASE_URL || "http://localhost:5000"
   ): Promise<boolean> {
     const resetUrl = `${appBaseUrl}/reset-password?token=${resetToken}`;
-    
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #065f46 0%, #047857 100%); color: white; padding: 20px; text-align: center;">
