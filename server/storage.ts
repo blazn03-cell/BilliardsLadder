@@ -337,6 +337,8 @@ export interface IStorage {
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   deleteUser(id: string): Promise<boolean>;
+  touchUserActivity(id: string): Promise<void>;
+  getActivePlayerCountByHall(hallId: string): Promise<number>;
 
   // Organizations
   getOrganization(id: string): Promise<Organization | undefined>;
@@ -1163,6 +1165,40 @@ export class MemStorage implements IStorage {
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
     return updateMapRecord(this.users, id, { ...updates, updatedAt: new Date() }, NULLABLE_FIELDS.User);
+  }
+
+  async touchUserActivity(id: string): Promise<void> {
+    const user = this.users.get(id);
+    if (!user) return;
+    this.users.set(id, { ...user, lastActivityAt: new Date() } as User);
+  }
+
+  async getActivePlayerCountByHall(hallId: string): Promise<number> {
+    const { ACTIVE_PLAYER_CONFIG } = await import("./config/activePlayer");
+    const now = Date.now();
+    const windowMs = ACTIVE_PLAYER_CONFIG.ACTIVITY_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    const minAgeMs = ACTIVE_PLAYER_CONFIG.MIN_ACCOUNT_AGE_HOURS * 60 * 60 * 1000;
+    const roster = await this.getRosterByHall(hallId);
+    const seenUsers = new Set<string>();
+    for (const entry of roster) {
+      // hallRosters.playerId → players.id; traverse to userId
+      const player = this.players.get(entry.playerId);
+      if (!player?.userId) continue;
+      if (seenUsers.has(player.userId)) continue;
+      const user = this.users.get(player.userId);
+      if (!user) continue;
+      if (ACTIVE_PLAYER_CONFIG.EXCLUDE_BANNED && user.accountStatus === "banned") continue;
+      if (ACTIVE_PLAYER_CONFIG.EXCLUDE_SUSPENDED && user.accountStatus === "suspended") continue;
+      if (ACTIVE_PLAYER_CONFIG.REQUIRE_EMAIL_VERIFIED && user.emailVerified !== true) continue;
+      const createdAt = user.createdAt ? new Date(user.createdAt).getTime() : now;
+      if (now - createdAt < minAgeMs) continue;
+      const lastActivity = (user as any).lastActivityAt
+        ? new Date((user as any).lastActivityAt).getTime()
+        : null;
+      if (lastActivity === null || now - lastActivity > windowMs) continue;
+      seenUsers.add(player.userId);
+    }
+    return seenUsers.size;
   }
 
   async upsertUser(user: UpsertUser): Promise<User> {
@@ -6495,6 +6531,58 @@ export class DatabaseStorage implements IStorage {
   async createPayoutTransfer(transfer: any) { return this.memStorage.createPayoutTransfer(transfer); }
   async getAllHallMatches() { return this.memStorage.getAllHallMatches(); }
   async getRosterByHall(hallId: string) { return this.memStorage.getRosterByHall(hallId); }
+  async touchUserActivity(id: string): Promise<void> {
+    try {
+      const { db } = await import("./config/db");
+      const { users } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      await db.update(users).set({ lastActivityAt: new Date() }).where(eq(users.id, id));
+    } catch (err: any) {
+      console.warn("[DatabaseStorage.touchUserActivity] fallback:", err?.message);
+      return this.memStorage.touchUserActivity(id);
+    }
+  }
+  async getActivePlayerCountByHall(hallId: string): Promise<number> {
+    try {
+      const { db } = await import("./config/db");
+      const { users, hallRosters, players } = await import("@shared/schema");
+      const { and, eq, gte, lt, sql } = await import("drizzle-orm");
+      const { ACTIVE_PLAYER_CONFIG } = await import("./config/activePlayer");
+
+      const now = Date.now();
+      const windowCutoff = new Date(now - ACTIVE_PLAYER_CONFIG.ACTIVITY_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+      const ageCutoff = new Date(now - ACTIVE_PLAYER_CONFIG.MIN_ACCOUNT_AGE_HOURS * 60 * 60 * 1000);
+
+      // Correct join path: hall_rosters.playerId → players.id → players.userId → users.id
+      const conditions: any[] = [
+        eq(hallRosters.hallId, hallId),
+        eq(hallRosters.isActive, true),
+        gte(users.lastActivityAt, windowCutoff),
+        lt(users.createdAt, ageCutoff),
+      ];
+      if (ACTIVE_PLAYER_CONFIG.EXCLUDE_BANNED) {
+        conditions.push(sql`${users.accountStatus} != 'banned'`);
+      }
+      if (ACTIVE_PLAYER_CONFIG.EXCLUDE_SUSPENDED) {
+        conditions.push(sql`${users.accountStatus} != 'suspended'`);
+      }
+      if (ACTIVE_PLAYER_CONFIG.REQUIRE_EMAIL_VERIFIED) {
+        conditions.push(eq(users.emailVerified, true));
+      }
+
+      const result = await db
+        .select({ count: sql<number>`count(distinct ${users.id})::int` })
+        .from(hallRosters)
+        .innerJoin(players, eq(players.id, hallRosters.playerId))
+        .innerJoin(users, eq(users.id, players.userId))
+        .where(and(...conditions));
+
+      return Number(result[0]?.count || 0);
+    } catch (err: any) {
+      console.warn("[DatabaseStorage.getActivePlayerCountByHall] fallback:", err?.message);
+      return this.memStorage.getActivePlayerCountByHall(hallId);
+    }
+  }
   async getRosterByPlayer(playerId: string) { return this.memStorage.getRosterByPlayer(playerId); }
   async unlockHallBattles(hallId: string, unlockedBy: string) { return this.memStorage.unlockHallBattles(hallId, unlockedBy); }
   async lockHallBattles(hallId: string) { return this.memStorage.lockHallBattles(hallId); }

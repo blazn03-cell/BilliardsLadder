@@ -59,7 +59,7 @@ const prices = {
 type OperatorTier = "small" | "medium" | "large" | "mega";
 
 const OPERATOR_TIER_ORDER: OperatorTier[] = ["small", "medium", "large", "mega"];
-const OPERATOR_SUBSCRIPTION_MIN_PLAYERS = 20;
+const OPERATOR_SUBSCRIPTION_MIN_PLAYERS = 7;
 
 function normalizeOperatorTier(value: unknown): OperatorTier | null {
   if (typeof value !== "string") return null;
@@ -108,11 +108,15 @@ async function getOperatorSubscriptionEligibilityForUser(
   userId: string,
 ): Promise<OperatorSubscriptionEligibility> {
   const hallId = userId;
-  const roster = await storage.getRosterByHall(hallId);
-  const rosterPlayerCount = roster.length;
+  // Active player count uses the centralized definition from
+  // server/config/activePlayer.ts (verified + in-good-standing + recent activity).
+  // This is the single authoritative signal — we deliberately do NOT fall back
+  // to a historical subscription playerCount, as that would let stale subs
+  // retain eligibility indefinitely after their hall has gone inactive.
+  const rosterPlayerCount = await storage.getActivePlayerCountByHall(hallId);
   const existingOperatorSubscription = await storage.getOperatorSubscription(userId);
   const subscriptionPlayerCount = existingOperatorSubscription?.playerCount || 0;
-  const activePlayerCount = Math.max(rosterPlayerCount, subscriptionPlayerCount);
+  const activePlayerCount = rosterPlayerCount;
   const meetsMinimumPlayers = activePlayerCount >= OPERATOR_SUBSCRIPTION_MIN_PLAYERS;
   const allowedTiers = meetsMinimumPlayers ? getAllowedOperatorTiers(activePlayerCount) : [];
 

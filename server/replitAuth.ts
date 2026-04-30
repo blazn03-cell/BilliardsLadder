@@ -66,12 +66,17 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
+  const userId = claims["sub"];
   await storage.upsertUser({
-    id: claims["sub"],
+    id: userId,
     email: claims["email"],
     name: `${claims["first_name"] || ""} ${claims["last_name"] || ""}`.trim() || claims["email"] || "Unknown User",
     emailVerified: true,
   });
+  const { touchUserActivity } = await import("./utils/activity");
+  touchUserActivity(storage, userId);
+  const { recordLogin } = await import("./services/rackPointsService");
+  recordLogin(userId);
 }
 
 export async function setupAuth(app: Express) {

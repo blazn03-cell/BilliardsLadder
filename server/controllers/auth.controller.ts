@@ -18,6 +18,8 @@ import {
   loginSchema
 } from "@shared/schema";
 import { emailService } from "../services/email-service";
+import { touchUserActivity } from "../utils/activity";
+import { recordLogin } from "../services/rackPointsService";
 
 const APPEAL_TOKEN_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
 const APPEAL_TOKEN_EXPIRY_MS = 30 * 60 * 1000;
@@ -153,6 +155,9 @@ export async function login(req: Request, res: Response) {
         return res.status(500).json({ message: "Login failed" });
       }
 
+      touchUserActivity(storage, user.id);
+      recordLogin(user.id);
+
       res.json({
         user: {
           id: user.id,
@@ -254,6 +259,8 @@ export async function signupOperator(req: Request, res: Response) {
       profileComplete: false,
     });
 
+    touchUserActivity(storage, newUser.id);
+
     emailService.sendVerificationEmail(
       operatorData.email,
       verificationToken,
@@ -307,6 +314,8 @@ export async function signupPlayer(req: Request, res: Response) {
       onboardingComplete: false,
       profileComplete: false,
     });
+
+    touchUserActivity(storage, newUser.id);
 
     const player = await storage.createPlayer({
       name: playerData.name,

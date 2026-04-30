@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, real, timestamp, index, unique, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, real, timestamp, index, unique, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -28,6 +28,7 @@ export const users = pgTable("users", {
   twoFactorSecret: text("two_factor_secret"), // TOTP secret
   phoneNumber: text("phone_number"), // For SMS 2FA
   lastLoginAt: timestamp("last_login_at"),
+  lastActivityAt: timestamp("last_activity_at"),
   loginAttempts: integer("login_attempts").default(0),
   lockedUntil: timestamp("locked_until"),
   
@@ -60,7 +61,12 @@ export const users = pgTable("users", {
   state: text("state"),
   subscriptionTier: text("subscription_tier"), // "small", "medium", "large", "mega"
   trusteeId: text("trustee_id"), // ID of trustee who signed up this operator (receives 53% of subscription)
-  
+
+  // Rack Points (gamification — non-cashable promotional currency)
+  rackPoints: integer("rack_points").notNull().default(0),
+  streakDays: integer("streak_days").notNull().default(0),
+  streakLastDay: text("streak_last_day"), // YYYY-MM-DD (UTC) — last day the streak was extended
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1205,6 +1211,34 @@ export const ledger = pgTable("ledger", {
   metaJson: varchar("meta_json"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Rack Points ledger — permanent audit trail of every points event
+export const rackPointsLedger = pgTable("rack_points_ledger", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  delta: integer("delta").notNull(), // signed: + for earn, - for spend/adjustment
+  balanceAfter: integer("balance_after").notNull(),
+  reason: text("reason").notNull(), // "login_streak" | "match_win" | "upset_bonus" | "admin_adjustment" | future codes
+  refType: text("ref_type"), // "match" | "challenge" | "admin" | null
+  refId: text("ref_id"),     // ID of the related entity, when applicable
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("rack_points_ledger_user_id_idx").on(table.userId),
+  createdAtIdx: index("rack_points_ledger_created_at_idx").on(table.createdAt),
+  // Idempotency guard: a (user, reason, refId) tuple can only be awarded once.
+  // Login streaks (refId NULL) are protected separately by the streakLastDay check.
+  userReasonRefUq: uniqueIndex("rack_points_ledger_user_reason_ref_uq")
+    .on(table.userId, table.reason, table.refId)
+    .where(sql`${table.refId} IS NOT NULL`),
+}));
+
+export const insertRackPointsLedgerSchema = createInsertSchema(rackPointsLedger).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertRackPointsLedger = z.infer<typeof insertRackPointsLedgerSchema>;
+export type RackPointsLedgerEntry = typeof rackPointsLedger.$inferSelect;
 
 // Challenge pool resolutions
 export const resolutions = pgTable("resolutions", {
