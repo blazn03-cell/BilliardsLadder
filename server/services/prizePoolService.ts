@@ -6,7 +6,7 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : (null as unknown as Stripe);
 
-// Prize Pool Distribution Percentages (Pro tier with corrected Growth Fund)
+// Prize Pool Distribution Percentages by membership tier
 export const DISTRIBUTION_CONFIG = {
   rookie: {
     winner: 0.65,      // 65%
@@ -20,13 +20,29 @@ export const DISTRIBUTION_CONFIG = {
     trustee: 0.10,     // 10%
     growthFund: 0.06   // 6%
   },
-  pro: {
+  premium: {
     winner: 0.28,      // 28%
     operator: 0.25,    // 25%
     trustee: 0.20,     // 20%
-    admin: 0.13,       // 13% (reduced from 14% to total 100%)
+    admin: 0.13,       // 13%
     growthFund: 0.07,  // 7%
     platform: 0.07     // 7%
+  },
+  family: {
+    winner: 0.28,      // 28%
+    operator: 0.25,    // 25%
+    trustee: 0.20,     // 20%
+    admin: 0.13,       // 13%
+    growthFund: 0.07,  // 7%
+    platform: 0.07     // 7%
+  },
+  elite: {
+    winner: 0.30,      // 30%
+    operator: 0.25,    // 25%
+    trustee: 0.20,     // 20%
+    admin: 0.13,       // 13%
+    growthFund: 0.06,  // 6%
+    platform: 0.06     // 6%
   }
 };
 
@@ -62,7 +78,7 @@ export interface PrizePoolCalculationResult {
  */
 export function calculatePrizePool(
   input: PrizePoolCalculationInput,
-  tier: 'rookie' | 'basic' | 'pro' = 'basic'
+  tier: 'rookie' | 'basic' | 'premium' | 'family' | 'elite' = 'basic'
 ): PrizePoolCalculationResult {
   const { challengeFees, subscriptionFees, nonMemberFees, extras } = input;
   
@@ -106,7 +122,7 @@ export async function createOrUpdatePrizePool(
   hallId: string,
   name: string,
   contributions: PrizePoolCalculationInput,
-  tier: 'rookie' | 'basic' | 'pro' = 'basic'
+  tier: 'rookie' | 'basic' | 'premium' | 'family' | 'elite' = 'basic'
 ) {
   // Calculate distributions
   const calculation = calculatePrizePool(contributions, tier);

@@ -370,7 +370,7 @@ function CharityInfo() {
           <div className="flex items-start space-x-2">
             <span className="text-pink-400 font-bold">•</span>
             <span className="text-gray-300">
-              <span className="text-white font-semibold">Local Focus:</span> All events benefit Seguin, New Braunfels, and San Marcos communities
+              <span className="text-white font-semibold">Community Focus:</span> All events benefit local communities nationwide
             </span>
           </div>
           <div className="flex items-start space-x-2">
@@ -408,7 +408,7 @@ export default function Charity() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">❤️ Charity Events</h1>
-          <p className="text-gray-400">Supporting our tri-city community</p>
+          <p className="text-gray-400">Supporting communities nationwide</p>
         </div>
         <CreateCharityEventDialog />
       </div>

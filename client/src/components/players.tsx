@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { Switch } from "@/components/ui/switch";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useForm } from "react-hook-form";
@@ -29,7 +29,6 @@ const playerSchema = z.object({
 
 type PlayerFormData = z.infer<typeof playerSchema>;
 
-const cities = ["Seguin", "New Braunfels", "San Marcos", "Austin", "San Antonio"];
 
 function CreatePlayerDialog() {
   const [open, setOpen] = useState(false);
@@ -41,7 +40,7 @@ function CreatePlayerDialog() {
     defaultValues: {
       name: "",
       rating: 500,
-      city: "Seguin",
+      city: "Austin",
       member: false,
       theme: "",
       points: 800,
@@ -140,20 +139,13 @@ function CreatePlayerDialog() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-gray-300">City</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-player-city">
-                          <SelectValue placeholder="Select city" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {cities.map((city) => (
-                          <SelectItem key={city} value={city}>
-                            {city}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter city"
+                        data-testid="select-player-city"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -219,7 +211,7 @@ function CreatePlayerDialog() {
                   <div className="space-y-0.5">
                     <FormLabel className="text-gray-300">Membership</FormLabel>
                     <div className="text-sm text-gray-400">
-                      Members pay 5% commission, non-members pay 15%
+                      Members get reduced stake fees (2–4% by tier)
                     </div>
                   </div>
                   <FormControl>

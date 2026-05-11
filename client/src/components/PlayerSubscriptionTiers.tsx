@@ -153,10 +153,12 @@ export function PlayerSubscriptionTiers({ userId, currentUserRole }: PlayerSubsc
 
   const getTierIcon = (tier: string) => {
     switch (tier) {
-      case "rookie": return <Users className="w-6 h-6 text-blue-500" />;
-      case "standard": return <Star className="w-6 h-6 text-purple-500" />;
-      case "premium": return <Crown className="w-6 h-6 text-yellow-500" />;
-      default: return <Zap className="w-6 h-6" />;
+      case "rookie": return <Users className="w-6 h-6 text-blue-400" />;
+      case "standard": return <Star className="w-6 h-6 text-green-400" />;
+      case "premium": return <Zap className="w-6 h-6 text-purple-400" />;
+      case "family": return <Users className="w-6 h-6 text-pink-400" />;
+      case "elite": return <Crown className="w-6 h-6 text-yellow-400" />;
+      default: return <Star className="w-6 h-6 text-gray-400" />;
     }
   };
 
@@ -166,8 +168,8 @@ export function PlayerSubscriptionTiers({ userId, currentUserRole }: PlayerSubsc
 
   if (tiersLoading || statusLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[1, 2, 3].map((i) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        {[1, 2, 3, 4, 5].map((i) => (
           <Card key={i} className="animate-pulse bg-gray-800">
             <CardHeader className="space-y-4">
               <div className="h-6 bg-gray-700 rounded"></div>
@@ -269,12 +271,12 @@ export function PlayerSubscriptionTiers({ userId, currentUserRole }: PlayerSubsc
       )}
 
       {/* Subscription Tiers */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {tiers.map((tier) => {
           const isCurrentTier = currentTier === tier.tier;
           const price = selectedBilling === "yearly" ? tier.yearlyPrice : tier.monthlyPrice;
           const savings = selectedBilling === "yearly" ? tier.yearlySavings : tier.monthlySavings;
-          const isPopular = tier.tier === "standard";
+          const isPopular = tier.tier === "premium";
 
           return (
             <Card
@@ -328,7 +330,7 @@ export function PlayerSubscriptionTiers({ userId, currentUserRole }: PlayerSubsc
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium text-emerald-400">
                     <DollarSign className="w-4 h-4" />
-                    {tier.commissionRate / 100}% commission rate
+                    {tier.commissionRate / 100}% stake fee
                   </div>
                   {tier.challengerFee > 0 ? (
                     <div className="flex items-center gap-2 text-sm font-medium text-yellow-400">

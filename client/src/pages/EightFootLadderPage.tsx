@@ -107,7 +107,7 @@ export default function EightFootLadderPage() {
         />
       </div>
 
-      {/* Tutoring System for Pro Members */}
+      {/* Tutoring System for Premium Members */}
       <div className="max-w-2xl mx-auto mb-8">
         <TutoringSystem 
           isPro={true}

@@ -35,8 +35,10 @@ const playerTiers = [
 
 const membershipTiers = [
   { value: "none", label: "No Membership", description: "Pay per game" },
-  { value: "basic", label: "Basic Membership", description: "$25/month - Reduced fees" },
-  { value: "pro", label: "Pro Membership", description: "$60/month - Includes coaching" },
+  { value: "rookie", label: "Rookie Pass", description: "$9.99/month - Jump in the ladder" },
+  { value: "basic", label: "Basic Membership", description: "$24.99/month - Reduced stake fees" },
+  { value: "premium", label: "Premium Membership", description: "$34.99/month - Lowest fees + free tournaments" },
+  { value: "elite", label: "Elite Membership", description: "$99/month - VIP access, 2% stake fee" },
 ];
 
 export default function Signup() {

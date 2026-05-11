@@ -111,7 +111,7 @@ export default function OperatorSettings() {
     <div className="container mx-auto px-4 py-8" data-testid="operator-settings">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-green-400 mb-2">Operator Settings</h1>
-        <p className="text-gray-300">Customize your ActionLadder instance for your city and area</p>
+        <p className="text-gray-300">Customize your ActionLadder instance for your location</p>
       </div>
 
       <div className="grid gap-6 max-w-4xl">
@@ -156,7 +156,7 @@ export default function OperatorSettings() {
               Location Settings
             </CardTitle>
             <CardDescription className="text-gray-300">
-              Set your city and area to personalize the ActionLadder experience
+              Set your location to personalize the ActionLadder experience
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -182,7 +182,7 @@ export default function OperatorSettings() {
                   id="areaName"
                   value={areaName}
                   onChange={(e) => setAreaName(e.target.value)}
-                  placeholder="e.g., South Texas"
+                  placeholder="e.g., South Side, Downtown"
                   className="bg-black/40 border-green-600/50 text-white"
                   data-testid="input-area-name"
                 />

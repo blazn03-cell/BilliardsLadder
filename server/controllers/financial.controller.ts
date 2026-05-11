@@ -15,11 +15,13 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : (null as unknown as Stripe);
 
-// Stripe Price IDs for ActionLadder Commission System
+// Stripe Price IDs — see routes.ts NOTE about recreating products at correct prices
 const prices = {
-  rookie_monthly: "price_1S36UcDc2BliYufwVpgpOph9",
-  basic_monthly: "price_1S36UcDc2BliYufwF8R8w5BY",
-  pro_monthly: "price_1S36UdDc2BliYufwGZmAEVPq",
+  rookie_monthly: process.env.PLAYER_ROOKIE_MONTHLY_PRICE_ID || "price_1S36UcDc2BliYufwVpgpOph9",
+  basic_monthly: process.env.PLAYER_BASIC_MONTHLY_PRICE_ID || "price_1S36UcDc2BliYufwF8R8w5BY",
+  premium_monthly: process.env.PLAYER_PREMIUM_MONTHLY_PRICE_ID || "price_1S36UdDc2BliYufwGZmAEVPq",
+  family_monthly: process.env.PLAYER_FAMILY_MONTHLY_PRICE_ID || "",
+  elite_monthly: process.env.PLAYER_ELITE_MONTHLY_PRICE_ID || "",
   small: process.env.SMALL_PRICE_ID,
   medium: process.env.MEDIUM_PRICE_ID,
   large: process.env.LARGE_PRICE_ID,
@@ -604,7 +606,7 @@ async function handleSubscription(storage: IStorage, subscription: any): Promise
             cancelAtPeriodEnd,
             monthlyPrice: subscription.items.data[0]?.price?.unit_amount || 0,
             perks: [],
-            commissionRate: tier === 'rookie' ? 1000 : tier === 'standard' ? 800 : 500
+            commissionRate: tier === 'elite' ? 200 : tier === 'premium' ? 300 : tier === 'family' ? 400 : tier === 'standard' ? 400 : 400
           });
         } catch (error: any) {
           console.error(`❌ Failed to create membership subscription for user ${userId}:`, error.message);

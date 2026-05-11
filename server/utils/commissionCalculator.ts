@@ -252,7 +252,7 @@ export class CommissionCalculator {
    * Get the best (lowest commission) membership tier between two players
    */
   private static getBestMembershipTier(tier1: string, tier2: string): string {
-    const tierHierarchy = ["pro", "basic", "none"];
+    const tierHierarchy = ["elite", "premium", "family", "basic", "rookie", "none"];
     
     const tier1Index = tierHierarchy.indexOf(tier1);
     const tier2Index = tierHierarchy.indexOf(tier2);

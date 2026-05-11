@@ -126,7 +126,7 @@ export function useAppPreferences() {
     soundEnabled: true,
     notificationsEnabled: true,
     autoRefresh: true,
-    favoriteCity: 'Seguin',
+    favoriteCity: '',
   });
 
   const updatePreference = (key: string, value: any) => {

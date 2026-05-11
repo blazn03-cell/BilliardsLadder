@@ -16,6 +16,7 @@ import { setupFinancialRoutes } from "./routes/financial.routes";
 import { setupPredictionRoutes } from "./routes/prediction.routes";
 import { setupCharityRoutes } from "./routes/charity.routes";
 import { setupTrainingRoutes } from "./routes/training.routes";
+import { setupShopRoutes } from "./routes/shop.routes";
 import { setupAIRoutes } from "./routes/ai.routes";
 import { setupSupportRoutes } from "./routes/support.routes";
 import { setupStreamRoutes } from "./routes/stream.routes";
@@ -62,11 +63,16 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : (null as unknown as Stripe);
 
-// Stripe Price IDs for ActionLadder Commission System
+// Stripe Price IDs for BilliardsLadder player subscription commission system
+// NOTE: rookie/basic/premium IDs were created at old prices — recreate in Stripe dashboard
+//       at $9.99/$24.99/$34.99 and set PLAYER_*_MONTHLY_PRICE_ID env vars.
+//       family ($44.99) and elite ($99) products need to be created fresh.
 const prices = {
-  rookie_monthly: "price_1S36UcDc2BliYufwVpgpOph9", // ActionLadder Rookie Pass ($20/month → $4 operator commission)
-  basic_monthly: "price_1S36UcDc2BliYufwF8R8w5BY", // ActionLadder Basic Membership ($25/month → $7 operator commission)
-  pro_monthly: "price_1S36UdDc2BliYufwGZmAEVPq", // ActionLadder Pro Membership ($60/month → $10 operator commission)
+  rookie_monthly: process.env.PLAYER_ROOKIE_MONTHLY_PRICE_ID || "price_1S36UcDc2BliYufwVpgpOph9",   // $9.99/mo
+  basic_monthly: process.env.PLAYER_BASIC_MONTHLY_PRICE_ID || "price_1S36UcDc2BliYufwF8R8w5BY",     // $24.99/mo
+  premium_monthly: process.env.PLAYER_PREMIUM_MONTHLY_PRICE_ID || "price_1S36UdDc2BliYufwGZmAEVPq", // $34.99/mo
+  family_monthly: process.env.PLAYER_FAMILY_MONTHLY_PRICE_ID || "",   // $44.99/mo — create in Stripe
+  elite_monthly: process.env.PLAYER_ELITE_MONTHLY_PRICE_ID || "",     // $99/mo   — create in Stripe
   small: process.env.SMALL_PRICE_ID, // Operator subscription tiers
   medium: process.env.MEDIUM_PRICE_ID,
   large: process.env.LARGE_PRICE_ID,
@@ -122,6 +128,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register training routes (training sessions, insights, rewards)
   setupTrainingRoutes(app, storage);
+
+  // Register shop/rewards routes (credits, shop items, badges, daily missions)
+  setupShopRoutes(app);
   
   // Register AI routes (coaching, commentary, predictions, analysis)
   setupAIRoutes(app);

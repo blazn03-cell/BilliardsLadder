@@ -153,7 +153,7 @@ function CommissionRates() {
                 </div>
               </div>
               <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-3">
-                <div className="text-green-400 font-semibold">Pro Members</div>
+                <div className="text-green-400 font-semibold">Premium Members</div>
                 <div className="text-sm text-gray-300 mt-1">
                   Platform: 8% • Operator: 7%
                 </div>
@@ -169,30 +169,30 @@ function CommissionRates() {
             <h4 className="font-semibold text-green-400 mb-3">Membership Operator Commissions</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
-                <div className="text-yellow-400 font-semibold">Rookie Pass ($20/mo)</div>
+                <div className="text-yellow-400 font-semibold">Rookie Pass ($9.99/mo)</div>
                 <div className="text-sm text-gray-300 mt-1">
-                  Operator Commission: $4
+                  Operator Commission: $2
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  20% of subscription fee
+                  ~20% of subscription fee
                 </div>
               </div>
               <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
-                <div className="text-blue-400 font-semibold">Basic ($25/mo)</div>
+                <div className="text-blue-400 font-semibold">Basic ($24.99/mo)</div>
                 <div className="text-sm text-gray-300 mt-1">
                   Operator Commission: $7
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  28% of subscription fee
+                  ~28% of subscription fee
                 </div>
               </div>
               <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-3">
-                <div className="text-green-400 font-semibold">Pro ($60/mo)</div>
+                <div className="text-green-400 font-semibold">Premium ($34.99/mo)</div>
                 <div className="text-sm text-gray-300 mt-1">
                   Operator Commission: $10
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  16.7% of subscription fee
+                  ~28% of subscription fee
                 </div>
               </div>
             </div>

@@ -89,7 +89,7 @@ Consider these factors:
 - Player skill ratings and recent performance
 - Playing styles and game preferences
 - Current streaks and momentum
-- Geographical location (Seguin, San Marcos, New Braunfels)
+- Geographical location (player's registered city/region)
 - Member status and respect points
 - Historical matchup data
 

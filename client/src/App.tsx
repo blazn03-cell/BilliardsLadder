@@ -64,6 +64,8 @@ import TrainingSession from "@/pages/TrainingSession";
 import CoachFeedback from "@/pages/CoachFeedback";
 import AdminTrainingRewards from "@/pages/AdminTrainingRewards";
 import PlayerCareerDashboard from "@/pages/PlayerCareerDashboard";
+import EarningReference from "@/pages/EarningReference";
+import PlayerRewardsPage from "@/pages/PlayerRewardsPage";
 const logoBackground = "/images/logo-background.png";
 // Auth-protected route component
 function AppContent({ activeTab }: { activeTab: string }) {
@@ -81,7 +83,8 @@ function AppContent({ activeTab }: { activeTab: string }) {
     'ai-features', 'poster-generator', 'file-manager', 'player-subscription', 
     'checkout', 'monetization', 'team-management', 'team-matches', 'team-challenges',
     'sportsmanship', 'bounties', 'qr-registration', 'operator-settings', 
-    'operator-subscriptions', 'revenue-admin', 'admin', 'admin-training-rewards'
+    'operator-subscriptions', 'revenue-admin', 'admin', 'admin-training-rewards',
+    'rewards-shop'
   ];
   
   // If trying to access protected content and not authenticated, redirect to login
@@ -150,6 +153,8 @@ function AppContent({ activeTab }: { activeTab: string }) {
         {activeTab === "revenue-admin" && <RevenueAdmin />}
         {activeTab === "challenge-calendar" && <ChallengeCalendar />}
         {activeTab === "admin-training-rewards" && <AdminTrainingRewards />}
+        {activeTab === "earning-reference" && <EarningReference />}
+        {activeTab === "rewards-shop" && <PlayerRewardsPage />}
       </div>
       <RealTimeNotifications />
     </>
@@ -205,6 +210,7 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
       items: [
         { id: "player-subscription", label: "💳 Subscription Plans", requiresAuth: true },
         { id: "checkout", label: "💰 Billing & Payments", requiresAuth: true },
+        { id: "earning-reference", label: "📋 Earning Reference" },
         { id: "monetization", label: "📊 Revenue Dashboard", roles: ["OWNER", "OPERATOR", "TRUSTEE"] as GlobalRole[], requiresAuth: true },
       ]
     },
@@ -216,6 +222,7 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
         { id: "team-management", label: "👥 Team Management", requiresAuth: true },
         { id: "team-matches", label: "🤝 Team Matches", requiresAuth: true },
         { id: "team-challenges", label: "⚡ Team Challenges", requiresAuth: true },
+        { id: "rewards-shop", label: "🎯 Rewards & Shop", requiresAuth: true },
         { id: "players", label: "🎯 Players" },
         { id: "sportsmanship", label: "🤝 Sportsmanship", requiresAuth: true },
         { id: "bounties", label: "💎 Bounties", requiresAuth: true },

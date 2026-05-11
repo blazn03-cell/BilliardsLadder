@@ -87,7 +87,7 @@ export function getRecentQRRegistrations() {
         {
           id: "player-001",
           name: "Mike 'Chalk Dust' Johnson",
-          city: "San Marcos",
+          city: "Chicago",
           rating: 520,
           theme: "Precision over power",
           createdAt: new Date(),

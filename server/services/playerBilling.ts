@@ -7,89 +7,131 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : (null as unknown as Stripe);
 
-// Player subscription tiers - designed to compete with traditional leagues
+// Player subscription tiers per Earning Reference spec
 export function getPlayerSubscriptionTier(tier: string) {
   switch (tier) {
     case "rookie":
       return {
         tier: "rookie",
-        name: "Rookie",
-        monthlyPrice: 2500, // $25/month
-        yearlyPrice: 25500, // $255/year (save $45)
+        name: "Rookie Pass",
+        monthlyPrice: 999,  // $9.99/month
+        yearlyPrice: 9990,  // $99.90/year (save ~$20)
         priceId: process.env.PLAYER_ROOKIE_MONTHLY_PRICE_ID || "price_rookie_monthly",
         yearlyPriceId: process.env.PLAYER_ROOKIE_YEARLY_PRICE_ID || "price_rookie_yearly",
-        traditionalLeagueCost: 3700, // $37/month typical league cost
-        monthlySavings: 1200, // $12/month savings
-        yearlySavings: 18500, // $185/year savings
-        challengerFee: 0,
+        traditionalLeagueCost: 8000,
+        monthlySavings: 7001,
+        yearlySavings: 84012,
+        challengerFee: 200, // $2 shift deposit per match
         perks: [
-          "Access to all ladder divisions",
-          "Challenge match system",
-          "Basic tournament entries",
-          "Match history tracking",
-          "10% commission rate on side bets",
-          "Weekly streak bonuses",
-          "Community features"
+          "Access to Rookie ladder",
+          "Quarterly cash prizes ($500 / $400 / $300 / $200 / $100 / $50)",
+          "Mid-quarter checkpoint cash (V2)",
+          "$2 shift deposits per match",
+          "Low-stakes challenge matches",
+          "Credits convert to cash at quarter end (100 cr = $1)",
+          "Match history & leaderboard"
         ],
-        commissionRate: 1000, // 10% in basis points
-        description: "Perfect for new players entering the competitive billiards world"
+        commissionRate: 400, // 4% stake fee in basis points
+        description: "The entry point — quarterly cash prizes and rookie ladder access"
       };
     case "standard":
+    case "basic":
       return {
-        tier: "standard", 
-        name: "Standard",
-        monthlyPrice: 3500, // $35/month
-        yearlyPrice: 35700, // $357/year (save $63)
+        tier: "standard",
+        name: "Basic",
+        monthlyPrice: 2499, // $24.99/month
+        yearlyPrice: 25490, // $254.90/year (save ~$44)
         priceId: process.env.PLAYER_STANDARD_MONTHLY_PRICE_ID || "price_standard_monthly",
         yearlyPriceId: process.env.PLAYER_STANDARD_YEARLY_PRICE_ID || "price_standard_yearly",
-        traditionalLeagueCost: 3700, // $37/month typical league cost
-        monthlySavings: 200, // $2/month savings
-        yearlySavings: 2300, // $23/year savings
-        challengerFee: 6000,
+        traditionalLeagueCost: 8000,
+        monthlySavings: 5501,
+        yearlySavings: 66012,
+        challengerFee: 0,
         perks: [
-          "Everything in Rookie",
-          "$60 challenger fee per match",
-          "Premium tournament access",
-          "Advanced analytics & insights",
-          "Live stream priority placement",
-          "8% commission rate on side bets",
-          "Monthly bonus challenges",
-          "Priority customer support",
-          "AI coaching tips"
+          "Unlimited challenges",
+          "4% stake fee",
+          "$150 max stake per match",
+          "Full open ladder access",
+          "Consistency cash bonuses (3 / 6 / 12 / 26 week streaks)",
+          "Monthly tournament access",
+          "Shop credits system"
         ],
-        commissionRate: 800, // 8% in basis points
-        description: "For serious players who want competitive advantages and insights"
+        commissionRate: 400, // 4% stake fee in basis points
+        description: "Full competitive access with consistency bonuses and tournament play"
       };
     case "premium":
       return {
         tier: "premium",
-        name: "Premium", 
-        monthlyPrice: 4500, // $45/month
-        yearlyPrice: 45900, // $459/year (save $81)
+        name: "Premium",
+        monthlyPrice: 3499, // $34.99/month
+        yearlyPrice: 35690, // $356.90/year (save ~$62)
         priceId: process.env.PLAYER_PREMIUM_MONTHLY_PRICE_ID || "price_premium_monthly",
         yearlyPriceId: process.env.PLAYER_PREMIUM_YEARLY_PRICE_ID || "price_premium_yearly",
-        traditionalLeagueCost: 3700, // $37/month typical league cost
-        monthlySavings: -800, // $8/month more but saves $40+ through perks
-        yearlySavings: -1900, // $19/year more but saves $400+ annually through perks
-        challengerFee: 6000,
+        traditionalLeagueCost: 8000,
+        monthlySavings: 4501,
+        yearlySavings: 54012,
+        challengerFee: 0,
         perks: [
-          "Everything in Standard",
-          "$60 challenger fee per match",
-          "VIP tournament seeding",
-          "Personal performance coaching",
-          "Fan tip collection system",
-          "5% commission rate on side bets (vs 10% for Rookie)",
-          "Exclusive premium events",
-          "Direct line to pros for mentoring",
-          "Revenue sharing on content creation",
-          "White-glove support",
-          "Loyalty discount: 10% off after 6 months",
-          "Referral bonus: $10 credit per successful referral",
-          "Free monthly tutoring session ($30 value)",
-          "Tournament winnings bonus: Keep 95% vs 90%"
+          "3% stake fee",
+          "$1,000 max stake per match",
+          "AI Coach access",
+          "Advanced analytics",
+          "Priority matchmaking",
+          "48-reward vault",
+          "$30 tournament entry",
+          "No ads",
+          "Verified Premium badge"
         ],
-        commissionRate: 500, // 5% in basis points
-        description: "Elite tier for top competitors and content creators"
+        commissionRate: 300, // 3% stake fee in basis points
+        description: "Serious players — lower fees, AI coaching, and higher stakes"
+      };
+    case "family":
+      return {
+        tier: "family",
+        name: "Family Plan",
+        monthlyPrice: 4499, // $44.99/month
+        yearlyPrice: 45890, // $458.90/year (save ~$80)
+        priceId: process.env.PLAYER_FAMILY_MONTHLY_PRICE_ID || "price_family_monthly",
+        yearlyPriceId: process.env.PLAYER_FAMILY_YEARLY_PRICE_ID || "price_family_yearly",
+        traditionalLeagueCost: 16000, // $160/month for a family in traditional leagues
+        monthlySavings: 11501,
+        yearlySavings: 138012,
+        challengerFee: 0,
+        perks: [
+          "Up to 4 player profiles on one account",
+          "Adults operate at Basic-level stakes",
+          "Kids (12 & under) + Teens (13–17) add-ons ($3.99–$4.99 each)",
+          "Junior competitions & drills for younger players",
+          "Family Tournament access",
+          "4% stake fee for adult accounts"
+        ],
+        commissionRate: 400, // 4% stake fee (Basic-level for adults)
+        description: "One account for the whole family — juniors, teens, and adults"
+      };
+    case "elite":
+      return {
+        tier: "elite",
+        name: "Elite Player",
+        monthlyPrice: 9900, // $99/month
+        yearlyPrice: 100980, // $1,009.80/year (save ~$178)
+        priceId: process.env.PLAYER_ELITE_MONTHLY_PRICE_ID || "price_elite_monthly",
+        yearlyPriceId: process.env.PLAYER_ELITE_YEARLY_PRICE_ID || "price_elite_yearly",
+        traditionalLeagueCost: 8000,
+        monthlySavings: -1900, // Costs more, but premium access pays off at high stakes
+        yearlySavings: -22800,
+        challengerFee: 0,
+        perks: [
+          "2% stake fee (lowest on the platform)",
+          "$1,000+ max stake (operator approval above $1,000)",
+          "Travel / cross-region challenges",
+          "AI opponent scouting",
+          "VIP tournament seeding",
+          "Dedicated support",
+          "Hall of Fame eligible",
+          "$0–$20 tournament entry scaled by prize pool"
+        ],
+        commissionRate: 200, // 2% stake fee in basis points
+        description: "The top tier — highest stakes, lowest fees, Hall of Fame eligible"
       };
     default:
       return null;
@@ -100,7 +142,7 @@ export function registerPlayerBillingRoutes(app: Express) {
   
   // Get player subscription tiers and pricing
   app.get("/api/player-billing/tiers", (req, res) => {
-    const tiers = ["rookie", "standard", "premium"].map(tier => getPlayerSubscriptionTier(tier));
+    const tiers = ["rookie", "standard", "premium", "family", "elite"].map(tier => getPlayerSubscriptionTier(tier));
     res.json({ tiers });
   });
 
@@ -122,9 +164,9 @@ export function registerPlayerBillingRoutes(app: Express) {
       }
 
       // Calculate actual savings for premium users
-      const subscriptionCost = 4500; // $45/month
-      const commissionSavings = 200 * 0.05 * 100; // $10/month from 5% vs 10% commission on $200 avg bets
-      const tutoringValue = 3000; // $30/month free tutoring session
+      const subscriptionCost = 3499; // $34.99/month
+      const commissionSavings = 200 * 0.01 * 100; // $2/month from 3% vs 4% stake fee on $200 avg bets
+      const tutoringValue = 0; // AI Coach included in tier, standalone session locked until coaching built
       const tournamentBonus = 100 * 0.05 * 100; // $5/month from 95% vs 90% tournament winnings on $100 avg
       const referralCredits = 1000; // $10/month average referral bonus
       
@@ -158,8 +200,7 @@ export function registerPlayerBillingRoutes(app: Express) {
         netCost,
         loyaltyEligible,
         breakdown: {
-          "Lower Commission (5% vs 10%)": `$${(commissionSavings/100).toFixed(0)}/month`,
-          "Free Monthly Tutoring": `$${(tutoringValue/100).toFixed(0)}/month`,
+          "Lower Stake Fee (3% vs 4%)": `$${(commissionSavings/100).toFixed(0)}/month`,
           "Tournament Winnings Bonus": `$${(tournamentBonus/100).toFixed(0)}/month`,
           "Referral Credits": `$${(referralCredits/100).toFixed(0)}/month`,
           ...(loyaltyEligible && {"Loyalty Discount": `$${(loyaltyDiscount/100).toFixed(2)}/month`})

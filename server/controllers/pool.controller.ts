@@ -241,7 +241,7 @@ export function createSidePot(storage: IStorage) {
             title: `High Stakes Challenge - $${stakePerSideDollars} per side`,
             poolHallName: "Unknown Hall",
             city: "Unknown",
-            state: "TX",
+            state: "Unknown",
             category: "casual",
             isLive: false,
           });

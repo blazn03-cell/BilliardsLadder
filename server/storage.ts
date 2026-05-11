@@ -1277,9 +1277,9 @@ export class MemStorage implements IStorage {
     // Initialize test organizations for demonstration
     const testOrg1: Organization = {
       id: randomUUID(),
-      name: "Seguin Winners Pool Hall",
-      stripeCustomerId: "cus_test_seguin123",
-      stripeSubscriptionId: "sub_test_seguin123",
+      name: "Chicago Champions Pool Hall",
+      stripeCustomerId: "cus_test_chicago123",
+      stripeSubscriptionId: "sub_test_chicago123",
       seatLimit: 25,
       createdAt: new Date(),
     };
@@ -1287,23 +1287,23 @@ export class MemStorage implements IStorage {
 
     const testOrg2: Organization = {
       id: randomUUID(),
-      name: "San Marcos Sharks",
+      name: "Houston Sharks",
       seatLimit: 5,
       createdAt: new Date(),
     };
     this.organizations.set(testOrg2.id, testOrg2);
 
-    // Initialize Tri-City pool halls
+    // Initialize demo pool halls
     const seguin: PoolHall = {
       id: "hall-seguin",
-      name: "Seguin Winners Pool Hall",
-      city: "Seguin",
+      name: "Chicago Champions Pool Hall",
+      city: "Chicago",
       wins: 12,
       losses: 8,
       points: 1200,
       description: "Home of the champions, where legends are made on felt",
-      address: "123 Main St, Seguin, TX",
-      phone: "(830) 555-0123",
+      address: "123 Main St, Chicago, IL",
+      phone: "(312) 555-0123",
       active: true,
       battlesUnlocked: false,
       unlockedBy: null,
@@ -1314,14 +1314,14 @@ export class MemStorage implements IStorage {
 
     const newBraunfels: PoolHall = {
       id: "hall-new-braunfels",
-      name: "New Braunfels Sharks",
-      city: "New Braunfels",
+      name: "Houston Precision Pool Hall",
+      city: "Houston",
       wins: 10,
       losses: 7,
       points: 1050,
       description: "Sharp shooters with precision game play",
-      address: "456 River Rd, New Braunfels, TX",
-      phone: "(830) 555-0456",
+      address: "456 River Rd, Houston, TX",
+      phone: "(713) 555-0456",
       active: true,
       battlesUnlocked: false,
       unlockedBy: null,
@@ -1332,14 +1332,14 @@ export class MemStorage implements IStorage {
 
     const sanMarcos: PoolHall = {
       id: "hall-san-marcos",
-      name: "San Marcos Hustlers",
-      city: "San Marcos",
+      name: "Dallas Hustlers Pool Hall",
+      city: "Dallas",
       wins: 8,
       losses: 12,
       points: 850,
       description: "Underdogs with heart and hustle",
-      address: "789 University Dr, San Marcos, TX",
-      phone: "(512) 555-0789",
+      address: "789 Commerce St, Dallas, TX",
+      phone: "(214) 555-0789",
       active: true,
       battlesUnlocked: false,
       unlockedBy: null,
@@ -1379,7 +1379,7 @@ export class MemStorage implements IStorage {
       winnerHallId: seguin.id,
       scheduledDate: new Date("2024-01-20"),
       completedAt: new Date("2024-01-20T20:45:00"),
-      notes: "Seguin dominated with solid fundamentals",
+      notes: "Chicago dominated with solid fundamentals",
       stake: 30000, // $300 per team
       createdAt: new Date("2024-01-18"),
     };
@@ -1391,7 +1391,7 @@ export class MemStorage implements IStorage {
         id: randomUUID(),
         name: "Tommy 'The Knife' Rodriguez",
         rating: 720,
-        city: "Seguin",
+        city: "Chicago",
         member: true,
         theme: "Blood and chalk dust",
         points: 2850,
@@ -1415,7 +1415,7 @@ export class MemStorage implements IStorage {
         id: randomUUID(),
         name: "Jesse — The Spot",
         rating: 605,
-        city: "Seguin",
+        city: "Chicago",
         member: false,
         theme: "Back in Black",
         points: 350,
@@ -1437,9 +1437,9 @@ export class MemStorage implements IStorage {
       },
       {
         id: randomUUID(),
-        name: "San Marcos Sniper",
+        name: "The Sniper",
         rating: 590,
-        city: "San Marcos",
+        city: "Houston",
         member: true,
         theme: "X Gon' Give It to Ya",
         points: 160,
@@ -1456,14 +1456,14 @@ export class MemStorage implements IStorage {
         rookiePassActive: false,
         rookiePassExpiresAt: null,
         graduatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        membershipTier: "pro",
+        membershipTier: "premium",
         createdAt: new Date(),
       },
       {
         id: randomUUID(),
-        name: "Seguin Shark",
+        name: "The Shark",
         rating: 540,
-        city: "Seguin",
+        city: "Chicago",
         member: false,
         theme: "Congratulations",
         points: 280,
@@ -1487,7 +1487,7 @@ export class MemStorage implements IStorage {
         id: randomUUID(),
         name: "Chalktopus",
         rating: 520,
-        city: "New Braunfels",
+        city: "Houston",
         member: true,
         theme: "Monster",
         points: 220,
@@ -1509,9 +1509,9 @@ export class MemStorage implements IStorage {
       },
       {
         id: randomUUID(),
-        name: "New Braunfels Ninja",
+        name: "Night Ninja",
         rating: 480,
-        city: "New Braunfels",
+        city: "Dallas",
         member: false,
         theme: "Ninja",
         points: 180,
@@ -1536,7 +1536,7 @@ export class MemStorage implements IStorage {
         id: randomUUID(),
         name: "Rookie Mike",
         rating: 420,
-        city: "San Marcos",
+        city: "Dallas",
         member: false,
         theme: "Learning the ropes",
         points: 100,
@@ -1560,7 +1560,7 @@ export class MemStorage implements IStorage {
         id: randomUUID(),
         name: "Sarah 'Rising Star'",
         rating: 460,
-        city: "Seguin",
+        city: "Houston",
         member: true,
         theme: "Grinding to the top",
         points: 140,
@@ -1584,7 +1584,7 @@ export class MemStorage implements IStorage {
         id: randomUUID(),
         name: "Pocket Rookie",
         rating: 380,
-        city: "New Braunfels",
+        city: "Dallas",
         member: false,
         theme: "Future champion",
         points: 80,
@@ -1670,7 +1670,7 @@ export class MemStorage implements IStorage {
     const charityEvent: CharityEvent = {
       id: randomUUID(),
       name: "Local Youth Center Support",
-      description: "Tournament proceeds benefit Seguin Youth Programs",
+      description: "Tournament proceeds benefit local youth programs",
       goal: 500,
       raised: 285,
       percentage: 0.1,
@@ -1696,7 +1696,7 @@ export class MemStorage implements IStorage {
       id: randomUUID(),
       type: "onPlayer",
       rank: null,
-      targetId: seedPlayers[2].id, // San Marcos Sniper
+      targetId: seedPlayers[2].id, // The Sniper
       prize: 30,
       active: true,
       description: "Beat the King of 599 & Under Division",
@@ -3698,7 +3698,7 @@ export class MemStorage implements IStorage {
 
   async validateProMembership(playerId: string): Promise<boolean> {
     const player = this.players.get(playerId);
-    return player?.membershipTier === "pro";
+    return player?.membershipTier === "premium" || player?.membershipTier === "elite";
   }
 
   async createTeamChallengeWithParticipants(
