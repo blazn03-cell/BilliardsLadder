@@ -604,7 +604,7 @@ async function handleSubscription(storage: IStorage, subscription: any): Promise
             cancelAtPeriodEnd,
             monthlyPrice: subscription.items.data[0]?.price?.unit_amount || 0,
             perks: [],
-            commissionRate: tier === 'rookie' ? 1000 : tier === 'standard' ? 800 : 500
+            commissionRate: tier === 'elite' ? 200 : tier === 'premium' ? 300 : tier === 'family' ? 400 : tier === 'standard' ? 400 : 400
           });
         } catch (error: any) {
           console.error(`❌ Failed to create membership subscription for user ${userId}:`, error.message);
