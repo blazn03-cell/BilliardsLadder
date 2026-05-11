@@ -211,7 +211,7 @@ function CreatePlayerDialog() {
                   <div className="space-y-0.5">
                     <FormLabel className="text-gray-300">Membership</FormLabel>
                     <div className="text-sm text-gray-400">
-                      Members pay 5% commission, non-members pay 15%
+                      Members get reduced stake fees (2–4% by tier)
                     </div>
                   </div>
                   <FormControl>
