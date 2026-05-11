@@ -11,23 +11,23 @@ export const MEMBERSHIP_TIERS = {
   get ROOKIE() {
     const config = getCurrentConfig();
     return {
-      name: "Rookie",
+      name: "Rookie Pass",
       price: config.membershipPricing.rookie,
       commissionRate: config.commissionRates.rookie,
-      challengerFee: 0,
-      perks: ["entry_tier", "3_4_matches_included", "local_ladder_access"],
-      description: "Entry tier - Half the cost of APA! 3-4 matches included",
+      challengerFee: 200, // $2 shift deposit per match
+      perks: ["rookie_ladder_access", "quarterly_cash_prizes", "credits_convert_to_cash", "low_stakes_matches"],
+      description: "Rookie ladder access with quarterly cash prizes — starts at $9.99/mo",
     };
   },
   get STANDARD() {
     const config = getCurrentConfig();
     return {
-      name: "Standard",
+      name: "Basic",
       price: config.membershipPricing.standard,
       commissionRate: config.commissionRates.standard,
-      challengerFee: 6000,
-      perks: ["$60_challenger_fee_per_match", "unlimited_local_ladder", "priority_matching", "weekly_bonus_eligible"],
-      description: "Unlimited local ladder with $60 challenger fee per match",
+      challengerFee: 0,
+      perks: ["unlimited_challenges", "4pct_stake_fee", "150_max_stake", "full_open_ladder", "consistency_bonuses", "monthly_tournament"],
+      description: "Full open ladder with consistency bonuses and tournament access",
     };
   },
   get PREMIUM() {
@@ -36,9 +36,9 @@ export const MEMBERSHIP_TIERS = {
       name: "Premium",
       price: config.membershipPricing.premium,
       commissionRate: config.commissionRates.premium,
-      challengerFee: 6000,
-      perks: ["$60_challenger_fee_per_match", "unlimited_all_ladders", "hall_city_state_access", "stream_perks", "priority_support"],
-      description: "All ladders + stream perks with $60 challenger fee per match",
+      challengerFee: 0,
+      perks: ["3pct_stake_fee", "1000_max_stake", "ai_coach", "advanced_analytics", "priority_matchmaking", "no_ads", "verified_badge"],
+      description: "Lower fees, higher stakes, AI coaching, and priority matchmaking",
     };
   },
 } as const;
@@ -146,8 +146,8 @@ export function calculateSavings(tier: string, monthlyMatches: number): {
     throw new Error("Invalid membership tier");
   }
 
-  // Real league costs: APA/BCA $43-45/month + $25 annual fee, Bar leagues $32-34/month
-  const competitorMonthlyCost = 4300; // $43/month APA average (+ annual fees)
+  // Traditional league costs: APA/BCA $43-80/month + annual fees, Bar leagues $32-50/month
+  const competitorMonthlyCost = 8000; // $80/month traditional league average
   const competitorMatchFee = 1000; // $10/match
 
   const actionLadderMonthlyCost = tierConfig.price;
