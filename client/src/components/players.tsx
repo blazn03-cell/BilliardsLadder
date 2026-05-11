@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { Switch } from "@/components/ui/switch";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useForm } from "react-hook-form";
@@ -29,7 +29,6 @@ const playerSchema = z.object({
 
 type PlayerFormData = z.infer<typeof playerSchema>;
 
-const cities = ["Austin", "San Antonio", "Dallas", "Houston", "New York", "Chicago", "Los Angeles", "Phoenix", "Other"];
 
 function CreatePlayerDialog() {
   const [open, setOpen] = useState(false);
@@ -140,20 +139,13 @@ function CreatePlayerDialog() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-gray-300">City</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-player-city">
-                          <SelectValue placeholder="Select city" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {cities.map((city) => (
-                          <SelectItem key={city} value={city}>
-                            {city}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter city"
+                        data-testid="select-player-city"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

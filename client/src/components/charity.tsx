@@ -408,7 +408,7 @@ export default function Charity() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">❤️ Charity Events</h1>
-          <p className="text-gray-400">Supporting our tri-city community</p>
+          <p className="text-gray-400">Supporting communities nationwide</p>
         </div>
         <CreateCharityEventDialog />
       </div>

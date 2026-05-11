@@ -91,9 +91,9 @@ interface TeamStripeAccount {
 // Mock team data (in real app, this would come from API)
 const mockTeams = [
   { id: "team1", name: "Lakeside Sharks", city: "Chicago", state: "Illinois" },
-  { id: "team2", name: "Austin Aces", city: "Austin", state: "Texas" },
-  { id: "team3", name: "Dallas Dragons", city: "Dallas", state: "Texas" },
-  { id: "team4", name: "Houston Hustlers", city: "Houston", state: "Texas" },
+  { id: "team2", name: "Phoenix Aces", city: "Phoenix", state: "Arizona" },
+  { id: "team3", name: "Denver Dragons", city: "Denver", state: "Colorado" },
+  { id: "team4", name: "Atlanta Hustlers", city: "Atlanta", state: "Georgia" },
 ];
 
 export default function MatchDivisions() {
@@ -574,7 +574,7 @@ export default function MatchDivisions() {
                       <Badge variant="outline" className="border-yellow-500 text-yellow-300">Scheduled</Badge>
                     </div>
                     <div className="text-sm text-gray-400">
-                      <div>Texas vs Oklahoma</div>
+                      <div>East vs West</div>
                       <div>Entry: $1,000/player • Stakes: $20,000</div>
                       <div>Next Friday</div>
                     </div>
