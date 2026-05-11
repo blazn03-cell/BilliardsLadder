@@ -115,7 +115,7 @@ export default function TeamChallenges() {
     <div className="space-y-6 p-6">
       <div className="text-center">
         <h1 className="text-3xl font-bold text-white mb-2">Team Challenges</h1>
-        <p className="text-gray-300">Pro Membership Required • $10 - $10,000 Range</p>
+        <p className="text-gray-300">Premium Membership Required • $10 - $10,000 Range</p>
       </div>
 
       {/* Challenge Types Overview */}
@@ -147,7 +147,7 @@ export default function TeamChallenges() {
                 ) : (
                   <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
                     <Shield className="h-4 w-4" />
-                    Pro Membership only
+                    Premium Membership only
                   </div>
                 )}
                 <div className="text-sm text-gray-400">

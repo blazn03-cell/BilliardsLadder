@@ -153,7 +153,7 @@ function CommissionRates() {
                 </div>
               </div>
               <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-3">
-                <div className="text-green-400 font-semibold">Pro Members</div>
+                <div className="text-green-400 font-semibold">Premium Members</div>
                 <div className="text-sm text-gray-300 mt-1">
                   Platform: 8% • Operator: 7%
                 </div>
