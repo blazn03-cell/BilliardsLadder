@@ -16,6 +16,7 @@ import { setupFinancialRoutes } from "./routes/financial.routes";
 import { setupPredictionRoutes } from "./routes/prediction.routes";
 import { setupCharityRoutes } from "./routes/charity.routes";
 import { setupTrainingRoutes } from "./routes/training.routes";
+import { setupShopRoutes } from "./routes/shop.routes";
 import { setupAIRoutes } from "./routes/ai.routes";
 import { setupSupportRoutes } from "./routes/support.routes";
 import { setupStreamRoutes } from "./routes/stream.routes";
@@ -127,6 +128,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register training routes (training sessions, insights, rewards)
   setupTrainingRoutes(app, storage);
+
+  // Register shop/rewards routes (credits, shop items, badges, daily missions)
+  setupShopRoutes(app);
   
   // Register AI routes (coaching, commentary, predictions, analysis)
   setupAIRoutes(app);
