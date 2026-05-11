@@ -93,10 +93,10 @@ export const players = pgTable("players", {
   rookieLosses: integer("rookie_losses").default(0), // Track rookie division losses
   rookiePoints: integer("rookie_points").default(0), // Separate rookie points system
   rookieStreak: integer("rookie_streak").default(0), // Current rookie win streak
-  rookiePassActive: boolean("rookie_pass_active").default(false), // $20/month subscription
+  rookiePassActive: boolean("rookie_pass_active").default(false), // $9.99/month subscription
   rookiePassExpiresAt: timestamp("rookie_pass_expires_at"), // When subscription expires
   graduatedAt: timestamp("graduated_at"), // When they left rookie division
-  membershipTier: text("membership_tier").default("none"), // "none", "basic", "pro"
+  membershipTier: text("membership_tier").default("none"), // "none", "rookie", "basic", "premium", "family", "elite"
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -401,7 +401,7 @@ export const createPlayerSchema = z.object({
   city: z.string().min(2),
   state: z.string().min(2),
   tier: z.enum(["rookie", "barbox", "eight_foot", "nine_foot"]),
-  membershipTier: z.enum(["none", "basic", "pro"]).default("none"),
+  membershipTier: z.enum(["none", "rookie", "basic", "premium", "family", "elite"]).default("none"),
 });
 
 export const loginSchema = z.object({
@@ -920,7 +920,7 @@ export const teamChallengeParticipants = pgTable("team_challenge_participants", 
   playerId: text("player_id").notNull(),
   feeContribution: integer("fee_contribution").notNull(), // Individual player's fee in cents
   hasPaid: boolean("has_paid").default(false), // Payment status
-  membershipTier: text("membership_tier").notNull(), // Must be "pro" for team challenges
+  membershipTier: text("membership_tier").notNull(), // Must be "premium" or higher for team challenges
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -1335,7 +1335,7 @@ export const tutoringCredits = pgTable("tutoring_credits", {
 export const commissionRates = pgTable("commission_rates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   operatorId: text("operator_id").notNull(), // References users table
-  membershipTier: text("membership_tier").notNull(), // "none", "basic", "pro"
+  membershipTier: text("membership_tier").notNull(), // "none", "rookie", "basic", "premium", "family", "elite"
   platformCommissionBps: integer("platform_commission_bps").notNull(), // Basis points (1000 = 10%)
   operatorCommissionBps: integer("operator_commission_bps").notNull(), // Basis points
   escrowCommissionBps: integer("escrow_commission_bps").default(250), // 2.5% default for sidepots
@@ -1364,7 +1364,7 @@ export const membershipEarnings = pgTable("membership_earnings", {
   subscriptionId: text("subscription_id").notNull(), // Stripe subscription ID
   operatorId: text("operator_id").notNull(),
   playerId: text("player_id").notNull(),
-  membershipTier: text("membership_tier").notNull(), // "rookie", "basic", "pro"
+  membershipTier: text("membership_tier").notNull(), // "rookie", "basic", "premium", "family", "elite"
   grossAmount: integer("gross_amount").notNull(), // Total membership fee
   platformAmount: integer("platform_amount").notNull(), // Platform share
   operatorAmount: integer("operator_amount").notNull(), // Operator commission
