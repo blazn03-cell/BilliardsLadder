@@ -291,8 +291,8 @@ function QRCodeSection() {
 
       // This would normally use real player data
       const posterData = {
-        player1: { name: "Tyga Hoodz", rating: 620, city: "San Marcos" },
-        player2: { name: "Jesse — The Spot", rating: 605, city: "Seguin" },
+        player1: { name: "Tyga Hoodz", rating: 620, city: "Chicago" },
+        player2: { name: "Jesse — The Spot", rating: 605, city: "Houston" },
         event: {
           title: "Friday Night Fights",
           date: "This Friday 8PM",

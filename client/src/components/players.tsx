@@ -29,7 +29,7 @@ const playerSchema = z.object({
 
 type PlayerFormData = z.infer<typeof playerSchema>;
 
-const cities = ["Seguin", "New Braunfels", "San Marcos", "Austin", "San Antonio"];
+const cities = ["Austin", "San Antonio", "Dallas", "Houston", "New York", "Chicago", "Los Angeles", "Phoenix", "Other"];
 
 function CreatePlayerDialog() {
   const [open, setOpen] = useState(false);
@@ -41,7 +41,7 @@ function CreatePlayerDialog() {
     defaultValues: {
       name: "",
       rating: 500,
-      city: "Seguin",
+      city: "Austin",
       member: false,
       theme: "",
       points: 800,

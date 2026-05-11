@@ -90,7 +90,7 @@ interface TeamStripeAccount {
 
 // Mock team data (in real app, this would come from API)
 const mockTeams = [
-  { id: "team1", name: "Seguin Sharks", city: "Seguin", state: "Texas" },
+  { id: "team1", name: "Lakeside Sharks", city: "Chicago", state: "Illinois" },
   { id: "team2", name: "Austin Aces", city: "Austin", state: "Texas" },
   { id: "team3", name: "Dallas Dragons", city: "Dallas", state: "Texas" },
   { id: "team4", name: "Houston Hustlers", city: "Houston", state: "Texas" },
@@ -550,7 +550,7 @@ export default function MatchDivisions() {
                       <Badge className="bg-green-900 text-green-300">Won</Badge>
                     </div>
                     <div className="text-sm text-gray-400">
-                      <div>Seguin Sharks vs Austin Aces</div>
+                      <div>Lakeside Sharks vs Austin Aces</div>
                       <div>Entry: $50/player • Prize: $400</div>
                       <div>2 days ago</div>
                     </div>

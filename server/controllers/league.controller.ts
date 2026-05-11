@@ -8,7 +8,7 @@ export function getLeagueStandings(storage: IStorage) {
         {
           id: "hall-001",
           name: "Rack & Roll Billiards",
-          city: "San Marcos",
+          city: "Chicago",
           wins: 12,
           losses: 3,
           points: 850,
