@@ -1456,7 +1456,7 @@ export class MemStorage implements IStorage {
         rookiePassActive: false,
         rookiePassExpiresAt: null,
         graduatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        membershipTier: "pro",
+        membershipTier: "premium",
         createdAt: new Date(),
       },
       {
@@ -3698,7 +3698,7 @@ export class MemStorage implements IStorage {
 
   async validateProMembership(playerId: string): Promise<boolean> {
     const player = this.players.get(playerId);
-    return player?.membershipTier === "pro";
+    return player?.membershipTier === "premium" || player?.membershipTier === "elite";
   }
 
   async createTeamChallengeWithParticipants(

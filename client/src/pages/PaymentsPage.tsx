@@ -56,7 +56,7 @@ const PaymentsPage: React.FC = () => {
       amount: '$200',
       description: 'High Stakes Entry',
       mode: 'payment',
-      metadata: { type: 'high_stakes', tier: 'pro' }
+      metadata: { type: 'high_stakes', tier: 'premium' }
     },
     {
       priceId: 'price_1QZtpFJKQVJqL5dGYJhCyGP5',
@@ -67,17 +67,17 @@ const PaymentsPage: React.FC = () => {
     },
     {
       priceId: 'price_1QZtpFJKQVJqL5dGYJhCyGP6',
-      amount: '$25/month',
+      amount: '$24.99/month',
       description: 'Basic Membership',
       mode: 'subscription',
       metadata: { type: 'membership', tier: 'basic' }
     },
     {
       priceId: 'price_1QZtpFJKQVJqL5dGYJhCyGP7',
-      amount: '$45/month',
-      description: 'Pro Membership',
+      amount: '$34.99/month',
+      description: 'Premium Membership',
       mode: 'subscription',
-      metadata: { type: 'membership', tier: 'pro' }
+      metadata: { type: 'membership', tier: 'premium' }
     }
   ];
 

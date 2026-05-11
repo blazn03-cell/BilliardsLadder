@@ -222,7 +222,7 @@ export class RevenueConfigService {
   }
 
   // PART 3: Player Subscription Splits (ALL IN CENTS)
-  getSubscriptionSplits(tier: 'rookie' | 'amateur' | 'pro'): {
+  getSubscriptionSplits(tier: 'rookie' | 'basic' | 'premium' | 'family' | 'elite'): {
     tier: string;
     totalCents: number;
     splits: {
@@ -236,39 +236,63 @@ export class RevenueConfigService {
   } {
     const subscriptionSplits = {
       rookie: {
-        tier: 'Rookie',
-        totalCents: 2500, // $25
+        tier: 'Rookie Pass',
+        totalCents: 999, // $9.99
+        splits: {
+          tournamentSpecials: { cents: 280, percentage: 28 },
+          operatorCut: { cents: 250, percentage: 25 },
+          playerIncentives: { cents: 200, percentage: 20 },
+          trusteesAdmin: { cents: 150, percentage: 15 },
+          growthFund: { cents: 100, percentage: 10 },
+          founder: { cents: 19, percentage: 2 },
+        },
+      },
+      basic: {
+        tier: 'Basic',
+        totalCents: 2499, // $24.99
         splits: {
           tournamentSpecials: { cents: 700, percentage: 28 },
           operatorCut: { cents: 625, percentage: 25 },
           playerIncentives: { cents: 500, percentage: 20 },
-          trusteesAdmin: { cents: 375, percentage: 15 },
-          growthFund: { cents: 250, percentage: 10 },
-          founder: { cents: 50, percentage: 2 },
+          trusteesAdmin: { cents: 350, percentage: 14 },
+          growthFund: { cents: 200, percentage: 8 },
+          founder: { cents: 124, percentage: 5 },
         },
       },
-      amateur: {
-        tier: 'Amateur',
-        totalCents: 3500, // $35
+      premium: {
+        tier: 'Premium',
+        totalCents: 3499, // $34.99
         splits: {
           tournamentSpecials: { cents: 980, percentage: 28 },
           operatorCut: { cents: 875, percentage: 25 },
           playerIncentives: { cents: 700, percentage: 20 },
-          trusteesAdmin: { cents: 490, percentage: 14 },
-          growthFund: { cents: 280, percentage: 8 },
-          founder: { cents: 175, percentage: 5 },
+          trusteesAdmin: { cents: 455, percentage: 13 },
+          growthFund: { cents: 245, percentage: 7 },
+          founder: { cents: 244, percentage: 7 },
         },
       },
-      pro: {
-        tier: 'Pro',
-        totalCents: 5000, // $50
+      family: {
+        tier: 'Family',
+        totalCents: 4499, // $44.99
         splits: {
-          tournamentSpecials: { cents: 1400, percentage: 28 },
-          operatorCut: { cents: 1250, percentage: 25 },
-          playerIncentives: { cents: 1000, percentage: 20 },
-          trusteesAdmin: { cents: 650, percentage: 13 }, // Reduced from 14% to 13% to total exactly 100%
-          growthFund: { cents: 350, percentage: 7 },
-          founder: { cents: 350, percentage: 7 },
+          tournamentSpecials: { cents: 1260, percentage: 28 },
+          operatorCut: { cents: 1125, percentage: 25 },
+          playerIncentives: { cents: 900, percentage: 20 },
+          trusteesAdmin: { cents: 585, percentage: 13 },
+          growthFund: { cents: 315, percentage: 7 },
+          founder: { cents: 314, percentage: 7 },
+        },
+      },
+      elite: {
+        tier: 'Elite',
+        totalCents: 9900, // $99
+        splits: {
+          tournamentSpecials: { cents: 2772, percentage: 28 },
+          operatorCut: { cents: 2475, percentage: 25 },
+          playerIncentives: { cents: 1980, percentage: 20 },
+          trusteesAdmin: { cents: 1287, percentage: 13 },
+          growthFund: { cents: 693, percentage: 7 },
+          founder: { cents: 693, percentage: 7 },
         },
       },
     };

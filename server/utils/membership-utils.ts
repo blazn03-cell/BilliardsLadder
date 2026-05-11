@@ -1,7 +1,7 @@
-// League membership utility functions for Basic and Pro tiers
+// League membership utility functions for all subscription tiers
 
 export interface LeagueMembershipBenefits {
-  leagueFeeRate: number; // Decimal (0.05 = 5%)
+  leagueFeeRate: number; // Decimal (0.04 = 4%)
   freeTournaments: boolean;
   tournamentEntryFee: number; // Cents
   perks: string[];
@@ -9,35 +9,75 @@ export interface LeagueMembershipBenefits {
 
 export function getLeagueMembershipBenefits(membershipTier: string): LeagueMembershipBenefits {
   switch (membershipTier) {
-    case 'basic':
+    case 'rookie':
       return {
-        leagueFeeRate: 0.05, // 5% league fee (rounded up)
+        leagueFeeRate: 0.04, // 4% stake fee
         freeTournaments: false,
-        tournamentEntryFee: 2500, // $25 (can be $25-30 range)
+        tournamentEntryFee: 3000, // $30
         perks: [
           'Jump in the ladder',
-          '5% league dues (rounded up)',
+          '4% stake fee',
+          'Tournament entry: $30'
+        ]
+      };
+
+    case 'basic':
+    case 'standard':
+      return {
+        leagueFeeRate: 0.04, // 4% stake fee
+        freeTournaments: false,
+        tournamentEntryFee: 2500, // $25
+        perks: [
+          'Jump in the ladder',
+          '4% stake fee',
           'Tournament entry: $25–30'
         ]
       };
-    
+
+    case 'premium':
     case 'pro':
       return {
-        leagueFeeRate: 0.03, // 3% league fee (lower than Basic)
+        leagueFeeRate: 0.03, // 3% stake fee
         freeTournaments: true,
         tournamentEntryFee: 0, // FREE tournament entry
         perks: [
           'FREE tournament entry (worth $25–30)',
-          'Lower league fees (3%)',
+          'Lower stake fees (3%)',
           'Premium perks (priority seeding, livestream)',
-          'Tutor Bonus: $15 credit per session',
-          'Effective cost: $45/month (with 2 tutoring sessions)'
+          'Advanced analytics & coaching tools'
         ]
       };
-    
+
+    case 'family':
+      return {
+        leagueFeeRate: 0.04, // 4% stake fee
+        freeTournaments: true,
+        tournamentEntryFee: 0,
+        perks: [
+          'Up to 4 family members',
+          '4% stake fee per match',
+          'FREE tournament entry',
+          'Family leaderboard'
+        ]
+      };
+
+    case 'elite':
+      return {
+        leagueFeeRate: 0.02, // 2% stake fee
+        freeTournaments: true,
+        tournamentEntryFee: 0,
+        perks: [
+          'Lowest stake fees (2%)',
+          'FREE tournament entry',
+          'VIP seeding & livestream',
+          'Priority matchmaking',
+          'Dedicated support'
+        ]
+      };
+
     default: // 'none' or no membership
       return {
-        leagueFeeRate: 0.15, // 15% league fee for non-members
+        leagueFeeRate: 0.15, // 15% stake fee for non-members
         freeTournaments: false,
         tournamentEntryFee: 3000, // $30 for non-members
         perks: []
