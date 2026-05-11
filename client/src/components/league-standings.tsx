@@ -193,7 +193,7 @@ export default function LeagueStandings() {
       <div className="text-center">
         <h1 className="text-4xl font-bold text-white mb-2">ACTIONLADDER POOL LEAGUE</h1>
         <p className="text-gray-400">Official Hall vs Hall Competition</p>
-        <div className="text-sm text-green-400 mt-1">Seguin • New Braunfels • San Marcos</div>
+        <div className="text-sm text-green-400 mt-1">Nationwide Pool League</div>
       </div>
 
       <SeasonSelector />

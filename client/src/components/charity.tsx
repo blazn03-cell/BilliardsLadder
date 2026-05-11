@@ -370,7 +370,7 @@ function CharityInfo() {
           <div className="flex items-start space-x-2">
             <span className="text-pink-400 font-bold">•</span>
             <span className="text-gray-300">
-              <span className="text-white font-semibold">Local Focus:</span> All events benefit Seguin, New Braunfels, and San Marcos communities
+              <span className="text-white font-semibold">Community Focus:</span> All events benefit local communities nationwide
             </span>
           </div>
           <div className="flex items-start space-x-2">
