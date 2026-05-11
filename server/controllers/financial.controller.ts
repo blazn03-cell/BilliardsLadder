@@ -15,11 +15,13 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : (null as unknown as Stripe);
 
-// Stripe Price IDs for ActionLadder Commission System
+// Stripe Price IDs — see routes.ts NOTE about recreating products at correct prices
 const prices = {
-  rookie_monthly: "price_1S36UcDc2BliYufwVpgpOph9",
-  basic_monthly: "price_1S36UcDc2BliYufwF8R8w5BY",
-  pro_monthly: "price_1S36UdDc2BliYufwGZmAEVPq",
+  rookie_monthly: process.env.PLAYER_ROOKIE_MONTHLY_PRICE_ID || "price_1S36UcDc2BliYufwVpgpOph9",
+  basic_monthly: process.env.PLAYER_BASIC_MONTHLY_PRICE_ID || "price_1S36UcDc2BliYufwF8R8w5BY",
+  premium_monthly: process.env.PLAYER_PREMIUM_MONTHLY_PRICE_ID || "price_1S36UdDc2BliYufwGZmAEVPq",
+  family_monthly: process.env.PLAYER_FAMILY_MONTHLY_PRICE_ID || "",
+  elite_monthly: process.env.PLAYER_ELITE_MONTHLY_PRICE_ID || "",
   small: process.env.SMALL_PRICE_ID,
   medium: process.env.MEDIUM_PRICE_ID,
   large: process.env.LARGE_PRICE_ID,

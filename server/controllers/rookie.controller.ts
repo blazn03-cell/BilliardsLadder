@@ -7,7 +7,8 @@ const stripe = process.env.STRIPE_SECRET_KEY
   : (null as unknown as Stripe);
 
 const prices = {
-  rookie_monthly: "price_1S36UcDc2BliYufwVpgpOph9",
+  // Rookie Pass $9.99/mo — update PLAYER_ROOKIE_MONTHLY_PRICE_ID env var when Stripe product is re-created at new price
+  rookie_monthly: process.env.PLAYER_ROOKIE_MONTHLY_PRICE_ID || "price_1S36UcDc2BliYufwVpgpOph9",
 };
 
 export function getAllRookieMatches(storage: IStorage) {
