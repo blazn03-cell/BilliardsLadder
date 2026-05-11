@@ -64,6 +64,7 @@ import TrainingSession from "@/pages/TrainingSession";
 import CoachFeedback from "@/pages/CoachFeedback";
 import AdminTrainingRewards from "@/pages/AdminTrainingRewards";
 import PlayerCareerDashboard from "@/pages/PlayerCareerDashboard";
+import EarningReference from "@/pages/EarningReference";
 const logoBackground = "/images/logo-background.png";
 // Auth-protected route component
 function AppContent({ activeTab }: { activeTab: string }) {
@@ -150,6 +151,7 @@ function AppContent({ activeTab }: { activeTab: string }) {
         {activeTab === "revenue-admin" && <RevenueAdmin />}
         {activeTab === "challenge-calendar" && <ChallengeCalendar />}
         {activeTab === "admin-training-rewards" && <AdminTrainingRewards />}
+        {activeTab === "earning-reference" && <EarningReference />}
       </div>
       <RealTimeNotifications />
     </>
@@ -205,6 +207,7 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
       items: [
         { id: "player-subscription", label: "💳 Subscription Plans", requiresAuth: true },
         { id: "checkout", label: "💰 Billing & Payments", requiresAuth: true },
+        { id: "earning-reference", label: "📋 Earning Reference" },
         { id: "monetization", label: "📊 Revenue Dashboard", roles: ["OWNER", "OPERATOR", "TRUSTEE"] as GlobalRole[], requiresAuth: true },
       ]
     },
