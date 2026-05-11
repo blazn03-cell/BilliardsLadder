@@ -47,9 +47,9 @@ export const DEFAULT_REVENUE_CONFIG: RevenueConfig = {
     premium: 3400,           // 34% for premium members
   },
   membershipPricing: {
-    rookie: 2000,            // $20/month
-    standard: 3000,          // $30/month
-    premium: 4000,           // $40/month
+    rookie: 999,             // $9.99/month (Rookie Pass)
+    standard: 2499,          // $24.99/month (Basic)
+    premium: 3499,           // $34.99/month (Premium)
   },
   settings: {
     roundUpEnabled: true,
@@ -78,9 +78,9 @@ export const ALTERNATIVE_CONFIGS: RevenueConfig[] = [
       premium: 3200,
     },
     membershipPricing: {
-      rookie: 2000,
-      standard: 3000,
-      premium: 4000,
+      rookie: 999,
+      standard: 2499,
+      premium: 3499,
     },
     settings: {
       roundUpEnabled: true,
@@ -106,9 +106,9 @@ export const ALTERNATIVE_CONFIGS: RevenueConfig[] = [
       premium: 2800,
     },
     membershipPricing: {
-      rookie: 1800,            // Reduced pricing
-      standard: 2700,
-      premium: 3600,
+      rookie: 899,             // Discounted Rookie Pass
+      standard: 2249,          // Discounted Basic
+      premium: 3149,           // Discounted Premium
     },
     settings: {
       roundUpEnabled: false,   // No round-up for player benefit
