@@ -64,9 +64,9 @@ const stripe = process.env.STRIPE_SECRET_KEY
 
 // Stripe Price IDs for ActionLadder Commission System
 const prices = {
-  rookie_monthly: "price_1S36UcDc2BliYufwVpgpOph9", // ActionLadder Rookie Pass ($20/month → $4 operator commission)
-  basic_monthly: "price_1S36UcDc2BliYufwF8R8w5BY", // ActionLadder Basic Membership ($25/month → $7 operator commission)
-  pro_monthly: "price_1S36UdDc2BliYufwGZmAEVPq", // ActionLadder Pro Membership ($60/month → $10 operator commission)
+  rookie_monthly: "price_1S36UcDc2BliYufwVpgpOph9", // ActionLadder Rookie Pass ($9.99/month → $2 operator commission)
+  basic_monthly: "price_1S36UcDc2BliYufwF8R8w5BY", // ActionLadder Basic Membership ($24.99/month → $7 operator commission)
+  pro_monthly: "price_1S36UdDc2BliYufwGZmAEVPq", // ActionLadder Premium Membership ($34.99/month → $10 operator commission)
   small: process.env.SMALL_PRICE_ID, // Operator subscription tiers
   medium: process.env.MEDIUM_PRICE_ID,
   large: process.env.LARGE_PRICE_ID,
