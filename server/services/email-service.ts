@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 
 interface EmailOptions {
   to: string;
@@ -22,36 +22,47 @@ interface OnboardingEmailData {
   platformUrl: string;
 }
 
+const DEFAULT_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_FROM || 'noreply@actionladder.com';
+const DEFAULT_FROM_NAME = 'BilliardsLadder';
+
 class EmailService {
-  private transporter: nodemailer.Transporter;
+  private initialized = false;
 
   constructor() {
-    // Configure nodemailer (using SMTP or service like SendGrid)
-    this.transporter = nodemailer.createTransport({
-      // For development, use ethereal email (test emails)
-      host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER || 'ethereal.user@ethereal.email',
-        pass: process.env.SMTP_PASS || 'ethereal.pass'
+    const apiKey = process.env.SENDGRID_API_KEY;
+    if (apiKey) {
+      sgMail.setApiKey(apiKey);
+      this.initialized = true;
+      console.log('[EmailService] SendGrid configured successfully');
+      if (!process.env.SENDGRID_FROM_EMAIL && !process.env.EMAIL_FROM) {
+        console.warn('[EmailService] SENDGRID_FROM_EMAIL not set — using fallback sender noreply@actionladder.com');
       }
-    });
+    } else {
+      console.warn('[EmailService] SENDGRID_API_KEY not set — emails will not be sent');
+    }
   }
 
   async sendEmail(options: EmailOptions): Promise<void> {
+    if (!this.initialized) {
+      console.warn('[EmailService] Skipping email send — SendGrid not configured');
+      return;
+    }
+
     try {
-      const mailOptions = {
-        from: options.from || '"Action Ladder" <noreply@actionladder.net>',
+      const msg = {
         to: options.to,
+        from: {
+          email: options.from || DEFAULT_FROM_EMAIL,
+          name: DEFAULT_FROM_NAME,
+        },
         subject: options.subject,
         html: options.html,
       };
 
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log('Email sent:', info.messageId);
-    } catch (error) {
-      console.error('Email sending failed:', error);
+      await sgMail.send(msg);
+      console.log(`[EmailService] Email sent to ${options.to}`);
+    } catch (error: any) {
+      console.error('[EmailService] Email sending failed:', error?.response?.body || error.message || error);
       throw error;
     }
   }
@@ -442,7 +453,7 @@ class EmailService {
     appBaseUrl: string = process.env.APP_BASE_URL || "http://localhost:5000"
   ): Promise<boolean> {
     const resetUrl = `${appBaseUrl}/reset-password?token=${resetToken}`;
-    
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #065f46 0%, #047857 100%); color: white; padding: 20px; text-align: center;">
@@ -496,6 +507,77 @@ class EmailService {
       return true;
     } catch (error) {
       console.error('Failed to send password reset email:', error);
+      return false;
+    }
+  }
+  async sendVerificationEmail(
+    email: string,
+    verificationToken: string,
+    userName?: string,
+    appBaseUrl?: string
+  ): Promise<boolean> {
+    const baseUrl = appBaseUrl || process.env.APP_BASE_URL || "http://localhost:5000";
+    const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${verificationToken}`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Verify Your Email</title>
+      </head>
+      <body style="margin:0;padding:0;background-color:#000000;color:#ffffff;font-family:'Courier New',monospace;line-height:1.6;">
+        <div style="max-width:600px;margin:0 auto;padding:20px;background-color:#111111;">
+          <div style="text-align:center;padding:30px 0;border-bottom:2px solid #00ff00;margin-bottom:30px;">
+            <div style="font-size:32px;font-weight:bold;color:#00ff00;margin-bottom:10px;">BILLIARDS LADDER</div>
+            <div style="color:#888888;font-size:14px;font-style:italic;">In here, respect is earned in racks, not words</div>
+          </div>
+
+          <div style="padding:20px 0;">
+            <h2 style="color:#00ff00;margin-bottom:20px;">Verify Your Email${userName ? `, ${userName}` : ""}</h2>
+            <p style="color:#cccccc;font-size:16px;margin-bottom:25px;">
+              Welcome to the ladder. Before you can step up to the table, we need to confirm your email address.
+            </p>
+
+            <div style="text-align:center;margin:30px 0;">
+              <a href="${verifyUrl}"
+                 style="background:#059669;color:white;padding:14px 40px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block;font-size:16px;letter-spacing:1px;">
+                VERIFY EMAIL
+              </a>
+            </div>
+
+            <p style="color:#888888;font-size:14px;margin-bottom:10px;">
+              Or copy and paste this link into your browser:
+            </p>
+            <p style="color:#00ff00;font-size:13px;word-break:break-all;background:#1a1a1a;padding:12px;border-radius:4px;border:1px solid #333333;">
+              ${verifyUrl}
+            </p>
+
+            <div style="margin-top:30px;padding-top:20px;border-top:1px solid #333333;">
+              <p style="color:#666666;font-size:12px;margin:0;">
+                This link expires in 24 hours. If you didn't create an account, you can safely ignore this email.
+              </p>
+            </div>
+          </div>
+
+          <div style="background:#0a0a0a;color:#555555;padding:20px;text-align:center;font-size:12px;border-top:1px solid #222222;">
+            <p style="margin:0;">BilliardsLadder &mdash; Pool &bull; Points &bull; Pride</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    try {
+      await this.sendEmail({
+        to: email,
+        subject: "BilliardsLadder - Verify Your Email Address",
+        html,
+      });
+      return true;
+    } catch (error) {
+      console.error("Failed to send verification email:", error);
       return false;
     }
   }

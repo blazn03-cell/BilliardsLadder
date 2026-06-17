@@ -40,7 +40,7 @@ export interface PosterData {
 const themeColors = {
   dark: {
     primary: '#00ff41',
-    secondary: '#22c55e', 
+    secondary: '#22c55e',
     accent: '#85bb65',
     background: ['#1a4a2e', '#0f2818', '#0a0a0a'],
     text: '#ffffff',
@@ -75,7 +75,7 @@ const themeColors = {
 // Main poster generation function that routes to specific templates
 export function generatePoster(data: PosterData): Promise<string> {
   const template = data.design?.template || 'fight-night';
-  
+
   switch (template) {
     case 'fight-night':
       return generateFightNightPoster(data);
@@ -94,15 +94,15 @@ export function generateFightNightPoster(data: PosterData): Promise<string> {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d')!;
-    
+
     // Set canvas size
     canvas.width = 800;
     canvas.height = 1200;
-    
+
     // Get theme colors
     const theme = data.design?.theme || 'dark';
     const colors = themeColors[theme as keyof typeof themeColors];
-    
+
     // Background
     const gradient = ctx.createRadialGradient(400, 600, 0, 400, 600, 600);
     gradient.addColorStop(0, colors.background[0]);
@@ -110,7 +110,7 @@ export function generateFightNightPoster(data: PosterData): Promise<string> {
     gradient.addColorStop(1, colors.background[2]);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 800, 1200);
-    
+
     // Add subtle texture
     ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
     for (let i = 0; i < 100; i++) {
@@ -118,26 +118,26 @@ export function generateFightNightPoster(data: PosterData): Promise<string> {
       const y = Math.random() * 1200;
       ctx.fillRect(x, y, 2, 2);
     }
-    
+
     // Hype Text (AI generated)
     ctx.fillStyle = colors.primary;
     ctx.font = 'bold 52px Inter';
     ctx.textAlign = 'center';
     const hypeText = data.event.hypeText || 'FIGHT NIGHT';
     ctx.fillText(hypeText.toUpperCase(), 400, 120);
-    
+
     // Event title
     ctx.fillStyle = colors.text;
     ctx.font = 'bold 36px Inter';
     ctx.fillText(data.event.title, 400, 180);
-    
+
     // Tagline (AI generated)
     if (data.content?.tagline) {
       ctx.fillStyle = colors.accent;
       ctx.font = 'italic 18px Inter';
       ctx.fillText(data.content.tagline, 400, 210);
     }
-    
+
     // VS section with dramatic styling
     ctx.save();
     ctx.shadowColor = colors.highlight;
@@ -146,19 +146,19 @@ export function generateFightNightPoster(data: PosterData): Promise<string> {
     ctx.font = 'bold 80px Inter';
     ctx.fillText('VS', 400, 620);
     ctx.restore();
-    
+
     // Player 1 (Left side)
     ctx.textAlign = 'left';
     ctx.fillStyle = colors.text;
     ctx.font = 'bold 36px Inter';
-    
+
     // Player name with shadow effect
     ctx.save();
     ctx.shadowColor = colors.primary;
     ctx.shadowBlur = 10;
     ctx.fillText(data.player1.name.toUpperCase(), 50, 400);
     ctx.restore();
-    
+
     // Player stats
     ctx.font = '24px Inter';
     ctx.fillStyle = colors.secondary;
@@ -167,19 +167,19 @@ export function generateFightNightPoster(data: PosterData): Promise<string> {
     if (data.player1.record) {
       ctx.fillText(`Record: ${data.player1.record}`, 50, 500);
     }
-    
+
     // Player 2 (Right side)
     ctx.textAlign = 'right';
     ctx.fillStyle = colors.text;
     ctx.font = 'bold 36px Inter';
-    
+
     // Player name with shadow effect
     ctx.save();
     ctx.shadowColor = colors.primary;
     ctx.shadowBlur = 10;
     ctx.fillText(data.player2.name.toUpperCase(), 750, 400);
     ctx.restore();
-    
+
     // Player stats
     ctx.font = '24px Inter';
     ctx.fillStyle = colors.secondary;
@@ -188,7 +188,7 @@ export function generateFightNightPoster(data: PosterData): Promise<string> {
     if (data.player2.record) {
       ctx.fillText(`Record: ${data.player2.record}`, 750, 500);
     }
-    
+
     // Event details section
     ctx.textAlign = 'center';
     ctx.fillStyle = colors.text;
@@ -199,22 +199,22 @@ export function generateFightNightPoster(data: PosterData): Promise<string> {
     }
     ctx.fillText(data.event.location, 400, 880);
     ctx.fillText(data.event.stakes, 400, 920);
-    
+
     // Call to Action (AI generated)
     if (data.event.callToAction) {
       ctx.fillStyle = colors.highlight;
       ctx.font = 'bold 32px Inter';
       ctx.fillText(data.event.callToAction.toUpperCase(), 400, 980);
     }
-    
+
     // Footer branding
     ctx.fillStyle = colors.accent;
     ctx.font = 'bold 36px Inter';
-    ctx.fillText('ACTIONLADDER', 400, 1100);
+    ctx.fillText('BILLIARDSLADDER', 400, 1100);
     ctx.font = '20px Inter';
     ctx.fillStyle = colors.secondary;
     ctx.fillText('Pool. Points. Pride.', 400, 1130);
-    
+
     // Convert to blob URL
     canvas.toBlob((blob) => {
       if (blob) {
@@ -230,13 +230,13 @@ export function generateChampionshipPoster(data: PosterData): Promise<string> {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d')!;
-    
+
     canvas.width = 800;
     canvas.height = 1200;
-    
+
     const theme = data.design?.theme || 'gold';
     const colors = themeColors[theme as keyof typeof themeColors];
-    
+
     // Elegant background
     const gradient = ctx.createLinearGradient(0, 0, 0, 1200);
     gradient.addColorStop(0, colors.background[0]);
@@ -244,37 +244,37 @@ export function generateChampionshipPoster(data: PosterData): Promise<string> {
     gradient.addColorStop(1, colors.background[2]);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 800, 1200);
-    
+
     // Decorative border
     ctx.strokeStyle = colors.primary;
     ctx.lineWidth = 6;
     ctx.strokeRect(20, 20, 760, 1160);
-    
+
     // Championship banner
     ctx.fillStyle = colors.primary;
     ctx.font = 'bold 32px Inter';
     ctx.textAlign = 'center';
     ctx.fillText('CHAMPIONSHIP', 400, 80);
-    
+
     // Event title
     ctx.fillStyle = colors.text;
     ctx.font = 'bold 40px Inter';
     ctx.fillText(data.event.title, 400, 140);
-    
+
     // Hype text (AI generated)
     ctx.fillStyle = colors.accent;
     ctx.font = 'bold 28px Inter';
     ctx.fillText(data.event.hypeText || 'ELITE SHOWDOWN', 400, 180);
-    
+
     // Players in formal layout
     const centerY = 600;
-    
+
     // Player 1 - formal presentation
     ctx.textAlign = 'center';
     ctx.fillStyle = colors.text;
     ctx.font = 'bold 32px Inter';
     ctx.fillText(data.player1.name, 200, centerY - 60);
-    
+
     ctx.font = '20px Inter';
     ctx.fillStyle = colors.secondary;
     ctx.fillText(`Rating: ${data.player1.rating}`, 200, centerY - 30);
@@ -282,17 +282,17 @@ export function generateChampionshipPoster(data: PosterData): Promise<string> {
     if (data.player1.record) {
       ctx.fillText(data.player1.record, 200, centerY + 30);
     }
-    
+
     // VS separator
     ctx.fillStyle = colors.highlight;
     ctx.font = 'bold 48px Inter';
     ctx.fillText('VS', 400, centerY - 20);
-    
+
     // Player 2 - formal presentation
     ctx.fillStyle = colors.text;
     ctx.font = 'bold 32px Inter';
     ctx.fillText(data.player2.name, 600, centerY - 60);
-    
+
     ctx.font = '20px Inter';
     ctx.fillStyle = colors.secondary;
     ctx.fillText(`Rating: ${data.player2.rating}`, 600, centerY - 30);
@@ -300,7 +300,7 @@ export function generateChampionshipPoster(data: PosterData): Promise<string> {
     if (data.player2.record) {
       ctx.fillText(data.player2.record, 600, centerY + 30);
     }
-    
+
     // Event details
     ctx.fillStyle = colors.text;
     ctx.font = '24px Inter';
@@ -310,28 +310,28 @@ export function generateChampionshipPoster(data: PosterData): Promise<string> {
     }
     ctx.fillText(data.event.location, 400, 880);
     ctx.fillText(data.event.stakes, 400, 920);
-    
+
     // Call to action
     if (data.event.callToAction) {
       ctx.fillStyle = colors.primary;
       ctx.font = 'bold 28px Inter';
       ctx.fillText(data.event.callToAction, 400, 980);
     }
-    
+
     // Tagline
     if (data.content?.tagline) {
       ctx.fillStyle = colors.accent;
       ctx.font = 'italic 18px Inter';
       ctx.fillText(data.content.tagline, 400, 1020);
     }
-    
+
     // Footer
     ctx.fillStyle = colors.primary;
     ctx.font = 'bold 32px Inter';
-    ctx.fillText('ACTIONLADDER', 400, 1100);
+    ctx.fillText('BILLIARDSLADDER', 400, 1100);
     ctx.font = '18px Inter';
     ctx.fillText('Championship Series', 400, 1130);
-    
+
     canvas.toBlob((blob) => {
       if (blob) {
         resolve(URL.createObjectURL(blob));
@@ -345,17 +345,17 @@ export function generateClassicPoster(data: PosterData): Promise<string> {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d')!;
-    
+
     canvas.width = 800;
     canvas.height = 1200;
-    
+
     const theme = data.design?.theme || 'green';
     const colors = themeColors[theme as keyof typeof themeColors];
-    
+
     // Pool table felt background
     ctx.fillStyle = colors.background[1];
     ctx.fillRect(0, 0, 800, 1200);
-    
+
     // Add felt texture pattern
     ctx.fillStyle = colors.background[0];
     for (let x = 0; x < 800; x += 20) {
@@ -365,29 +365,29 @@ export function generateClassicPoster(data: PosterData): Promise<string> {
         }
       }
     }
-    
+
     // Classic billiards header
     ctx.fillStyle = colors.primary;
     ctx.font = 'bold 48px serif';
     ctx.textAlign = 'center';
     ctx.fillText('BILLIARDS CHALLENGE', 400, 100);
-    
+
     // Event title
     ctx.fillStyle = colors.text;
     ctx.font = '32px serif';
     ctx.fillText(data.event.title, 400, 150);
-    
+
     // Hype text with classic styling
     ctx.fillStyle = colors.accent;
     ctx.font = 'bold 24px serif';
     ctx.fillText(data.event.hypeText || 'CLASSIC MATCHUP', 400, 190);
-    
+
     // Players with traditional layout
     ctx.textAlign = 'left';
     ctx.fillStyle = colors.text;
     ctx.font = 'bold 28px serif';
     ctx.fillText(data.player1.name, 100, 350);
-    
+
     ctx.font = '20px serif';
     ctx.fillStyle = colors.secondary;
     ctx.fillText(`Skill Level: ${data.player1.rating}`, 100, 380);
@@ -395,19 +395,19 @@ export function generateClassicPoster(data: PosterData): Promise<string> {
     if (data.player1.record) {
       ctx.fillText(`Record: ${data.player1.record}`, 100, 440);
     }
-    
+
     // Classic VS
     ctx.textAlign = 'center';
     ctx.fillStyle = colors.highlight;
     ctx.font = 'bold 36px serif';
     ctx.fillText('VERSUS', 400, 500);
-    
+
     // Player 2
     ctx.textAlign = 'right';
     ctx.fillStyle = colors.text;
     ctx.font = 'bold 28px serif';
     ctx.fillText(data.player2.name, 700, 350);
-    
+
     ctx.font = '20px serif';
     ctx.fillStyle = colors.secondary;
     ctx.fillText(`Skill Level: ${data.player2.rating}`, 700, 380);
@@ -415,7 +415,7 @@ export function generateClassicPoster(data: PosterData): Promise<string> {
     if (data.player2.record) {
       ctx.fillText(`Record: ${data.player2.record}`, 700, 440);
     }
-    
+
     // Event information
     ctx.textAlign = 'center';
     ctx.fillStyle = colors.text;
@@ -426,28 +426,28 @@ export function generateClassicPoster(data: PosterData): Promise<string> {
     }
     ctx.fillText(`At ${data.event.location}`, 400, 760);
     ctx.fillText(data.event.stakes, 400, 790);
-    
+
     // Call to action
     if (data.event.callToAction) {
       ctx.fillStyle = colors.primary;
       ctx.font = 'bold 26px serif';
       ctx.fillText(data.event.callToAction, 400, 850);
     }
-    
+
     // Classic tagline
     if (data.content?.tagline) {
       ctx.fillStyle = colors.accent;
       ctx.font = 'italic 20px serif';
       ctx.fillText(data.content.tagline, 400, 900);
     }
-    
+
     // Traditional footer
     ctx.fillStyle = colors.primary;
     ctx.font = 'bold 28px serif';
-    ctx.fillText('ActionLadder League', 400, 1080);
+    ctx.fillText('BilliardsLadder League', 400, 1080);
     ctx.font = '16px serif';
     ctx.fillText('Established Pool Hall Competition', 400, 1110);
-    
+
     canvas.toBlob((blob) => {
       if (blob) {
         resolve(URL.createObjectURL(blob));
@@ -461,17 +461,17 @@ export function generateNeonPoster(data: PosterData): Promise<string> {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d')!;
-    
+
     canvas.width = 800;
     canvas.height = 1200;
-    
+
     const theme = data.design?.theme || 'neon';
     const colors = themeColors[theme as keyof typeof themeColors];
-    
+
     // Cyberpunk background
     ctx.fillStyle = colors.background[2];
     ctx.fillRect(0, 0, 800, 1200);
-    
+
     // Grid pattern
     ctx.strokeStyle = colors.primary;
     ctx.lineWidth = 1;
@@ -489,7 +489,7 @@ export function generateNeonPoster(data: PosterData): Promise<string> {
       ctx.stroke();
     }
     ctx.globalAlpha = 1;
-    
+
     // Neon title with glow effect
     ctx.save();
     ctx.shadowColor = colors.primary;
@@ -499,7 +499,7 @@ export function generateNeonPoster(data: PosterData): Promise<string> {
     ctx.textAlign = 'center';
     ctx.fillText('◄ NEON CHALLENGE ►', 400, 120);
     ctx.restore();
-    
+
     // Event title with cyberpunk styling
     ctx.save();
     ctx.shadowColor = colors.secondary;
@@ -508,7 +508,7 @@ export function generateNeonPoster(data: PosterData): Promise<string> {
     ctx.font = 'bold 32px monospace';
     ctx.fillText(data.event.title.toUpperCase(), 400, 170);
     ctx.restore();
-    
+
     // Hype text with electric effect
     ctx.save();
     ctx.shadowColor = colors.highlight;
@@ -517,7 +517,7 @@ export function generateNeonPoster(data: PosterData): Promise<string> {
     ctx.font = 'bold 28px monospace';
     ctx.fillText(data.event.hypeText || 'DIGITAL WARFARE', 400, 210);
     ctx.restore();
-    
+
     // Players in cyberpunk boxes
     const drawNeonBox = (x: number, y: number, width: number, height: number) => {
       ctx.strokeStyle = colors.secondary;
@@ -526,14 +526,14 @@ export function generateNeonPoster(data: PosterData): Promise<string> {
       ctx.strokeRect(x, y, width, height);
       ctx.setLineDash([]);
     };
-    
+
     // Player 1 box
     drawNeonBox(50, 300, 280, 200);
     ctx.fillStyle = colors.text;
     ctx.font = 'bold 24px monospace';
     ctx.textAlign = 'center';
     ctx.fillText(data.player1.name.toUpperCase(), 190, 340);
-    
+
     ctx.font = '16px monospace';
     ctx.fillStyle = colors.secondary;
     ctx.fillText(`[RATING: ${data.player1.rating}]`, 190, 370);
@@ -541,7 +541,7 @@ export function generateNeonPoster(data: PosterData): Promise<string> {
     if (data.player1.record) {
       ctx.fillText(`[W/L: ${data.player1.record}]`, 190, 410);
     }
-    
+
     // VS with electric effect
     ctx.save();
     ctx.shadowColor = colors.accent;
@@ -551,14 +551,14 @@ export function generateNeonPoster(data: PosterData): Promise<string> {
     ctx.textAlign = 'center';
     ctx.fillText('[ VS ]', 400, 420);
     ctx.restore();
-    
+
     // Player 2 box
     drawNeonBox(470, 300, 280, 200);
     ctx.fillStyle = colors.text;
     ctx.font = 'bold 24px monospace';
     ctx.textAlign = 'center';
     ctx.fillText(data.player2.name.toUpperCase(), 610, 340);
-    
+
     ctx.font = '16px monospace';
     ctx.fillStyle = colors.secondary;
     ctx.fillText(`[RATING: ${data.player2.rating}]`, 610, 370);
@@ -566,7 +566,7 @@ export function generateNeonPoster(data: PosterData): Promise<string> {
     if (data.player2.record) {
       ctx.fillText(`[W/L: ${data.player2.record}]`, 610, 410);
     }
-    
+
     // Event data in terminal style
     ctx.fillStyle = colors.primary;
     ctx.font = '20px monospace';
@@ -574,24 +574,24 @@ export function generateNeonPoster(data: PosterData): Promise<string> {
     ctx.fillText('> DATE:', 100, 600);
     ctx.fillStyle = colors.text;
     ctx.fillText(data.event.date, 200, 600);
-    
+
     if (data.event.time) {
       ctx.fillStyle = colors.primary;
       ctx.fillText('> TIME:', 100, 630);
       ctx.fillStyle = colors.text;
       ctx.fillText(data.event.time, 200, 630);
     }
-    
+
     ctx.fillStyle = colors.primary;
     ctx.fillText('> LOCATION:', 100, 660);
     ctx.fillStyle = colors.text;
     ctx.fillText(data.event.location, 230, 660);
-    
+
     ctx.fillStyle = colors.primary;
     ctx.fillText('> STAKES:', 100, 690);
     ctx.fillStyle = colors.text;
     ctx.fillText(data.event.stakes, 200, 690);
-    
+
     // Call to action with neon glow
     if (data.event.callToAction) {
       ctx.save();
@@ -603,7 +603,7 @@ export function generateNeonPoster(data: PosterData): Promise<string> {
       ctx.fillText(`>> ${data.event.callToAction} <<`, 400, 800);
       ctx.restore();
     }
-    
+
     // Cyberpunk tagline
     if (data.content?.tagline) {
       ctx.fillStyle = colors.accent;
@@ -611,7 +611,7 @@ export function generateNeonPoster(data: PosterData): Promise<string> {
       ctx.textAlign = 'center';
       ctx.fillText(data.content.tagline, 400, 860);
     }
-    
+
     // Neon footer
     ctx.save();
     ctx.shadowColor = colors.primary;
@@ -619,13 +619,13 @@ export function generateNeonPoster(data: PosterData): Promise<string> {
     ctx.fillStyle = colors.primary;
     ctx.font = 'bold 32px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('ACTIONLADDER.NET', 400, 1080);
+    ctx.fillText('BILLIARDSLADDER.NET', 400, 1080);
     ctx.restore();
-    
+
     ctx.fillStyle = colors.secondary;
     ctx.font = '16px monospace';
     ctx.fillText('[DIGITAL POOL ARENA]', 400, 1110);
-    
+
     canvas.toBlob((blob) => {
       if (blob) {
         resolve(URL.createObjectURL(blob));
@@ -639,10 +639,10 @@ export function generateBreakAndRunPoster(playerName: string, amount: number): P
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d')!;
-    
+
     canvas.width = 800;
     canvas.height = 800;
-    
+
     // Celebration background
     const gradient = ctx.createRadialGradient(400, 400, 0, 400, 400, 400);
     gradient.addColorStop(0, '#ffb703');
@@ -650,7 +650,7 @@ export function generateBreakAndRunPoster(playerName: string, amount: number): P
     gradient.addColorStop(1, '#0a0a0a');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 800, 800);
-    
+
     // Celebration particles
     ctx.fillStyle = '#fbbf24';
     for (let i = 0; i < 50; i++) {
@@ -661,7 +661,7 @@ export function generateBreakAndRunPoster(playerName: string, amount: number): P
       ctx.arc(x, y, size, 0, Math.PI * 2);
       ctx.fill();
     }
-    
+
     // Title with glow
     ctx.save();
     ctx.shadowColor = '#ffffff';
@@ -671,7 +671,7 @@ export function generateBreakAndRunPoster(playerName: string, amount: number): P
     ctx.textAlign = 'center';
     ctx.fillText('💥 BREAK & RUN! 💥', 400, 200);
     ctx.restore();
-    
+
     // Player name with emphasis
     ctx.save();
     ctx.shadowColor = '#ff4d6d';
@@ -680,7 +680,7 @@ export function generateBreakAndRunPoster(playerName: string, amount: number): P
     ctx.font = 'bold 48px Inter';
     ctx.fillText(playerName.toUpperCase(), 400, 300);
     ctx.restore();
-    
+
     // Amount with golden glow
     ctx.save();
     ctx.shadowColor = '#fbbf24';
@@ -689,24 +689,24 @@ export function generateBreakAndRunPoster(playerName: string, amount: number): P
     ctx.font = 'bold 72px Inter';
     ctx.fillText(`$${amount}`, 400, 450);
     ctx.restore();
-    
+
     // Celebration text
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 32px Inter';
     ctx.fillText('JACKPOT CLAIMED!', 400, 550);
-    
+
     // Achievement note
     ctx.fillStyle = '#fbbf24';
     ctx.font = '24px Inter';
     ctx.fillText('Perfect game achievement unlocked', 400, 590);
-    
+
     // Footer
     ctx.fillStyle = '#00ff41';
     ctx.font = 'bold 28px Inter';
-    ctx.fillText('ACTIONLADDER', 400, 700);
+    ctx.fillText('BILLIARDSLADDER', 400, 700);
     ctx.font = '18px Inter';
     ctx.fillText('Pool. Points. Pride.', 400, 730);
-    
+
     canvas.toBlob((blob) => {
       if (blob) {
         resolve(URL.createObjectURL(blob));

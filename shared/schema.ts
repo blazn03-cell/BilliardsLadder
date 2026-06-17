@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, real, timestamp, index, unique, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, real, timestamp, index, unique, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -28,6 +28,7 @@ export const users = pgTable("users", {
   twoFactorSecret: text("two_factor_secret"), // TOTP secret
   phoneNumber: text("phone_number"), // For SMS 2FA
   lastLoginAt: timestamp("last_login_at"),
+  lastActivityAt: timestamp("last_activity_at"),
   loginAttempts: integer("login_attempts").default(0),
   lockedUntil: timestamp("locked_until"),
   
@@ -35,10 +36,19 @@ export const users = pgTable("users", {
   globalRole: text("global_role").notNull().default("PLAYER"),
   role: text("role").default("player"), // player, operator, admin for side betting
   
+  // Email verification
+  emailVerified: boolean("email_verified").default(false),
+  verificationToken: text("verification_token"),
+  verificationTokenExpiry: timestamp("verification_token_expiry"),
+
   // Profile and status
   profileComplete: boolean("profile_complete").default(false),
   onboardingComplete: boolean("onboarding_complete").default(false),
-  accountStatus: text("account_status").default("active"), // "active", "suspended", "pending"
+  accountStatus: text("account_status").default("active"), // "active", "suspended", "banned", "pending"
+  banReason: text("ban_reason"),
+  bannedAt: timestamp("banned_at"),
+  bannedBy: text("banned_by"),
+  banExpiresAt: timestamp("ban_expires_at"),
   
   // Payment integration
   stripeCustomerId: text("stripe_customer_id"),
@@ -51,7 +61,12 @@ export const users = pgTable("users", {
   state: text("state"),
   subscriptionTier: text("subscription_tier"), // "small", "medium", "large", "mega"
   trusteeId: text("trustee_id"), // ID of trustee who signed up this operator (receives 53% of subscription)
-  
+
+  // Rack Points (gamification — non-cashable promotional currency)
+  rackPoints: integer("rack_points").notNull().default(0),
+  streakDays: integer("streak_days").notNull().default(0),
+  streakLastDay: text("streak_last_day"), // YYYY-MM-DD (UTC) — last day the streak was extended
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1197,6 +1212,34 @@ export const ledger = pgTable("ledger", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Rack Points ledger — permanent audit trail of every points event
+export const rackPointsLedger = pgTable("rack_points_ledger", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  delta: integer("delta").notNull(), // signed: + for earn, - for spend/adjustment
+  balanceAfter: integer("balance_after").notNull(),
+  reason: text("reason").notNull(), // "login_streak" | "match_win" | "upset_bonus" | "admin_adjustment" | future codes
+  refType: text("ref_type"), // "match" | "challenge" | "admin" | null
+  refId: text("ref_id"),     // ID of the related entity, when applicable
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("rack_points_ledger_user_id_idx").on(table.userId),
+  createdAtIdx: index("rack_points_ledger_created_at_idx").on(table.createdAt),
+  // Idempotency guard: a (user, reason, refId) tuple can only be awarded once.
+  // Login streaks (refId NULL) are protected separately by the streakLastDay check.
+  userReasonRefUq: uniqueIndex("rack_points_ledger_user_reason_ref_uq")
+    .on(table.userId, table.reason, table.refId)
+    .where(sql`${table.refId} IS NOT NULL`),
+}));
+
+export const insertRackPointsLedgerSchema = createInsertSchema(rackPointsLedger).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertRackPointsLedger = z.infer<typeof insertRackPointsLedgerSchema>;
+export type RackPointsLedgerEntry = typeof rackPointsLedger.$inferSelect;
+
 // Challenge pool resolutions
 export const resolutions = pgTable("resolutions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -2118,6 +2161,25 @@ export const notificationDeliveries = pgTable("notification_deliveries", {
   typeIdx: index("notification_deliveries_type_idx").on(table.type),
 }));
 
+// In-app notifications shown in the user's notification bell.
+// Distinct from notificationDeliveries which tracks outbound email/SMS/push provider routing.
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: text("user_id").notNull(),
+  type: text("type").notNull(), // "challenge", "match_result", "tournament", "ladder_change", "rookie_graduation", "hall_battle", "ban", "appeal", "payment", "system"
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  urgent: boolean("urgent").notNull().default(false),
+  actionUrl: text("action_url"),
+  refType: text("ref_type"), // e.g. "challenge", "match", "tournament", "appeal"
+  refId: text("ref_id"),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdx: index("notifications_user_idx").on(table.userId),
+  userCreatedIdx: index("notifications_user_created_idx").on(table.userId, table.createdAt),
+}));
+
 // === DISPUTE MANAGEMENT SYSTEM ===
 
 // Evidence and dispute resolution tracking
@@ -2294,6 +2356,12 @@ export const insertNotificationDeliverySchema = createInsertSchema(notificationD
   createdAt: true,
 });
 
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  readAt: true,
+  createdAt: true,
+});
+
 export const insertDisputeResolutionSchema = createInsertSchema(disputeResolutions).omit({
   id: true,
   createdAt: true,
@@ -2337,6 +2405,8 @@ export type NotificationSettings = typeof notificationSettings.$inferSelect;
 export type InsertNotificationSettings = z.infer<typeof insertNotificationSettingsSchema>;
 export type NotificationDelivery = typeof notificationDeliveries.$inferSelect;
 export type InsertNotificationDelivery = z.infer<typeof insertNotificationDeliverySchema>;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type DisputeResolution = typeof disputeResolutions.$inferSelect;
 export type InsertDisputeResolution = z.infer<typeof insertDisputeResolutionSchema>;
 export type PlayerCooldown = typeof playerCooldowns.$inferSelect;
@@ -2674,6 +2744,33 @@ export const playerEarningLedger = pgTable(
     index("idx_earning_ledger_booking").on(table.bookingId),
   ]
 );
+
+// Ban Appeals - Users can appeal bans/suspensions
+export const banAppeals = pgTable("ban_appeals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: text("user_id").notNull(),
+  userEmail: text("user_email").notNull(),
+  userName: text("user_name"),
+  reason: text("reason").notNull(),
+  supportingContext: text("supporting_context"),
+  status: text("status").notNull().default("pending"), // "pending", "approved", "denied"
+  adminResponse: text("admin_response"),
+  reviewedBy: text("reviewed_by"),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_ban_appeals_user").on(table.userId),
+  index("idx_ban_appeals_status").on(table.status),
+]);
+
+export const insertBanAppealSchema = createInsertSchema(banAppeals).omit({
+  id: true,
+  createdAt: true,
+  reviewedAt: true,
+});
+
+export type BanAppeal = typeof banAppeals.$inferSelect;
+export type InsertBanAppeal = z.infer<typeof insertBanAppealSchema>;
 
 export const insertServiceListingSchema = createInsertSchema(serviceListings).omit({
   id: true,

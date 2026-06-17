@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
+import path from "path";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { AIService } from "./services/ai-service";
@@ -24,6 +25,8 @@ import { setupQRRoutes } from "./routes/qr.routes";
 import { setupLeagueRoutes } from "./routes/league.routes";
 import { setupRookieRoutes } from "./routes/rookie.routes";
 import { setupCheckinRoutes } from "./routes/checkin.routes";
+import { setupBanAppealRoutes } from "./routes/banAppeal.routes";
+import { setupMeRoutes } from "./routes/me.routes";
 import { initializeFeeScheduler } from "./services/feeScheduler";
 import { initializeSocketManager } from "./services/challengeSocketEvents";
 import { registerAdminRoutes, registerOperatorRoutes } from "./routes/admin.routes";
@@ -32,8 +35,14 @@ import { registerHallRoutes } from "./routes/hall.routes";
 import { registerPlayerBillingRoutes } from "./services/playerBilling";
 import { registerQuickChallengeRoutes } from "./routes/quickChallenge.routes";
 import { getCareerStats, getPlayerEarnings, getPlayerServices, createPlayerService, activatePlayerService, withdrawNow } from "./controllers/playerCareer.controller";
+import {
+  getPlayerStats,
+  getPlayerChallengesSummary,
+  getPlayerLeaderboard,
+} from "./controllers/playerDashboard.controller";
 import { registerRevenueAdminRoutes } from "./routes/revenueAdmin.routes";
 import { sanitizeResponse } from "./middleware/sanitizeMiddleware";
+import { requireAnyAuth, requireStaffOrOwner } from "./middleware/auth";
 import { 
   insertPlayerSchema, insertMatchSchema, insertTournamentSchema,
   insertTournamentCalcuttaSchema, insertCalcuttaBidSchema,
@@ -64,23 +73,23 @@ const stripe = process.env.STRIPE_SECRET_KEY
 
 // Stripe Price IDs for ActionLadder Commission System
 const prices = {
-  rookie_monthly: "price_1S36UcDc2BliYufwVpgpOph9", // ActionLadder Rookie Pass ($20/month → $4 operator commission)
-  basic_monthly: "price_1S36UcDc2BliYufwF8R8w5BY", // ActionLadder Basic Membership ($25/month → $7 operator commission)
-  pro_monthly: "price_1S36UdDc2BliYufwGZmAEVPq", // ActionLadder Pro Membership ($60/month → $10 operator commission)
+  rookie_monthly: "price_1THmhwDvTG8XWAaKP5IdXAic", // ActionLadder Rookie Pass ($20/month → $4 operator commission)
+  basic_monthly: "price_1THmi0DvTG8XWAaKGZwVO8WR", // ActionLadder Basic Membership ($25/month → $7 operator commission)
+  pro_monthly: "price_1THmi2DvTG8XWAaKpyx6VNyR", // ActionLadder Pro Membership ($60/month → $10 operator commission)
   small: process.env.SMALL_PRICE_ID, // Operator subscription tiers
   medium: process.env.MEDIUM_PRICE_ID,
   large: process.env.LARGE_PRICE_ID,
   mega: process.env.MEGA_PRICE_ID,
   // Charity Donation System
-  charity_product: "prod_Sz4wWq0exnJOBv", // ActionLadder Charity Donations
+  charity_product: "prod_UGJKFusMczHWQ3", // ActionLadder Charity Donations
   charity_donations: {
-    "5": "price_1S36mVDc2BliYufwKkppBTdZ",
-    "10": "price_1S36mWDc2BliYufw9SnYauG6", 
-    "25": "price_1S36mWDc2BliYufwdLec5IH6",
-    "50": "price_1S36mWDc2BliYufwnyruktLt",
-    "100": "price_1S36mWDc2BliYufwMMQxtrpd",
-    "250": "price_1S36mXDc2BliYufw8KoRGk5g",
-    "500": "price_1S36mXDc2BliYufwhW9OUZng"
+    "5": "price_1THmi4DvTG8XWAaKLE6mESxA",
+    "10": "price_1THmi7DvTG8XWAaKdKDzSjXE", 
+    "25": "price_1THmi9DvTG8XWAaKY0S3p2Cf",
+    "50": "price_1THmiCDvTG8XWAaKbUxZQUnc",
+    "100": "price_1THmiEDvTG8XWAaK0aXNtqxB",
+    "250": "price_1THmiGDvTG8XWAaK1Lh1RO9i",
+    "500": "price_1THmiJDvTG8XWAaKPVETvXvR"
   }
 };
 
@@ -95,6 +104,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Health check endpoint (required for production deployment)
   app.get("/healthz", (_, res) => res.send("ok"));
+
+  // Serve downloadable export files (staff and owner only)
+  app.get("/api/exports/:filename", requireStaffOrOwner, (req, res) => {
+    const filename = req.params.filename.replace(/[^a-zA-Z0-9._-]/g, "");
+    const filePath = path.resolve("exports", filename);
+    if (!filePath.startsWith(path.resolve("exports"))) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    res.download(filePath, filename, (err) => {
+      if (err && !res.headersSent) {
+        res.status(404).json({ message: "File not found" });
+      }
+    });
+  });
   
   // Register authentication routes
   registerAuthRoutes(app);
@@ -128,6 +151,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register support routes (support requests)
   setupSupportRoutes(app, storage);
+
+  // Register ban appeal routes (public appeal submission and status check)
+  setupBanAppealRoutes(app);
+  setupMeRoutes(app);
 
   // Register stream routes (live streams)
   setupStreamRoutes(app, storage);
@@ -171,17 +198,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // AI Poster Generation Routes
   app.use('/api/poster', createPosterRoutes(storage));
+  app.use('/api/posters', createPosterRoutes(storage));
   
   // Payment Onboarding Routes (SetupIntent collection)
   setupPaymentOnboardingRoutes(app, storage);
   
   // Player Career Dashboard API Routes
-  app.get('/api/player/career-stats', getCareerStats);
-  app.get('/api/player/earnings', getPlayerEarnings);
-  app.get('/api/player/services', getPlayerServices);
-  app.post('/api/player/services', createPlayerService);
-  app.post('/api/player/services/:id/activate', activatePlayerService);
-  app.post('/api/player/withdraw', withdrawNow);
+  app.get('/api/player/career-stats', requireAnyAuth, getCareerStats);
+  app.get('/api/player/earnings', requireAnyAuth, getPlayerEarnings);
+  // Dashboard panels — auth checked inside the controllers
+  app.get('/api/player/stats', requireAnyAuth, getPlayerStats);
+  app.get('/api/player/challenges', requireAnyAuth, getPlayerChallengesSummary);
+  app.get('/api/player/leaderboard', requireAnyAuth, getPlayerLeaderboard);
+  app.get('/api/player/services', requireAnyAuth, getPlayerServices);
+  app.post('/api/player/services', requireAnyAuth, createPlayerService);
+  app.post('/api/player/services/:id/activate', requireAnyAuth, activatePlayerService);
+  app.post('/api/player/withdraw', requireAnyAuth, withdrawNow);
 
   // Forgot Password Routes
   setupForgotPasswordRoutes(app);

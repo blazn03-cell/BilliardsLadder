@@ -35,9 +35,15 @@ app.use(helmet({
 }));
 
 // CORS configuration for production
+const configuredOriginList = [
+  ...(process.env.APP_BASE_URL ? [process.env.APP_BASE_URL] : []),
+  ...(process.env.REPLIT_DOMAINS?.split(',').map((d) => `https://${d.trim().replace(/^https?:\/\//, "")}`) ?? []),
+  ...(process.env.RENDER_EXTERNAL_URL ? [process.env.RENDER_EXTERNAL_URL] : []),
+].filter(Boolean);
+
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.REPLIT_DOMAINS?.split(',') || [], 'https://*.replit.app'].flat()
+  origin: process.env.NODE_ENV === 'production'
+    ? configuredOriginList
     : true, // Allow all origins in development
   credentials: true,
   optionsSuccessStatus: 200,
@@ -45,14 +51,21 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Register webhook routes BEFORE body parsers (they need raw body for signature verification)
+import { registerWebhookRoutes } from "./routes/webhook.routes";
+registerWebhookRoutes(app);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Static downloads (reports, exports)
+app.use("/downloads", express.static("exports"));
+
 // Exclude webhooks from rate limiting (machine-to-machine traffic)
 const isWebhookRoute = (req: express.Request) => {
-  return req.path.includes('/webhook') || 
-         req.path.includes('/stripe-webhook') ||
-         req.headers['stripe-signature'];
+  return req.path.includes('/webhook') ||
+    req.path.includes('/stripe-webhook') ||
+    req.headers['stripe-signature'];
 };
 
 const skipWebhooks = (limiter: any) => (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -63,10 +76,11 @@ const skipWebhooks = (limiter: any) => (req: express.Request, res: express.Respo
 // Create persistent rate limiter instances at app initialization
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: 30, // BETA: increased from 5 for testing, revert to 5 for production
   message: { error: 'Too many authentication attempts, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
+  skipFailedRequests: true, // Don't count failed requests (4xx)
 });
 
 const paymentLimiter = rateLimit({
@@ -75,6 +89,7 @@ const paymentLimiter = rateLimit({
   message: { error: 'Too many payment requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
+  skipFailedRequests: true, // Don't count failed requests (4xx)
 });
 
 const generalLimiter = rateLimit({
@@ -83,6 +98,7 @@ const generalLimiter = rateLimit({
   message: { error: 'Too many API requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
+  skipFailedRequests: true, // Don't count failed requests (4xx)
 });
 
 // Apply rate limiting with webhook exclusions
@@ -156,11 +172,17 @@ if (process.env.NODE_ENV === "development") {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
+  const listenOptions: any = {
     port,
     host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+  };
+
+  // reusePort is not supported on some Windows environments (ENOTSUP), so make it optional.
+  if (process.platform !== 'win32') {
+    listenOptions.reusePort = true;
+  }
+
+  server.listen(listenOptions, () => {
     log(`serving on port ${port}`);
     logger.info(`Server started`, { port, env: process.env.NODE_ENV });
   });

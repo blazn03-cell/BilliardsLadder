@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { Settings, MapPin, Palette, Gift } from "lucide-react";
 
 interface OperatorSettings {
@@ -25,9 +26,8 @@ interface OperatorSettings {
 }
 
 export default function OperatorSettings() {
-  // For demo purposes, using a hardcoded user ID
-  // In a real app, this would come from user session/authentication
-  const operatorUserId = "demo-operator-id";
+  const { user } = useAuth();
+  const operatorUserId = user?.id || "";
   
   const [cityName, setCityName] = useState("");
   const [areaName, setAreaName] = useState("");
@@ -41,8 +41,7 @@ export default function OperatorSettings() {
   const { data: settings, isLoading } = useQuery({
     queryKey: ["/api/operator/settings", operatorUserId],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/operator/settings?userId=${operatorUserId}`);
-      return response.json();
+      return await apiRequest("GET", `/api/operator/settings?userId=${operatorUserId}`);
     },
     refetchOnMount: true,
   });
@@ -58,15 +57,17 @@ export default function OperatorSettings() {
   // Update settings mutation
   const updateSettingsMutation = useMutation({
     mutationFn: async (data: { cityName: string; areaName: string; customBranding?: string }) => {
-      const response = await apiRequest("PUT", `/api/operator/settings?userId=${operatorUserId}`, data);
-      return response.json();
+      return await apiRequest("PUT", `/api/operator/settings?userId=${operatorUserId}`, data);
     },
     onSuccess: () => {
       toast({
         title: "Settings Updated",
-        description: "Your operator settings have been saved successfully",
+        description: "Your operator settings have been saved successfully. Redirecting to subscription setup...",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/operator/settings", operatorUserId] });
+      setTimeout(() => {
+        window.location.href = "/app?tab=operator-subscriptions";
+      }, 1500);
     },
     onError: (error: any) => {
       toast({

@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 
 export default function AuthSuccess() {
@@ -11,21 +10,18 @@ export default function AuthSuccess() {
 
   useEffect(() => {
     if (!isLoading && authData) {
-      const { role, redirectUrl } = authData;
+      const { role } = authData;
       
-      // Redirect based on role
-      switch (role) {
-        case "admin":
+      const doRedirect = async () => {
+        if (role === "admin") {
           window.location.href = "/app?tab=admin";
-          break;
-        case "operator":
-          window.location.href = "/app?tab=operator-settings";
-          break;
-        case "player":
-        default:
+        } else if (role === "operator") {
           window.location.href = "/app?tab=dashboard";
-          break;
-      }
+        } else {
+          window.location.href = "/app?tab=dashboard";
+        }
+      };
+      doRedirect();
     }
   }, [authData, isLoading]);
 

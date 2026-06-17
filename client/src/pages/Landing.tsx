@@ -119,7 +119,7 @@ export default function Landing() {
                   </div>
 
                   <Button 
-                    onClick={() => window.location.href = "/app?tab=player-subscription"}
+                    onClick={() => window.location.href = "/signup?role=player"}
                     className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-emerald-500/20 transition-all duration-200"
                     data-testid="button-signup-player"
                   >
@@ -162,7 +162,7 @@ export default function Landing() {
                   </div>
 
                   <Button 
-                    onClick={() => window.location.href = "/app?tab=operator-settings"}
+                    onClick={() => window.location.href = "/signup?role=operator"}
                     className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-blue-500/20 transition-all duration-200"
                     data-testid="button-signup-operator"
                   >
@@ -178,6 +178,16 @@ export default function Landing() {
                 </CardContent>
               </Card>
 
+            </div>
+
+            <div className="text-center mt-10">
+              <a
+                href="/login"
+                className="text-gray-400 hover:text-emerald-400 transition-colors text-lg"
+                data-testid="link-login-landing"
+              >
+                Already have an account? <span className="text-emerald-400 font-medium underline underline-offset-4">Let's log you back in</span>
+              </a>
             </div>
           </div>
         </section>

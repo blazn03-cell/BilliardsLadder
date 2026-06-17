@@ -35,12 +35,16 @@ const playerTiers = [
 
 const membershipTiers = [
   { value: "none", label: "No Membership", description: "Pay per game" },
-  { value: "basic", label: "Basic Membership", description: "$25/month - Reduced fees" },
-  { value: "pro", label: "Pro Membership", description: "$60/month - Includes coaching" },
+  { value: "basic", label: "Standard Membership", description: "$24.99/month - Reduced fees" },
+  { value: "pro", label: "Elite Membership", description: "$74.99/month - Includes coaching" },
 ];
 
+const OIDC_ENABLED = String(import.meta.env.VITE_ENABLE_OIDC ?? "false").toLowerCase() === "true";
+
 export default function Signup() {
-  const [accountType, setAccountType] = useState<UserType>("player");
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialRole = urlParams.get("role") === "operator" ? "operator" : "player";
+  const [accountType, setAccountType] = useState<UserType>(initialRole);
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
 
@@ -71,17 +75,22 @@ export default function Signup() {
   });
 
   // Operator signup mutation
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
+
   const operatorSignupMutation = useMutation({
     mutationFn: (data: OperatorFormData) => apiRequest("/api/auth/signup-operator", {
       method: "POST",
       body: JSON.stringify(data),
     }),
-    onSuccess: () => {
-      toast({
-        title: "Account Created!",
-        description: "Your pool hall operator account has been created successfully.",
-      });
-      window.location.href = "/login";
+    onSuccess: (data: any, variables: OperatorFormData) => {
+      setPendingVerificationEmail(variables.email);
+      if (data?.verificationEmailSent === false) {
+        toast({
+          title: "Account created, email not sent yet",
+          description: "Use Resend Verification Email to send a fresh link.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: any) => {
       toast({
@@ -92,18 +101,20 @@ export default function Signup() {
     },
   });
 
-  // Player signup mutation
   const playerSignupMutation = useMutation({
     mutationFn: (data: PlayerFormData) => apiRequest("/api/auth/signup-player", {
       method: "POST",
       body: JSON.stringify(data),
     }),
-    onSuccess: () => {
-      toast({
-        title: "Account Created!",
-        description: "Your player account has been created successfully.",
-      });
-      window.location.href = "/login";
+    onSuccess: (data: any, variables: PlayerFormData) => {
+      setPendingVerificationEmail(variables.email);
+      if (data?.verificationEmailSent === false) {
+        toast({
+          title: "Account created, email not sent yet",
+          description: "Use Resend Verification Email to send a fresh link.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: any) => {
       toast({
@@ -127,37 +138,89 @@ export default function Signup() {
     window.location.href = "/api/login";
   };
 
+  const resendMutation = useMutation({
+    mutationFn: (emailAddr: string) => apiRequest("/api/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email: emailAddr }),
+    }),
+    onSuccess: () => {
+      toast({ title: "Sent!", description: "Check your inbox for a new verification link." });
+    },
+  });
+
+  if (pendingVerificationEmail) {
+    return (
+      <div className="min-h-screen bg-felt-dark flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-black/60 backdrop-blur-sm border border-emerald-400/20 shadow-xl">
+          <CardHeader className="text-center space-y-4">
+            <div className="mx-auto w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
+              <Mail className="h-8 w-8 text-emerald-400" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-emerald-300" data-testid="text-check-email-title">
+              Check Your Email
+            </CardTitle>
+            <p className="text-gray-400 text-sm">
+              We've sent a verification link to{" "}
+              <span className="text-white font-medium">{pendingVerificationEmail}</span>.
+              Click the link in the email to verify your account, then you can log in.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              onClick={() => resendMutation.mutate(pendingVerificationEmail)}
+              variant="outline"
+              className="w-full border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-300"
+              disabled={resendMutation.isPending}
+              data-testid="button-resend-signup"
+            >
+              {resendMutation.isPending ? "Sending..." : "Resend Verification Email"}
+            </Button>
+            <Link href="/login">
+              <Button variant="ghost" className="w-full text-gray-400 hover:text-white" data-testid="button-go-login-after-signup">
+                Go to Login
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-felt-dark flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-black/60 backdrop-blur-sm border border-emerald-400/20 shadow-xl">
         <CardHeader className="text-center space-y-2">
           <CardTitle className="text-2xl font-bold text-emerald-300">
-            Join ActionLadder
+            Join BilliardsLadder
           </CardTitle>
           <p className="text-gray-400 text-sm">
             Create your account to start competing
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Google Signup Button */}
-          <Button
-            onClick={handleGoogleSignup}
-            variant="outline"
-            className="w-full border-gray-600 hover:bg-gray-800 text-white"
-            data-testid="button-google-signup"
-          >
-            <Chrome className="mr-2 h-4 w-4" />
-            Continue with Google
-          </Button>
+          {OIDC_ENABLED && (
+            <>
+              {/* Google Signup Button */}
+              <Button
+                onClick={handleGoogleSignup}
+                variant="outline"
+                className="w-full border-gray-600 hover:bg-gray-800 text-white"
+                data-testid="button-google-signup"
+              >
+                <Chrome className="mr-2 h-4 w-4" />
+                Continue with Google
+              </Button>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-600" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-black px-2 text-gray-400">Or create account</span>
-            </div>
-          </div>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-gray-600" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-black px-2 text-gray-400">Or create account</span>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Account Type Selection */}
           <div className="space-y-3">
@@ -167,11 +230,10 @@ export default function Signup() {
                 type="button"
                 variant={accountType === "player" ? "default" : "outline"}
                 onClick={() => setAccountType("player")}
-                className={`h-auto py-3 px-4 ${
-                  accountType === "player"
+                className={`h-auto py-3 px-4 ${accountType === "player"
                     ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                     : "border-gray-600 hover:bg-gray-800 text-white"
-                }`}
+                  }`}
                 data-testid="button-select-player"
               >
                 <User className="h-4 w-4 mb-1" />
@@ -181,11 +243,10 @@ export default function Signup() {
                 type="button"
                 variant={accountType === "operator" ? "default" : "outline"}
                 onClick={() => setAccountType("operator")}
-                className={`h-auto py-3 px-4 ${
-                  accountType === "operator"
+                className={`h-auto py-3 px-4 ${accountType === "operator"
                     ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                     : "border-gray-600 hover:bg-gray-800 text-white"
-                }`}
+                  }`}
                 data-testid="button-select-operator"
               >
                 <Building2 className="h-4 w-4 mb-1" />
@@ -328,7 +389,7 @@ export default function Signup() {
                             <SelectValue placeholder="Select your skill level" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="z-[100]">
                           {playerTiers.map((tier) => (
                             <SelectItem key={tier.value} value={tier.value}>
                               <div>
@@ -356,7 +417,7 @@ export default function Signup() {
                             <SelectValue placeholder="Select membership tier" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="z-[100]">
                           {membershipTiers.map((tier) => (
                             <SelectItem key={tier.value} value={tier.value}>
                               <div>
@@ -547,7 +608,7 @@ export default function Signup() {
                             <SelectValue placeholder="Select your tier" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="z-[100]">
                           {subscriptionTiers.map((tier) => (
                             <SelectItem key={tier.value} value={tier.value}>
                               <div>

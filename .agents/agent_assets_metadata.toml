@@ -1,0 +1,62 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "qY0dA9lTyAsrC7uH6v166"
+uri = "file://exports/stripe-qa-report.md"
+type = "text"
+title = "Stripe QA Report - BilliardsLadder"
+
+[[outputs]]
+id = "igT9BNQsZdneGaru_j1eq"
+uri = "file://exports/stripe-production-verification-report.md"
+type = "text"
+title = "Stripe Production Verification Report"
+
+[[outputs]]
+id = "m6PeaGr7MwrL04Z_PI-Tv"
+uri = "file://exports/e2e-audit-log.md"
+type = "text"
+title = "BilliardsLadder E2E Audit Log"
+
+[[outputs]]
+id = "eyacu1F1Un5WWxNOfETH9"
+uri = "file://BilliardsLadder_Fixes_Report_Apr11.md"
+type = "text"
+title = "BilliardsLadder Technical Engineering Report — April 11, 2026"
+
+[[outputs]]
+id = "1aFo5ofeTM7nUPlRnljzI"
+uri = "file://exports/BilliardsLadder_Competition_Assessment.md"
+type = "text"
+title = "Competition Assessment Report (.md)"
+
+[[outputs]]
+id = "HwhInH9T-kSw96x4l-qML"
+uri = "file://exports/BilliardsLadder_Competition_Assessment.docx"
+type = "word_document"
+title = "Competition Assessment Report (.docx)"
+
+[[outputs]]
+id = "CRiHU3MKD51go7KjMHc_C"
+uri = "file://CHANGES_REPORT.md"
+type = "text"
+title = "BilliardsLadder — 4-Day Changes Report"
+
+[[outputs]]
+id = "qu3QyPlaBr1b3tMDBKjeN"
+uri = "file://exports/BilliardsLadder-Rewards-and-Streaks.docx"
+type = "word_document"
+title = "Rewards & Streaks Plan (Plain English)"
+
+[[outputs]]
+id = "GXf1AmZYXMPWtDapxfhwS"
+uri = "file://exports/BilliardsLadder-Rewards-Phase1-Starter.docx"
+type = "word_document"
+title = "Rewards & Streaks — Phase 1 Starter Plan"
+
+[[outputs]]
+id = "U2j1jBCsRfZBZokPDlEvf"
+uri = "file://exports/billiards-ladder-source.zip"
+type = "unspecified"
+title = "Billiards Ladder — Source Code"

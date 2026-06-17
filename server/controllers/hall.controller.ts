@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { storage } from "../storage";
 import type { InsertHallMatch, InsertHallRoster } from "@shared/schema";
+import { touchUserActivity } from "../utils/activity";
 
 // Get all pool halls with standings (only shows unlocked halls for battles)
 export async function getAllHalls(req: Request, res: Response) {
@@ -99,6 +100,8 @@ export async function createHallMatch(req: Request, res: Response) {
     }
 
     const match = await storage.createHallMatch(matchData);
+    const userId = (req as any).user?.id || (req as any).user?.claims?.sub;
+    touchUserActivity(storage, userId);
     res.status(201).json({ match });
   } catch (error: any) {
     console.error("Create hall match error:", error);

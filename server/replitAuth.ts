@@ -16,15 +16,19 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
-if (!process.env.REPLIT_DOMAINS) {
-  throw new Error("Environment variable REPLIT_DOMAINS not provided");
+function isOidcEnabled(): boolean {
+  const raw = (process.env.AUTH_OIDC_ENABLED ?? "false").toLowerCase().trim();
+  return raw === "1" || raw === "true" || raw === "yes" || raw === "on";
 }
 
 const getOidcConfig = memoize(
   async () => {
+    if (!process.env.REPL_ID) {
+      throw new Error("AUTH_OIDC_ENABLED is true but REPL_ID is missing");
+    }
     return await client.discovery(
       new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process.env.REPL_ID!
+      process.env.REPL_ID
     );
   },
   { maxAge: 3600 * 1000 }
@@ -66,11 +70,17 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
+  const userId = claims["sub"];
   await storage.upsertUser({
-    id: claims["sub"],
+    id: userId,
     email: claims["email"],
     name: `${claims["first_name"] || ""} ${claims["last_name"] || ""}`.trim() || claims["email"] || "Unknown User",
+    emailVerified: true,
   });
+  const { touchUserActivity } = await import("./utils/activity");
+  touchUserActivity(storage, userId);
+  const { recordLogin } = await import("./services/rackPointsService");
+  recordLogin(userId);
 }
 
 export async function setupAuth(app: Express) {
@@ -79,9 +89,28 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Import and register enhanced auth routes
-  const { registerAuthRoutes } = await import("./routes/auth.routes");
-  registerAuthRoutes(app);
+  passport.serializeUser((user: Express.User, cb) => cb(null, user));
+  passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+
+  if (!isOidcEnabled()) {
+    app.get("/api/login", (_req, res) => {
+      return res.status(404).json({
+        message: "OIDC login is disabled. Use email/password login.",
+      });
+    });
+    app.get("/api/callback", (_req, res) => res.redirect("/login"));
+    app.get("/api/auth/oauth-complete", (_req, res) => res.redirect("/login"));
+    app.get("/api/logout", (req, res) => {
+      req.logout(() => {
+        res.redirect("/");
+      });
+    });
+    return;
+  }
+
+  if (!process.env.REPLIT_DOMAINS) {
+    throw new Error("AUTH_OIDC_ENABLED is true but REPLIT_DOMAINS is missing");
+  }
 
   const config = await getOidcConfig();
 
@@ -109,16 +138,13 @@ export async function setupAuth(app: Express) {
     passport.use(strategy);
   }
 
-  passport.serializeUser((user: Express.User, cb) => cb(null, user));
-  passport.deserializeUser((user: Express.User, cb) => cb(null, user));
-
   app.get("/api/login", (req, res, next) => {
     const role = req.query.role as string;
     // Store role in session for use after authentication
     if (role && ["player", "operator", "admin"].includes(role)) {
       (req.session as any).intendedRole = role;
     }
-    
+
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
@@ -181,7 +207,19 @@ export async function setupAuth(app: Express) {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated() || !user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  if (user.authType === "password") {
+    return next();
+  }
+
+  if (!isOidcEnabled()) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  if (!user.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
@@ -209,13 +247,18 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 
 export const requireOwner: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
-  
-  if (!req.isAuthenticated() || !user.claims?.sub) {
+
+  if (!req.isAuthenticated() || !user) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+
+  const userId = user.claims?.sub || user.id;
+  if (!userId) {
     return res.status(401).json({ message: "Authentication required" });
   }
 
   try {
-    const dbUser = await storage.getUser(user.claims.sub);
+    const dbUser = await storage.getUser(userId);
     if (!dbUser || dbUser.globalRole !== "OWNER") {
       return res.status(403).json({ message: "Owner access required" });
     }
@@ -228,14 +271,52 @@ export const requireOwner: RequestHandler = async (req, res, next) => {
 
 export const requireStaffOrOwner: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
-  
-  if (!req.isAuthenticated() || !user.claims?.sub) {
+
+  if (!req.isAuthenticated() || !user) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+
+  const userId = user.claims?.sub || user.id;
+  if (!userId) {
     return res.status(401).json({ message: "Authentication required" });
   }
 
   try {
-    const dbUser = await storage.getUser(user.claims.sub);
-    if (!dbUser || !["STAFF", "OWNER"].includes(dbUser.globalRole || "")) {
+    const dbUser = await storage.getUser(userId);
+    if (!dbUser) {
+      return res.status(403).json({ message: "Staff or Owner access required" });
+    }
+
+    if (dbUser.accountStatus === "banned") {
+      req.logout(() => { });
+      return res.status(403).json({
+        message: "Your account has been banned.",
+        accountBanned: true,
+        banReason: dbUser.banReason || "No reason provided.",
+      });
+    }
+
+    if (dbUser.accountStatus === "suspended") {
+      if (dbUser.banExpiresAt && new Date(dbUser.banExpiresAt) < new Date()) {
+        await storage.updateUser(dbUser.id, {
+          accountStatus: "active",
+          banReason: null,
+          bannedAt: null,
+          bannedBy: null,
+          banExpiresAt: null,
+        });
+      } else {
+        req.logout(() => { });
+        return res.status(403).json({
+          message: "Your account is suspended.",
+          accountSuspended: true,
+          banReason: dbUser.banReason || "No reason provided.",
+          banExpiresAt: dbUser.banExpiresAt,
+        });
+      }
+    }
+
+    if (!["STAFF", "OWNER"].includes(dbUser.globalRole || "")) {
       return res.status(403).json({ message: "Staff or Owner access required" });
     }
     req.dbUser = dbUser;

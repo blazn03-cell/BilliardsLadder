@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Trophy, Camera, DollarSign, Users, Settings } from "lucide-react";
+import { ChevronDown, Trophy, Camera, DollarSign, Users, Settings, LogOut } from "lucide-react";
 import type { GlobalRole } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/components/dashboard";
@@ -19,7 +19,7 @@ import RookieSection from "@/pages/RookieSection";
 import BarboxLadderPage from "@/pages/BarboxLadderPage";
 import EightFootLadderPage from "@/pages/EightFootLadderPage";
 import EscrowChallenges from "@/components/escrow-challenges";
-import QRRegistration from "@/components/qr-registration";
+import QRRegistration, { PublicQRRegistration } from "@/components/qr-registration";
 import LeagueStandings from "@/components/league-standings";
 import RealTimeNotifications from "@/components/real-time-notifications";
 import PosterGenerator from "@/components/poster-generator";
@@ -51,12 +51,14 @@ import TrusteeLogin from "@/pages/TrusteeLogin";
 import Signup from "@/pages/Signup";
 import SelectRole from "@/pages/SelectRole";
 import ForgotPassword from "@/pages/ForgotPassword";
+import VerifyEmail from "@/pages/VerifyEmail";
 import BillingSuccess from "@/pages/BillingSuccess";
 import BillingCancel from "@/pages/BillingCancel";
 import { PlayerSubscription } from "@/pages/PlayerSubscription";
 import { ChallengeCalendar } from "@/pages/ChallengeCalendar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { MobileNav } from "@/components/MobileNav";
+import { RackPointsBadge } from "@/components/RackPointsBadge";
 import { WebVitals } from "@/components/WebVitals";
 import RevenueAdmin from "@/pages/RevenueAdmin";
 import HallLeaderboard from "@/pages/HallLeaderboard";
@@ -68,33 +70,55 @@ const logoBackground = "/images/logo-background.png";
 // Auth-protected route component
 function AppContent({ activeTab }: { activeTab: string }) {
   const { user, isLoading, isAuthenticated } = useAuth();
-  
+
   // Get current tab from URL params
   const urlParams = new URLSearchParams(window.location.search);
   const currentTab = urlParams.get('tab') || activeTab;
-  
+
   // List of tabs that require authentication
   const protectedTabs = [
     'dashboard', 'ladder', 'eightfoot-ladder', 'barbox-ladder', 'rookie-section',
-    'escrow-challenges', 'challenge-calendar', 'hall-battles', 'tournaments', 
+    'escrow-challenges', 'challenge-calendar', 'hall-battles', 'tournaments',
     'tournament-brackets', 'special-games', 'league-standings', 'match-divisions',
-    'ai-features', 'poster-generator', 'file-manager', 'player-subscription', 
+    'ai-features', 'poster-generator', 'file-manager', 'player-subscription',
     'checkout', 'monetization', 'team-management', 'team-matches', 'team-challenges',
-    'sportsmanship', 'bounties', 'qr-registration', 'operator-settings', 
+    'sportsmanship', 'bounties', 'qr-registration', 'operator-settings',
     'operator-subscriptions', 'revenue-admin', 'admin', 'admin-training-rewards'
   ];
-  
+
+  const tabRoleAccess: Partial<Record<string, GlobalRole[]>> = {
+    admin: ["OWNER", "TRUSTEE"],
+    "operator-settings": ["OWNER", "TRUSTEE", "STAFF", "OPERATOR"],
+    "operator-subscriptions": ["OWNER", "TRUSTEE", "OPERATOR"],
+    "revenue-admin": ["OWNER", "TRUSTEE", "OPERATOR"],
+    "admin-training-rewards": ["OWNER", "STAFF", "OPERATOR"],
+    "qr-registration": ["OWNER", "TRUSTEE", "STAFF", "OPERATOR"],
+    monetization: ["OWNER", "TRUSTEE", "OPERATOR"],
+  };
+
   // If trying to access protected content and not authenticated, redirect to login
   if (!isLoading && protectedTabs.includes(currentTab) && !isAuthenticated) {
     window.location.href = '/login';
     return null;
   }
-  
+
+  // Block URL-based role escalation by enforcing role checks at tab-render time.
+  if (!isLoading && isAuthenticated && user) {
+    const allowedRoles = tabRoleAccess[currentTab];
+    const currentRole = user.globalRole;
+    const isOwner = currentRole === "OWNER";
+
+    if (allowedRoles && !isOwner && !allowedRoles.includes(currentRole)) {
+      window.location.href = '/app?tab=dashboard';
+      return null;
+    }
+  }
+
   return (
     <>
       {/* Hero Banner */}
       <section className="py-12 relative overflow-hidden">
-        <div 
+        <div
           className="absolute inset-0 opacity-15"
           style={{
             backgroundImage: `url(${logoBackground})`,
@@ -118,38 +142,38 @@ function AppContent({ activeTab }: { activeTab: string }) {
       </section>
 
       <div className="container mx-auto px-4 py-8">
-        {activeTab === "dashboard" && <Dashboard />}
-        {activeTab === "player-subscription" && <PlayerSubscription />}
-        {activeTab === "ladder" && <Ladder />}
-        {activeTab === "barbox-ladder" && <BarboxLadderPage />}
-        {activeTab === "eightfoot-ladder" && <EightFootLadderPage />}
-        {activeTab === "rookie-section" && <RookieSection />}
-        {activeTab === "escrow-challenges" && <EscrowChallenges />}
-        {activeTab === "hall-battles" && <HallBattles />}
-        {activeTab === "league-standings" && <LeagueStandings />}
-        {activeTab === "qr-registration" && <QRRegistration />}
-        {activeTab === "poster-generator" && <PosterGenerator />}
-        {activeTab === "live-stream" && <LiveStream />}
-        {activeTab === "ai-features" && <AIDashboard />}
-        {activeTab === "operator-settings" && <OperatorSettings />}
-        {activeTab === "admin" && <AdminDashboard />}
-        {activeTab === "tournaments" && <Tournaments />}
-        {activeTab === "tournament-brackets" && <TournamentBrackets />}
-        {activeTab === "special-games" && <SpecialGames />}
-        {activeTab === "players" && <Players />}
-        {activeTab === "bounties" && <Bounties />}
-        {activeTab === "charity" && <Charity />}
-        {activeTab === "team-management" && <TeamManagement />}
-        {activeTab === "team-matches" && <TeamMatches />}
-        {activeTab === "team-challenges" && <TeamChallenges />}
-        {activeTab === "match-divisions" && <MatchDivisions />}
-        {activeTab === "sportsmanship" && <SportsmanshipSystem />}
-        {activeTab === "file-manager" && <FileManager />}
-        {activeTab === "operator-subscriptions" && <OperatorSubscriptions />}
-        {activeTab === "monetization" && <MonetizationDashboard />}
-        {activeTab === "revenue-admin" && <RevenueAdmin />}
-        {activeTab === "challenge-calendar" && <ChallengeCalendar />}
-        {activeTab === "admin-training-rewards" && <AdminTrainingRewards />}
+        {currentTab === "dashboard" && <Dashboard />}
+        {currentTab === "player-subscription" && <PlayerSubscription />}
+        {currentTab === "ladder" && <Ladder />}
+        {currentTab === "barbox-ladder" && <BarboxLadderPage />}
+        {currentTab === "eightfoot-ladder" && <EightFootLadderPage />}
+        {currentTab === "rookie-section" && <RookieSection />}
+        {currentTab === "escrow-challenges" && <EscrowChallenges />}
+        {currentTab === "hall-battles" && <HallBattles />}
+        {currentTab === "league-standings" && <LeagueStandings />}
+        {currentTab === "qr-registration" && <QRRegistration />}
+        {currentTab === "poster-generator" && <PosterGenerator />}
+        {currentTab === "live-stream" && <LiveStream />}
+        {currentTab === "ai-features" && <AIDashboard />}
+        {currentTab === "operator-settings" && <OperatorSettings />}
+        {currentTab === "admin" && <AdminDashboard />}
+        {currentTab === "tournaments" && <Tournaments />}
+        {currentTab === "tournament-brackets" && <TournamentBrackets />}
+        {currentTab === "special-games" && <SpecialGames />}
+        {currentTab === "players" && <Players />}
+        {currentTab === "bounties" && <Bounties />}
+        {currentTab === "charity" && <Charity />}
+        {currentTab === "team-management" && <TeamManagement />}
+        {currentTab === "team-matches" && <TeamMatches />}
+        {currentTab === "team-challenges" && <TeamChallenges />}
+        {currentTab === "match-divisions" && <MatchDivisions />}
+        {currentTab === "sportsmanship" && <SportsmanshipSystem />}
+        {currentTab === "file-manager" && <FileManager />}
+        {currentTab === "operator-subscriptions" && <OperatorSubscriptions />}
+        {currentTab === "monetization" && <MonetizationDashboard />}
+        {currentTab === "revenue-admin" && <RevenueAdmin />}
+        {currentTab === "challenge-calendar" && <ChallengeCalendar />}
+        {currentTab === "admin-training-rewards" && <AdminTrainingRewards />}
       </div>
       <RealTimeNotifications />
     </>
@@ -203,7 +227,8 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
       icon: DollarSign,
       requiresAuth: true, // Entire finance section requires authentication
       items: [
-        { id: "player-subscription", label: "💳 Subscription Plans", requiresAuth: true },
+        { id: "player-subscription", label: "💳 Subscription Plans", roles: ["PLAYER"] as GlobalRole[], requiresAuth: true },
+        { id: "operator-subscriptions", label: "💼 Operator Subscriptions", roles: ["OWNER", "OPERATOR", "TRUSTEE"] as GlobalRole[], requiresAuth: true },
         { id: "checkout", label: "💰 Billing & Payments", requiresAuth: true },
         { id: "monetization", label: "📊 Revenue Dashboard", roles: ["OWNER", "OPERATOR", "TRUSTEE"] as GlobalRole[], requiresAuth: true },
       ]
@@ -231,7 +256,6 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
       items: [
         { id: "qr-registration", label: "📱 QR Registration", requiresAuth: true },
         { id: "operator-settings", label: "⚙️ Operator Settings", requiresAuth: true },
-        { id: "operator-subscriptions", label: "💼 Operator Subscriptions", requiresAuth: true },
         { id: "revenue-admin", label: "💰 Revenue Configuration", roles: ["OWNER", "TRUSTEE"] as GlobalRole[], requiresAuth: true },
         { id: "admin-training-rewards", label: "🏆 Training Rewards", roles: ["OWNER", "OPERATOR", "STAFF"] as GlobalRole[], requiresAuth: true },
         { id: "admin", label: "🛡️ Admin Dashboard", requiresAuth: true },
@@ -242,25 +266,36 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
   // Get user role from authentication - default to PLAYER if not authenticated
   const userRole: GlobalRole = user?.globalRole || "PLAYER";
 
-  // Filter groups based on user role (but show all to encourage signups)
-  const visibleGroups = navigationGroups.filter(group => {
-    // If group has role restrictions, check them (only for authenticated users)
-    if (group.roles && isAuthenticated && userRole !== "OWNER" && !group.roles.includes(userRole)) {
-      return false;
-    }
-    
-    // Filter items within the group based on role (but not auth status)
-    if (isAuthenticated) {
-      group.items = group.items.filter(item => {
-        if ((item as any).roles && userRole !== "OWNER" && !(item as any).roles.includes(userRole)) {
-          return false;
-        }
-        return true;
-      });
-    }
-    
-    return true; // Show all groups to unauthenticated users
-  });
+  // Hide grouped nav tabs for unauthenticated users.
+  const visibleGroups = !isAuthenticated
+    ? []
+    : navigationGroups
+        .filter(group => {
+          if (group.requiresAuth && !isAuthenticated) {
+            return false;
+          }
+
+          if (group.roles && userRole !== "OWNER" && !group.roles.includes(userRole)) {
+            return false;
+          }
+
+          return true;
+        })
+        .map(group => ({
+          ...group,
+          items: group.items.filter(item => {
+            if ((item as any).requiresAuth && !isAuthenticated) {
+              return false;
+            }
+
+            if ((item as any).roles && userRole !== "OWNER" && !(item as any).roles.includes(userRole)) {
+              return false;
+            }
+
+            return true;
+          }),
+        }))
+        .filter(group => group.items.length > 0);
 
   // Show loading state while fetching user data
   if (isLoading) {
@@ -276,12 +311,12 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
   return (
     <header className="sticky top-0 z-50 bg-[#0d1f12]/90 backdrop-blur border-b border-white/10">
       {/* Row 1: Brand (left) + Live + Join via QR (right) */}
-      <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-2 md:gap-4">
-        <div 
-          className="flex items-center gap-2 md:gap-3 cursor-pointer"
+      <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-2 md:gap-4 min-w-0 overflow-x-hidden">
+        <div
+          className="flex items-center gap-2 md:gap-3 cursor-pointer shrink-0"
           onClick={() => window.location.href = "/"}
         >
-          <img 
+          <img
             src="/billiards-logo.svg"
             alt="Action Ladder Billiards Logo"
             className="h-10 w-10 md:h-12 md:w-12 rounded-xl object-cover border border-emerald-400/30"
@@ -290,14 +325,15 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
             <span className="font-extrabold tracking-wide text-emerald-300 text-sm md:text-lg">
               ACTIONLADDER
             </span>
-            <span className="hidden sm:block text-xs text-emerald-200/70">
+            <span className="hidden xl:block text-xs text-emerald-200/70">
               In here, respect is earned in racks, not words
             </span>
           </div>
         </div>
 
         {/* Desktop Navigation Dropdowns */}
-        <nav className="hidden md:flex items-center gap-2 flex-shrink-0 min-w-0">
+        <div className="hidden md:block flex-1 min-w-0 overflow-hidden">
+          <nav className="flex items-center justify-center gap-2 min-w-max overflow-x-auto no-scrollbar px-2">
           {visibleGroups.map(group => (
             <DropdownMenu key={group.id}>
               <DropdownMenuTrigger className="flex items-center gap-2 text-emerald-200/80 hover:text-white px-4 py-2.5 rounded-lg hover:bg-emerald-500/15 transition-all duration-200 whitespace-nowrap font-medium text-sm border border-transparent hover:border-emerald-500/20">
@@ -306,7 +342,7 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
                 <ChevronDown className="w-4 h-4" />
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent 
+              <DropdownMenuContent
                 className="max-h-96 w-64 overflow-y-auto bg-gray-900 text-white border border-gray-700"
                 align="start"
               >
@@ -329,9 +365,10 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
               </DropdownMenuContent>
             </DropdownMenu>
           ))}
-        </nav>
+          </nav>
+        </div>
 
-        <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex items-center gap-2 md:gap-3 shrink-0">
           <span className="hidden sm:inline rounded-full px-3 py-1 text-xs font-bold bg-red-900/40 text-red-300 ring-1 ring-red-500/40">
             ● LIVE NOW
           </span>
@@ -344,8 +381,46 @@ function Navigation({ activeTab, setActiveTab }: { activeTab: string; setActiveT
           >
             Join via QR
           </button>
-          <MobileNav 
-            navigationGroups={navigationGroups}
+          {isAuthenticated ? (
+            <>
+              <RackPointsBadge />
+              <button
+                onClick={() => {
+                  fetch("/api/auth/logout", { method: "POST", credentials: "include" })
+                    .then(() => { window.location.href = "/"; })
+                    .catch(() => { window.location.href = "/"; });
+                }}
+                className="hidden md:inline-flex whitespace-nowrap rounded-xl px-3 md:px-4 py-2 text-xs md:text-sm font-semibold
+                           bg-emerald-600 hover:bg-emerald-700 text-white transition items-center gap-2"
+                data-testid="button-logout-desktop"
+              >
+                <LogOut className="h-4 w-4" />
+                Log Out
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => { window.location.href = "/login"; }}
+                className="hidden md:inline-flex whitespace-nowrap rounded-xl px-3 md:px-4 py-2 text-xs md:text-sm font-semibold
+                           bg-emerald-600 hover:bg-emerald-700 text-white transition items-center"
+                data-testid="button-login-desktop"
+              >
+                Log In
+              </button>
+              <button
+                onClick={() => { window.location.href = "/signup"; }}
+                className="hidden md:inline-flex whitespace-nowrap rounded-xl px-3 md:px-4 py-2 text-xs md:text-sm font-semibold
+                           ring-1 ring-emerald-400/50 bg-emerald-500/15 text-emerald-200
+                           hover:bg-emerald-500/25 transition items-center"
+                data-testid="button-signup-desktop"
+              >
+                Sign Up
+              </button>
+            </>
+          )}
+          <MobileNav
+            navigationGroups={visibleGroups}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             userRole={userRole}
@@ -374,126 +449,132 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <div className="min-h-screen bg-felt-dark text-white font-sans overflow-x-hidden">
-        {/* Professional Logo Background */}
-        <div className="fixed inset-0 pointer-events-none">
-          <div 
-            className="absolute inset-0 opacity-8"
-            style={{
-              backgroundImage: `url(${logoBackground})`,
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-              filter: 'hue-rotate(90deg) saturate(3) brightness(0.6) contrast(1.5) sepia(0.3)',
-            }}
-          ></div>
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-felt-dark/80 to-felt-dark/90"></div>
-        </div>
-
-        <ErrorBoundary>
-          <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
-        </ErrorBoundary>
-
-        <main className="relative z-10">
-          <ErrorBoundary>
-            <Switch>
-            <Route path="/">
-              <Landing />
-            </Route>
-            <Route path="/auth-success">
-              <AuthSuccess />
-            </Route>
-            <Route path="/login">
-              <Login />
-            </Route>
-            <Route path="/owner-login">
-              <OwnerLogin />
-            </Route>
-            <Route path="/trustee-login">
-              <TrusteeLogin />
-            </Route>
-            <Route path="/signup">
-              <Signup />
-            </Route>
-            <Route path="/select-role">
-              <SelectRole />
-            </Route>
-            <Route path="/forgot-password">
-              <ForgotPassword />
-            </Route>
-            <Route path="/billing/success">
-              <BillingSuccess />
-            </Route>
-            <Route path="/billing/cancel">
-              <BillingCancel />
-            </Route>
-            <Route path="/checkout">
-              <Checkout />
-            </Route>
-            <Route path="/terms">
-              <Terms />
-            </Route>
-            <Route path="/privacy">
-              <Privacy />
-            </Route>
-            <Route path="/refund">
-              <Refund />
-            </Route>
-            <Route path="/acceptable-use">
-              <AcceptableUse />
-            </Route>
-            <Route path="/join">
-              <JoinPage />
-            </Route>
-            <Route path="/home">
-              {() => { window.location.href = "/app?tab=dashboard"; return null; }}
-            </Route>
-            <Route path="/owner-dashboard">
-              {() => { window.location.href = "/app?tab=admin"; return null; }}
-            </Route>
-            <Route path="/trustee-dashboard">
-              {() => { window.location.href = "/app?tab=admin"; return null; }}
-            </Route>
-            <Route path="/operator-dashboard">
-              {() => { window.location.href = "/app?tab=operator-settings"; return null; }}
-            </Route>
-            <Route path="/training/leaderboard/:hallId?">
-              <HallLeaderboard />
-            </Route>
-            <Route path="/training/session">
-              <TrainingSession />
-            </Route>
-            <Route path="/player/career">
-              <PlayerCareerDashboard />
-            </Route>
-            <Route path="/training/insights/:sessionId">
-              <CoachFeedback />
-            </Route>
-            <Route path="/app">
-              <AppContent activeTab={activeTab} />
-            </Route>
-            <Route component={NotFound} />
-            </Switch>
-          </ErrorBoundary>
-        </main>
-
-        <Toaster />
-        <WebVitals />
-
-        {/* Footer with Policy Links */}
-        <footer className="relative z-10 bg-black/80 border-t border-neon-green/20 py-8 mt-16">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-wrap justify-center items-center space-x-6 text-sm text-gray-400">
-              <a href="/terms" className="hover:text-neon-green transition-colors">Terms of Service</a>
-              <a href="/privacy" className="hover:text-neon-green transition-colors">Privacy Policy</a>
-              <a href="/refund" className="hover:text-neon-green transition-colors">Refund Policy</a>
-              <a href="/acceptable-use" className="hover:text-neon-green transition-colors">Acceptable Use</a>
-              <span className="text-neon-green">•</span>
-              <span>© 2025 ActionLadder</span>
-              <span className="text-neon-green">•</span>
-              <span className="font-mono">v1.0.0</span>
-            </div>
+          {/* Professional Logo Background */}
+          <div className="fixed inset-0 pointer-events-none">
+            <div
+              className="absolute inset-0 opacity-8"
+              style={{
+                backgroundImage: `url(${logoBackground})`,
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                filter: 'hue-rotate(90deg) saturate(3) brightness(0.6) contrast(1.5) sepia(0.3)',
+              }}
+            ></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-felt-dark/80 to-felt-dark/90"></div>
           </div>
-        </footer>
+
+          <ErrorBoundary>
+            <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+          </ErrorBoundary>
+
+          <main className="relative z-10">
+            <ErrorBoundary>
+              <Switch>
+                <Route path="/">
+                  <Landing />
+                </Route>
+                <Route path="/auth-success">
+                  <AuthSuccess />
+                </Route>
+                <Route path="/login">
+                  <Login />
+                </Route>
+                <Route path="/owner-login">
+                  <OwnerLogin />
+                </Route>
+                <Route path="/trustee-login">
+                  <TrusteeLogin />
+                </Route>
+                <Route path="/signup">
+                  <Signup />
+                </Route>
+                <Route path="/select-role">
+                  <SelectRole />
+                </Route>
+                <Route path="/forgot-password">
+                  <ForgotPassword />
+                </Route>
+                <Route path="/verify-email">
+                  <VerifyEmail />
+                </Route>
+                <Route path="/billing/success">
+                  <BillingSuccess />
+                </Route>
+                <Route path="/billing/cancel">
+                  <BillingCancel />
+                </Route>
+                <Route path="/checkout">
+                  <Checkout />
+                </Route>
+                <Route path="/terms">
+                  <Terms />
+                </Route>
+                <Route path="/privacy">
+                  <Privacy />
+                </Route>
+                <Route path="/refund">
+                  <Refund />
+                </Route>
+                <Route path="/acceptable-use">
+                  <AcceptableUse />
+                </Route>
+                <Route path="/join">
+                  <JoinPage />
+                </Route>
+                <Route path="/register/:sessionId">
+                  <PublicQRRegistration />
+                </Route>
+                <Route path="/home">
+                  {() => { window.location.href = "/app?tab=dashboard"; return null; }}
+                </Route>
+                <Route path="/owner-dashboard">
+                  {() => { window.location.href = "/app?tab=admin"; return null; }}
+                </Route>
+                <Route path="/trustee-dashboard">
+                  {() => { window.location.href = "/app?tab=admin"; return null; }}
+                </Route>
+                <Route path="/operator-dashboard">
+                  {() => { window.location.href = "/app?tab=operator-settings"; return null; }}
+                </Route>
+                <Route path="/training/leaderboard/:hallId?">
+                  <HallLeaderboard />
+                </Route>
+                <Route path="/training/session">
+                  <TrainingSession />
+                </Route>
+                <Route path="/player/career">
+                  <PlayerCareerDashboard />
+                </Route>
+                <Route path="/training/insights/:sessionId">
+                  <CoachFeedback />
+                </Route>
+                <Route path="/app">
+                  <AppContent activeTab={activeTab} />
+                </Route>
+                <Route component={NotFound} />
+              </Switch>
+            </ErrorBoundary>
+          </main>
+
+          <Toaster />
+          <WebVitals />
+
+          {/* Footer with Policy Links */}
+          <footer className="relative z-10 bg-black/80 border-t border-neon-green/20 py-8 mt-16">
+            <div className="container mx-auto px-4">
+              <div className="flex flex-wrap justify-center items-center space-x-6 text-sm text-gray-400">
+                <a href="/terms" className="hover:text-neon-green transition-colors">Terms of Service</a>
+                <a href="/privacy" className="hover:text-neon-green transition-colors">Privacy Policy</a>
+                <a href="/refund" className="hover:text-neon-green transition-colors">Refund Policy</a>
+                <a href="/acceptable-use" className="hover:text-neon-green transition-colors">Acceptable Use</a>
+                <span className="text-neon-green">•</span>
+                <span>© 2025 ActionLadder</span>
+                <span className="text-neon-green">•</span>
+                <span className="font-mono">v1.0.0</span>
+              </div>
+            </div>
+          </footer>
         </div>
       </QueryClientProvider>
     </ErrorBoundary>

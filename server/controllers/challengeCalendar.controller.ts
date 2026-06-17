@@ -12,6 +12,7 @@ import stripe from "stripe";
 import { sanitizeResponse } from "../middleware/sanitizeMiddleware";
 import { getFeeScheduler } from "../services/feeScheduler";
 import { QRCodeService } from "../services/qrCodeService";
+import { touchUserActivity } from "../utils/activity";
 
 export function getChallenges(storage: IStorage) {
   return async (req: Request, res: Response) => {
@@ -105,7 +106,28 @@ export function createChallenge(storage: IStorage) {
       }
       
       const challenge = await storage.createChallenge(validatedData);
-      
+
+      const userId = (req as any).user?.id || (req as any).user?.claims?.sub;
+      touchUserActivity(storage, userId);
+      for (const playerId of [validatedData.aPlayerId, validatedData.bPlayerId]) {
+        const player = await storage.getPlayer(playerId);
+        if (player?.userId) touchUserActivity(storage, player.userId);
+      }
+
+      // Fire-and-forget: notify the opponent that they've been challenged.
+      try {
+        const { notifyChallengeReceived } = await import("../services/notifyService");
+        notifyChallengeReceived({
+          challengeId: challenge.id,
+          challengerName: playerA.name,
+          opponentUserId: playerB.userId,
+          stakesCents: challenge.stakes ?? 0,
+          gameType: challenge.gameType ?? "8-ball",
+        });
+      } catch (notifyErr: any) {
+        console.warn("[challenges] notify failed:", notifyErr?.message);
+      }
+
       res.status(201).json(challenge);
     } catch (error: any) {
       console.error("Create challenge error:", error);
@@ -130,7 +152,103 @@ export function updateChallenge(storage: IStorage) {
       }
       
       const updatedChallenge = await storage.updateChallenge(id, updates);
-      
+
+      // Phase 1 Rack Points: award win + (optional) upset bonus when a challenge
+      // transitions to "completed" with a valid winnerId.
+      // Idempotency is double-guarded:
+      //   1) Pre-update status check rejects re-completion at the controller layer.
+      //   2) The ledger has a UNIQUE(user_id, reason, ref_id) partial index so even
+      //      under concurrent PATCHes only one award per (user, reason, challengeId)
+      //      will land — see rackPointsService.award().
+      if (
+        updatedChallenge &&
+        updatedChallenge.status === "completed" &&
+        updatedChallenge.winnerId &&
+        challenge.status !== "completed" &&
+        // Reject impossible winners — only the two participants can win.
+        (updatedChallenge.winnerId === updatedChallenge.aPlayerId ||
+          updatedChallenge.winnerId === updatedChallenge.bPlayerId)
+      ) {
+        try {
+          const winnerPlayerId = updatedChallenge.winnerId;
+          const loserPlayerId =
+            winnerPlayerId === updatedChallenge.aPlayerId
+              ? updatedChallenge.bPlayerId
+              : updatedChallenge.aPlayerId;
+          const [winnerPlayer, loserPlayer] = await Promise.all([
+            storage.getPlayer(winnerPlayerId),
+            storage.getPlayer(loserPlayerId),
+          ]);
+          if (winnerPlayer?.userId) {
+            const { recordMatchWin } = await import("../services/rackPointsService");
+            recordMatchWin({
+              winnerUserId: winnerPlayer.userId,
+              winnerRating: winnerPlayer.rating,
+              loserRating: loserPlayer?.rating,
+              matchId: updatedChallenge.id,
+            });
+          }
+        } catch (rewardErr: any) {
+          console.warn("[challenges] rack points award failed:", rewardErr?.message);
+        }
+
+        // Fire-and-forget: notify both players of the result.
+        try {
+          const { notifyMatchResult } = await import("../services/notifyService");
+          const winnerPlayerId = updatedChallenge.winnerId!;
+          const loserPlayerId =
+            winnerPlayerId === updatedChallenge.aPlayerId
+              ? updatedChallenge.bPlayerId
+              : updatedChallenge.aPlayerId;
+          const [winnerPlayer, loserPlayer] = await Promise.all([
+            storage.getPlayer(winnerPlayerId),
+            storage.getPlayer(loserPlayerId),
+          ]);
+          if (winnerPlayer?.userId) {
+            notifyMatchResult({
+              challengeId: updatedChallenge.id,
+              recipientUserId: winnerPlayer.userId,
+              won: true,
+              opponentName: loserPlayer?.name ?? "your opponent",
+            });
+          }
+          if (loserPlayer?.userId) {
+            notifyMatchResult({
+              challengeId: updatedChallenge.id,
+              recipientUserId: loserPlayer.userId,
+              won: false,
+              opponentName: winnerPlayer?.name ?? "your opponent",
+            });
+          }
+        } catch (notifyErr: any) {
+          console.warn("[challenges] notify match result failed:", notifyErr?.message);
+        }
+      }
+
+      // Detect status transition to "accepted" and notify the challenger.
+      if (
+        updatedChallenge &&
+        updatedChallenge.status === "accepted" &&
+        challenge.status !== "accepted"
+      ) {
+        try {
+          const { notifyChallengeAccepted } = await import("../services/notifyService");
+          const [aPlayer, bPlayer] = await Promise.all([
+            storage.getPlayer(updatedChallenge.aPlayerId),
+            storage.getPlayer(updatedChallenge.bPlayerId),
+          ]);
+          if (aPlayer?.userId) {
+            notifyChallengeAccepted({
+              challengeId: updatedChallenge.id,
+              recipientUserId: aPlayer.userId,
+              otherPlayerName: bPlayer?.name ?? "Your opponent",
+            });
+          }
+        } catch (notifyErr: any) {
+          console.warn("[challenges] notify accept failed:", notifyErr?.message);
+        }
+      }
+
       res.json(updatedChallenge);
     } catch (error: any) {
       console.error("Update challenge error:", error);
@@ -267,6 +385,9 @@ export function checkInToChallenge(storage: IStorage) {
         checkedInBy,
         location
       });
+
+      const checkInPlayer = await storage.getPlayer(playerId);
+      if (checkInPlayer?.userId) touchUserActivity(storage, checkInPlayer.userId);
       
       const allCheckIns = await storage.getChallengeCheckInsByChallenge(id);
       if (allCheckIns.length === 2) {

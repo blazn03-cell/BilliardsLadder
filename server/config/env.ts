@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 /**
  * env.ts — Validates all required environment variables at startup.
  * If anything is missing, the server fails fast with a clear message.
@@ -8,14 +10,15 @@ interface EnvConfig {
   // App
   NODE_ENV: string;
   PORT: number;
+  AUTH_OIDC_ENABLED: boolean;
 
   // Database
   DATABASE_URL: string;
 
   // Auth (Replit OpenID Connect)
-  REPLIT_DOMAINS: string;
-  REPL_ID: string;
-  ISSUER_URL: string;
+  REPLIT_DOMAINS?: string;
+  REPL_ID?: string;
+  ISSUER_URL?: string;
   SESSION_SECRET: string;
 
   // Stripe
@@ -31,6 +34,7 @@ interface EnvConfig {
 
   // Email
   SENDGRID_API_KEY?: string;
+  SENDGRID_FROM_EMAIL?: string;
   EMAIL_FROM?: string;
 }
 
@@ -52,7 +56,7 @@ function optionalEnv(key: string, fallback = ""): string {
 
 function validateEnv(): EnvConfig {
   const missing: string[] = [];
-  const errors: string[] = [];
+  const oidcEnabled = ["1", "true", "yes", "on"].includes(optionalEnv("AUTH_OIDC_ENABLED", "false").toLowerCase());
 
   function safe(key: string, required = true): string {
     const val = process.env[key];
@@ -67,14 +71,15 @@ function validateEnv(): EnvConfig {
     // App
     NODE_ENV: optionalEnv("NODE_ENV", "development"),
     PORT: parseInt(optionalEnv("PORT", "5000"), 10),
+    AUTH_OIDC_ENABLED: oidcEnabled,
 
     // Database
     DATABASE_URL: safe("DATABASE_URL"),
 
     // Auth
-    REPLIT_DOMAINS: safe("REPLIT_DOMAINS"),
-    REPL_ID: safe("REPL_ID"),
-    ISSUER_URL: optionalEnv("ISSUER_URL", "https://replit.com/oidc"),
+    REPLIT_DOMAINS: safe("REPLIT_DOMAINS", oidcEnabled),
+    REPL_ID: safe("REPL_ID", oidcEnabled),
+    ISSUER_URL: oidcEnabled ? optionalEnv("ISSUER_URL", "https://replit.com/oidc") : optionalEnv("ISSUER_URL"),
     SESSION_SECRET: safe("SESSION_SECRET"),
 
     // Stripe
@@ -90,6 +95,7 @@ function validateEnv(): EnvConfig {
 
     // Email
     SENDGRID_API_KEY: optionalEnv("SENDGRID_API_KEY"),
+    SENDGRID_FROM_EMAIL: optionalEnv("SENDGRID_FROM_EMAIL") || optionalEnv("EMAIL_FROM", "noreply@actionladder.com"),
     EMAIL_FROM: optionalEnv("EMAIL_FROM", "noreply@actionladder.com"),
   };
 

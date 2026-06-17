@@ -1,0 +1,955 @@
+# BilliardsLadder — Live E2E Test & Audit Script
+# REPLIT AI AGENT INSTRUCTIONS
+# Copy and paste this entire prompt into the Replit AI agent.
+# The agent should execute every step in order without skipping.
+
+---
+
+## YOUR MISSION
+
+You are performing a full end-to-end live audit of the BilliardsLadder application.
+Your job is to:
+1. Register a new user
+2. Log them in and reach the dashboard
+3. Perform a real Stripe checkout (test mode)
+4. Verify the database updated correctly after payment
+5. Verify the UI reflects those changes
+6. Log every error, bug, or unexpected behavior with a recommended fix
+7. Export the full log as a Markdown file and create a download link
+
+Do NOT skip any step. Do NOT assume something works — verify it.
+Log everything. A clean log is as valuable as a bug-filled one.
+
+---
+
+## BEFORE YOU START
+
+Run the following checks first:
+
+```bash
+# 1. Confirm server is running
+curl -s http://localhost:5000/health | head -20
+
+# 2. Confirm Stripe keys are set
+node -e "
+const key = process.env.STRIPE_SECRET_KEY;
+const webhook = process.env.STRIPE_WEBHOOK_SECRET;
+console.log('STRIPE_SECRET_KEY:', key ? (key.startsWith('sk_test') ? '✅ TEST KEY SET' : key.startsWith('sk_live') ? '⚠️ LIVE KEY - BE CAREFUL' : '❌ UNKNOWN FORMAT') : '❌ NOT SET');
+console.log('STRIPE_WEBHOOK_SECRET:', webhook ? '✅ SET' : '❌ NOT SET');
+"
+
+# 3. Confirm database is reachable
+node -e "
+const { Pool } = require('pg');
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+pool.query('SELECT NOW()').then(r => {
+  console.log('✅ Database connected:', r.rows[0].now);
+  pool.end();
+}).catch(e => {
+  console.log('❌ Database connection failed:', e.message);
+  pool.end();
+});
+"
+```
+
+Log the results of all three checks before proceeding.
+If any check fails, log it as a CRITICAL error and attempt to fix it before continuing.
+
+---
+
+## STEP 1 — USER REGISTRATION
+
+**Goal:** Register a brand new test user and confirm it works end-to-end.
+
+```bash
+# Generate a unique test user
+TIMESTAMP=$(date +%s)
+TEST_EMAIL="e2e_test_${TIMESTAMP}@billiardsladder.test"
+TEST_PASSWORD="TestPass123!"
+TEST_NAME="E2E TestUser ${TIMESTAMP}"
+
+echo "Test user: $TEST_EMAIL"
+
+# Attempt registration
+REGISTER_RESPONSE=$(curl -s -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -c /tmp/e2e_cookies.txt \
+  -d "{
+    \"email\": \"$TEST_EMAIL\",
+    \"password\": \"$TEST_PASSWORD\",
+    \"name\": \"$TEST_NAME\",
+    \"role\": \"player\"
+  }")
+
+echo "Registration response:"
+echo $REGISTER_RESPONSE | node -e "
+const chunks = [];
+process.stdin.on('data', d => chunks.push(d));
+process.stdin.on('end', () => {
+  try {
+    const data = JSON.parse(chunks.join(''));
+    console.log(JSON.stringify(data, null, 2));
+  } catch(e) {
+    console.log('Raw response:', chunks.join(''));
+  }
+});
+"
+```
+
+**What to check:**
+- HTTP status should be 200 or 201
+- Response should contain a user object with id, email, name
+- No error message in the response body
+- Session cookie should be set in /tmp/e2e_cookies.txt
+
+**Log as BUG if:**
+- Status is 4xx or 5xx
+- Response contains an error field
+- No user object returned
+- Cookie file is empty after registration
+
+---
+
+## STEP 2 — DATABASE CHECK AFTER REGISTRATION
+
+**Goal:** Confirm the user was actually written to the database.
+
+```bash
+node -e "
+const { Pool } = require('pg');
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+async function checkRegistration() {
+  const email = process.argv[1];
+  
+  // Check users table
+  const userResult = await pool.query(
+    'SELECT id, email, name, role, created_at, stripe_customer_id FROM users WHERE email = \$1',
+    [email]
+  );
+  
+  if (userResult.rows.length === 0) {
+    console.log('❌ BUG: User not found in database after registration');
+    console.log('RECOMMENDED FIX: Check registration handler in auth.controller.ts - user may not be committing to DB');
+  } else {
+    const user = userResult.rows[0];
+    console.log('✅ User found in database:');
+    console.log('  ID:', user.id);
+    console.log('  Email:', user.email);
+    console.log('  Name:', user.name);
+    console.log('  Role:', user.role);
+    console.log('  Created:', user.created_at);
+    console.log('  Stripe Customer ID:', user.stripe_customer_id || 'null (expected at this stage)');
+    
+    // Check players table too
+    const playerResult = await pool.query(
+      'SELECT id, user_id, member, rookie_pass_active, rating FROM players WHERE user_id = \$1',
+      [user.id]
+    );
+    
+    if (playerResult.rows.length === 0) {
+      console.log('⚠️  WARNING: No player record found for this user');
+      console.log('RECOMMENDED FIX: Check if player record is auto-created on registration in storage.ts');
+    } else {
+      const player = playerResult.rows[0];
+      console.log('✅ Player record found:');
+      console.log('  Player ID:', player.id);
+      console.log('  Member:', player.member, '(should be false)');
+      console.log('  Rookie Pass:', player.rookie_pass_active, '(should be false)');
+      console.log('  Rating:', player.rating);
+    }
+  }
+  
+  await pool.end();
+}
+
+checkRegistration().catch(e => {
+  console.log('❌ DB CHECK ERROR:', e.message);
+  pool.end();
+});
+" "$TEST_EMAIL"
+```
+
+---
+
+## STEP 3 — LOGIN FLOW
+
+**Goal:** Log the user in and confirm the session persists.
+
+```bash
+# Clear cookies and do a fresh login
+rm -f /tmp/e2e_cookies.txt
+
+LOGIN_RESPONSE=$(curl -s -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -c /tmp/e2e_cookies.txt \
+  -d "{
+    \"email\": \"$TEST_EMAIL\",
+    \"password\": \"$TEST_PASSWORD\"
+  }")
+
+echo "Login response:"
+echo $LOGIN_RESPONSE | node -e "
+const chunks = [];
+process.stdin.on('data', d => chunks.push(d));
+process.stdin.on('end', () => {
+  try {
+    const data = JSON.parse(chunks.join(''));
+    if (data.user) {
+      console.log('✅ Login successful');
+      console.log('  User ID:', data.user.id);
+      console.log('  Email:', data.user.email);
+      console.log('  Auth type:', data.user.authType || 'not specified');
+    } else if (data.error) {
+      console.log('❌ BUG: Login failed -', data.error);
+      console.log('RECOMMENDED FIX: Check auth.controller.ts login handler and verify password hashing with bcryptjs');
+    } else {
+      console.log('⚠️  Unexpected response structure:', JSON.stringify(data, null, 2));
+    }
+  } catch(e) {
+    console.log('❌ Could not parse login response:', chunks.join(''));
+  }
+});
+"
+
+# Verify session persists
+echo ""
+echo "Checking session persistence..."
+ME_RESPONSE=$(curl -s http://localhost:5000/api/auth/me \
+  -b /tmp/e2e_cookies.txt)
+
+echo $ME_RESPONSE | node -e "
+const chunks = [];
+process.stdin.on('data', d => chunks.push(d));
+process.stdin.on('end', () => {
+  try {
+    const data = JSON.parse(chunks.join(''));
+    if (data.id || data.user) {
+      console.log('✅ Session persists - /api/auth/me returned user data');
+    } else if (data.error || data.message === 'Unauthorized') {
+      console.log('❌ CRITICAL BUG: Login succeeded but session does not persist');
+      console.log('RECOMMENDED FIX: This is the OIDC vs password auth mismatch bug in replitAuth.ts');
+      console.log('  Check: isAuthenticated middleware is checking authType === password');
+      console.log('  Check: Session secret is consistent (not regenerated on restart)');
+    } else {
+      console.log('⚠️  Unexpected /api/auth/me response:', JSON.stringify(data, null, 2));
+    }
+  } catch(e) {
+    console.log('❌ Could not parse /api/auth/me response');
+  }
+});
+"
+```
+
+---
+
+## STEP 4 — DASHBOARD ACCESS CHECK
+
+**Goal:** Confirm all dashboard API endpoints return data (not 401).
+
+```bash
+node -e "
+const { execSync } = require('child_process');
+
+const endpoints = [
+  { path: '/api/auth/me', label: 'User identity' },
+  { path: '/api/players', label: 'Players list' },
+  { path: '/api/challenges', label: 'Challenges' },
+  { path: '/api/tournaments', label: 'Tournaments' },
+  { path: '/api/matches', label: 'Matches' },
+];
+
+console.log('Dashboard endpoint accessibility check:');
+console.log('==========================================');
+
+for (const endpoint of endpoints) {
+  try {
+    const result = execSync(
+      \`curl -s -o /dev/null -w \"%{http_code}\" -b /tmp/e2e_cookies.txt http://localhost:5000\${endpoint.path}\`,
+      { encoding: 'utf8' }
+    ).trim();
+    
+    if (result === '200') {
+      console.log(\`✅ \${endpoint.label} (\${endpoint.path}): HTTP \${result}\`);
+    } else if (result === '401') {
+      console.log(\`❌ BUG: \${endpoint.label} (\${endpoint.path}): HTTP \${result} - Session not recognized\`);
+      console.log(\`   RECOMMENDED FIX: Verify isAuthenticated middleware accepts password auth users\`);
+    } else if (result === '404') {
+      console.log(\`⚠️  \${endpoint.label} (\${endpoint.path}): HTTP \${result} - Route not found\`);
+      console.log(\`   NOTE: This may be expected if route name differs\`);
+    } else {
+      console.log(\`⚠️  \${endpoint.label} (\${endpoint.path}): HTTP \${result} - Unexpected status\`);
+    }
+  } catch(e) {
+    console.log(\`❌ ERROR hitting \${endpoint.path}:\`, e.message);
+  }
+}
+"
+```
+
+---
+
+## STEP 5 — STRIPE CHECKOUT FLOW
+
+**Goal:** Initiate a real Stripe checkout session and verify it generates a valid URL.
+
+```bash
+echo "Initiating Stripe checkout for Rookie membership..."
+
+CHECKOUT_RESPONSE=$(curl -s -X POST http://localhost:5000/api/player-billing/checkout \
+  -H "Content-Type: application/json" \
+  -b /tmp/e2e_cookies.txt \
+  -d '{
+    "tier": "rookie",
+    "billingPeriod": "monthly"
+  }')
+
+echo $CHECKOUT_RESPONSE | node -e "
+const chunks = [];
+process.stdin.on('data', d => chunks.push(d));
+process.stdin.on('end', () => {
+  try {
+    const data = JSON.parse(chunks.join(''));
+    
+    if (data.url && data.url.includes('checkout.stripe.com')) {
+      console.log('✅ Stripe checkout session created successfully');
+      console.log('  Checkout URL:', data.url.substring(0, 80) + '...');
+      console.log('  Session ID:', data.sessionId || data.id || 'not returned');
+      
+      // Save URL for next step
+      require('fs').writeFileSync('/tmp/checkout_url.txt', data.url);
+      console.log('  (URL saved for verification step)');
+    } else if (data.error) {
+      console.log('❌ BUG: Checkout creation failed -', data.error);
+      if (data.error.includes('No such price')) {
+        console.log('RECOMMENDED FIX: Price IDs are pointing to wrong Stripe account.');
+        console.log('  Run: node validate-stripe.js to check all price IDs');
+        console.log('  Fix: Update price IDs in financial.controller.ts to match current Stripe account');
+      } else if (data.error.includes('No such customer')) {
+        console.log('RECOMMENDED FIX: Stripe customer was not created for this user.');
+        console.log('  Check: createOrRetrieveCustomer() function in financial.controller.ts');
+      } else {
+        console.log('RECOMMENDED FIX: Check financial.controller.ts createCheckoutSession() handler');
+      }
+    } else {
+      console.log('⚠️  Unexpected checkout response:', JSON.stringify(data, null, 2));
+    }
+  } catch(e) {
+    console.log('❌ Could not parse checkout response');
+    console.log('Raw:', chunks.join('').substring(0, 500));
+  }
+});
+"
+
+# Also test operator checkout
+echo ""
+echo "Testing generic billing checkout (operator tier)..."
+OPERATOR_CHECKOUT=$(curl -s -X POST http://localhost:5000/api/billing/checkout \
+  -H "Content-Type: application/json" \
+  -b /tmp/e2e_cookies.txt \
+  -d '{
+    "priceId": "small"
+  }')
+
+echo $OPERATOR_CHECKOUT | node -e "
+const chunks = [];
+process.stdin.on('data', d => chunks.push(d));
+process.stdin.on('end', () => {
+  try {
+    const data = JSON.parse(chunks.join(''));
+    if (data.url) {
+      console.log('✅ Operator billing checkout: OK');
+    } else {
+      console.log('❌ BUG: Operator checkout failed:', data.error || JSON.stringify(data));
+      console.log('RECOMMENDED FIX: Check /api/billing/checkout handler in financial.routes.ts');
+    }
+  } catch(e) {
+    console.log('❌ Could not parse operator checkout response');
+  }
+});
+"
+```
+
+---
+
+## STEP 6 — SIMULATE WEBHOOK (POST-PAYMENT DATABASE UPDATE)
+
+**Goal:** Simulate the Stripe webhook that fires after a successful payment and verify the database updates correctly.
+
+```bash
+node -e "
+const { Pool } = require('pg');
+const crypto = require('crypto');
+const http = require('http');
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+async function simulateWebhook() {
+  // Get our test user
+  const userResult = await pool.query(
+    'SELECT id, email FROM users WHERE email LIKE \$1 LIMIT 1',
+    ['e2e_test_%@billiardsladder.test']
+  );
+  
+  if (userResult.rows.length === 0) {
+    console.log('❌ ERROR: Test user not found for webhook simulation');
+    await pool.end();
+    return;
+  }
+  
+  const user = userResult.rows[0];
+  console.log('Simulating webhook for user:', user.id, user.email);
+  
+  // Get player record
+  const playerResult = await pool.query(
+    'SELECT id, member FROM players WHERE user_id = \$1',
+    [user.id]
+  );
+  
+  const player = playerResult.rows[0];
+  console.log('Player before webhook:', player ? JSON.stringify(player) : 'NOT FOUND');
+  
+  // Build a realistic checkout.session.completed webhook event
+  const webhookEvent = {
+    id: 'evt_test_e2e_' + Date.now(),
+    type: 'checkout.session.completed',
+    created: Math.floor(Date.now() / 1000),
+    data: {
+      object: {
+        id: 'cs_test_e2e_' + Date.now(),
+        mode: 'subscription',
+        payment_status: 'paid',
+        customer: 'cus_test_e2e',
+        subscription: 'sub_test_e2e_' + Date.now(),
+        metadata: {
+          userId: user.id.toString(),
+          tier: 'rookie',
+          billingPeriod: 'monthly',
+          type: 'player_subscription'
+        }
+      }
+    }
+  };
+  
+  const payload = JSON.stringify(webhookEvent);
+  const secret = process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test';
+  const timestamp = Math.floor(Date.now() / 1000);
+  const signedPayload = timestamp + '.' + payload;
+  const signature = crypto.createHmac('sha256', secret.replace('whsec_', '')).update(signedPayload).digest('hex');
+  const stripeSignature = 't=' + timestamp + ',v1=' + signature;
+  
+  // Send to webhook endpoint
+  const options = {
+    hostname: 'localhost',
+    port: 5000,
+    path: '/api/stripe/webhook',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'stripe-signature': stripeSignature,
+      'Content-Length': Buffer.byteLength(payload)
+    }
+  };
+  
+  const req = http.request(options, async (res) => {
+    let body = '';
+    res.on('data', chunk => body += chunk);
+    res.on('end', async () => {
+      console.log('Webhook response status:', res.statusCode);
+      console.log('Webhook response body:', body);
+      
+      if (res.statusCode === 200) {
+        console.log('✅ Webhook accepted by server');
+        
+        // Wait briefly then check DB
+        await new Promise(r => setTimeout(r, 1000));
+        
+        // Check webhook_events table
+        const webhookLog = await pool.query(
+          'SELECT * FROM webhook_events WHERE stripe_event_id = \$1',
+          [webhookEvent.id]
+        );
+        
+        if (webhookLog.rows.length > 0) {
+          console.log('✅ Webhook event logged to database');
+        } else {
+          console.log('❌ BUG: Webhook event NOT logged to webhook_events table');
+          console.log('RECOMMENDED FIX: Check webhook handler is calling storage.logWebhookEvent() after processing');
+        }
+        
+        // Check if player member flag updated
+        const playerAfter = await pool.query(
+          'SELECT id, member, rookie_pass_active FROM players WHERE user_id = \$1',
+          [user.id]
+        );
+        
+        if (playerAfter.rows.length > 0) {
+          const p = playerAfter.rows[0];
+          if (p.member === true) {
+            console.log('✅ Player member flag updated to TRUE after webhook');
+          } else {
+            console.log('❌ BUG: Player member flag still FALSE after checkout.session.completed webhook');
+            console.log('RECOMMENDED FIX: Check webhook handler for checkout.session.completed event');
+            console.log('  Should call: storage.updatePlayerMembership(userId, true)');
+            console.log('  File: server/routes/webhook.routes.ts or server/controllers/webhook.controller.ts');
+          }
+          
+          if (p.rookie_pass_active === true) {
+            console.log('✅ Rookie pass flag set correctly');
+          } else {
+            console.log('⚠️  NOTE: rookie_pass_active is still false - verify this is expected for webhook simulation vs real Stripe payment');
+          }
+        }
+        
+        // Check membership_subscriptions table
+        const subResult = await pool.query(
+          'SELECT * FROM membership_subscriptions WHERE user_id = \$1 ORDER BY created_at DESC LIMIT 1',
+          [user.id]
+        );
+        
+        if (subResult.rows.length > 0) {
+          console.log('✅ Membership subscription record created');
+          console.log('  Subscription:', JSON.stringify(subResult.rows[0], null, 2));
+        } else {
+          console.log('❌ BUG: No membership_subscriptions record created after webhook');
+          console.log('RECOMMENDED FIX: Check checkout.session.completed handler creates subscription record');
+        }
+        
+      } else if (res.statusCode === 400) {
+        console.log('❌ BUG: Webhook rejected (400) - signature verification failed');
+        console.log('RECOMMENDED FIX: Signature generation may not match Stripe format exactly');
+        console.log('  For real testing use Stripe CLI: stripe trigger checkout.session.completed');
+      } else {
+        console.log('❌ BUG: Unexpected webhook response status:', res.statusCode);
+      }
+      
+      await pool.end();
+    });
+  });
+  
+  req.on('error', e => {
+    console.log('❌ ERROR sending webhook:', e.message);
+    pool.end();
+  });
+  
+  req.write(payload);
+  req.end();
+}
+
+simulateWebhook().catch(async e => {
+  console.log('❌ WEBHOOK SIMULATION ERROR:', e.message);
+  await pool.end();
+});
+"
+```
+
+---
+
+## STEP 7 — UI REFLECTION CHECK
+
+**Goal:** Verify the API responses reflect the database changes in the data the frontend would receive.
+
+```bash
+node -e "
+const http = require('http');
+const fs = require('fs');
+
+// Read cookies
+let cookieHeader = '';
+try {
+  // Parse the cookie file to extract session cookie
+  const cookieFile = fs.readFileSync('/tmp/e2e_cookies.txt', 'utf8');
+  const lines = cookieFile.split('\n').filter(l => !l.startsWith('#') && l.trim());
+  const cookies = lines.map(l => {
+    const parts = l.split('\t');
+    if (parts.length >= 7) return parts[5] + '=' + parts[6];
+    return null;
+  }).filter(Boolean);
+  cookieHeader = cookies.join('; ');
+} catch(e) {
+  console.log('⚠️  Could not read cookie file:', e.message);
+}
+
+function makeRequest(path) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'localhost',
+      port: 5000,
+      path,
+      method: 'GET',
+      headers: { 'Cookie': cookieHeader }
+    };
+    
+    const req = http.request(options, res => {
+      let body = '';
+      res.on('data', d => body += d);
+      res.on('end', () => resolve({ status: res.statusCode, body, path }));
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+async function checkUIData() {
+  console.log('Checking UI data endpoints post-payment:');
+  console.log('==========================================');
+  
+  const checks = [
+    { path: '/api/auth/me', label: 'User profile data' },
+    { path: '/api/players', label: 'Player list (membership status visible)' },
+    { path: '/api/billing/status', label: 'Billing status endpoint' },
+    { path: '/api/billing/subscription', label: 'Current subscription data' },
+  ];
+  
+  for (const check of checks) {
+    try {
+      const result = await makeRequest(check.path);
+      
+      if (result.status === 200) {
+        let data;
+        try { data = JSON.parse(result.body); } catch(e) { data = result.body; }
+        
+        console.log('\\n✅ ' + check.label + ' (' + check.path + '): HTTP 200');
+        
+        // Check for member flag in relevant responses
+        if (check.path.includes('players') && Array.isArray(data)) {
+          const testPlayer = data.find(p => p.email && p.email.includes('e2e_test'));
+          if (testPlayer) {
+            console.log('  Test player found in list');
+            console.log('  member flag:', testPlayer.member);
+            if (!testPlayer.member) {
+              console.log('  ⚠️  NOTE: member flag is false - payment webhook may not have updated DB yet');
+            }
+          }
+        }
+        
+        if (check.path.includes('subscription') || check.path.includes('billing')) {
+          console.log('  Response preview:', JSON.stringify(data).substring(0, 200));
+        }
+        
+      } else if (result.status === 401) {
+        console.log('\\n❌ BUG: ' + check.label + ' (' + check.path + '): 401 Unauthorized');
+        console.log('   RECOMMENDED FIX: Session not being passed correctly — check cookie handling');
+      } else if (result.status === 404) {
+        console.log('\\n⚠️  ' + check.label + ' (' + check.path + '): 404 — Route may not exist');
+        console.log('   NOTE: Check server/routes.ts for correct route registration');
+      } else {
+        console.log('\\n⚠️  ' + check.label + ' (' + check.path + '): HTTP ' + result.status);
+        console.log('   Response:', result.body.substring(0, 200));
+      }
+    } catch(e) {
+      console.log('\\n❌ ERROR hitting ' + check.path + ':', e.message);
+    }
+  }
+}
+
+checkUIData();
+"
+```
+
+---
+
+## STEP 8 — SECURITY SPOT CHECK
+
+**Goal:** Verify protected routes still reject unauthenticated requests.
+
+```bash
+echo "Security verification — unauthenticated requests should all return 401..."
+
+node -e "
+const { execSync } = require('child_process');
+
+const protectedRoutes = [
+  '/api/billing/checkout',
+  '/api/player-billing/checkout',
+  '/api/create-payment-intent',
+  '/api/players',
+  '/api/auth/me',
+];
+
+for (const route of protectedRoutes) {
+  const method = route.includes('checkout') || route.includes('payment') ? 'POST' : 'GET';
+  const status = execSync(
+    \`curl -s -o /dev/null -w \"%{http_code}\" -X \${method} http://localhost:5000\${route} -H 'Content-Type: application/json' -d '{}'\`,
+    { encoding: 'utf8' }
+  ).trim();
+  
+  if (status === '401') {
+    console.log('✅ ' + route + ': Correctly returns 401 without auth');
+  } else if (status === '200') {
+    console.log('❌ SECURITY BUG: ' + route + ' returns 200 WITHOUT authentication');
+    console.log('   RECOMMENDED FIX: Add isAuthenticated middleware to this route in server/routes/');
+  } else {
+    console.log('⚠️  ' + route + ': Returns HTTP ' + status + ' without auth (expected 401)');
+  }
+}
+"
+```
+
+---
+
+## STEP 9 — CLEANUP
+
+**Goal:** Remove all test data created during this run.
+
+```bash
+node -e "
+const { Pool } = require('pg');
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+async function cleanup() {
+  console.log('Cleaning up test data...');
+  
+  // Find test users
+  const users = await pool.query(
+    'SELECT id, email FROM users WHERE email LIKE \$1',
+    ['e2e_test_%@billiardsladder.test']
+  );
+  
+  for (const user of users.rows) {
+    // Delete in dependency order
+    await pool.query('DELETE FROM membership_subscriptions WHERE user_id = \$1', [user.id]);
+    await pool.query('DELETE FROM players WHERE user_id = \$1', [user.id]);
+    await pool.query('DELETE FROM sessions WHERE sess::text LIKE \$1', ['%' + user.id + '%']);
+    await pool.query('DELETE FROM users WHERE id = \$1', [user.id]);
+    console.log('✅ Cleaned up user:', user.email);
+  }
+  
+  // Clean test webhook events
+  await pool.query(\"DELETE FROM webhook_events WHERE stripe_event_id LIKE 'evt_test_e2e_%'\");
+  console.log('✅ Cleaned up test webhook events');
+  
+  await pool.end();
+  console.log('Cleanup complete.');
+}
+
+cleanup().catch(async e => {
+  console.log('❌ CLEANUP ERROR:', e.message);
+  await pool.end();
+});
+"
+```
+
+---
+
+## STEP 10 — GENERATE THE AUDIT LOG
+
+**Goal:** Compile everything into a structured Markdown log file and create a download link.
+
+Run this final step to generate the log:
+
+```bash
+node -e "
+const fs = require('fs');
+const { execSync } = require('child_process');
+
+const timestamp = new Date().toISOString();
+const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+// Capture server logs from the last run
+let serverLogs = '';
+try {
+  serverLogs = execSync('tail -100 /tmp/server.log 2>/dev/null || echo \"No server log file found\"', { encoding: 'utf8' });
+} catch(e) {
+  serverLogs = 'Could not retrieve server logs';
+}
+
+const logTemplate = \`# BilliardsLadder — E2E Audit Log
+**Generated:** \${timestamp}
+**Environment:** Replit Development
+**Tester:** Replit AI Agent (Automated)
+**App URL:** https://BilliardsLadder.replit.app
+
+---
+
+## Test Run Summary
+
+| Step | Description | Status |
+|------|-------------|--------|
+| 0 | Pre-flight checks (server, Stripe, DB) | [AGENT: FILL IN] |
+| 1 | User registration | [AGENT: FILL IN] |
+| 2 | Database check after registration | [AGENT: FILL IN] |
+| 3 | Login flow | [AGENT: FILL IN] |
+| 4 | Dashboard access | [AGENT: FILL IN] |
+| 5 | Stripe checkout session creation | [AGENT: FILL IN] |
+| 6 | Webhook simulation + DB update | [AGENT: FILL IN] |
+| 7 | UI data reflection check | [AGENT: FILL IN] |
+| 8 | Security spot check | [AGENT: FILL IN] |
+| 9 | Cleanup | [AGENT: FILL IN] |
+
+---
+
+## Bugs & Issues Found
+
+> Replace the template rows below with actual findings from your test run.
+> Add a row for each bug. Delete this section if zero bugs found.
+
+| # | Severity | Step | Description | Recommended Fix | Status |
+|---|----------|------|-------------|-----------------|--------|
+| 1 | 🔴 Critical / 🟠 High / 🟡 Medium / 🟢 Low | Step X | [Bug description] | [Fix recommendation] | Found / Fixed |
+
+---
+
+## Detailed Step Results
+
+### Step 0 — Pre-flight
+\\\`\\\`\\\`
+[AGENT: PASTE OUTPUT HERE]
+\\\`\\\`\\\`
+
+### Step 1 — Registration
+\\\`\\\`\\\`
+[AGENT: PASTE OUTPUT HERE]
+\\\`\\\`\\\`
+
+### Step 2 — Database Check Post-Registration
+\\\`\\\`\\\`
+[AGENT: PASTE OUTPUT HERE]
+\\\`\\\`\\\`
+
+### Step 3 — Login
+\\\`\\\`\\\`
+[AGENT: PASTE OUTPUT HERE]
+\\\`\\\`\\\`
+
+### Step 4 — Dashboard Access
+\\\`\\\`\\\`
+[AGENT: PASTE OUTPUT HERE]
+\\\`\\\`\\\`
+
+### Step 5 — Stripe Checkout
+\\\`\\\`\\\`
+[AGENT: PASTE OUTPUT HERE]
+\\\`\\\`\\\`
+
+### Step 6 — Webhook + Database Update
+\\\`\\\`\\\`
+[AGENT: PASTE OUTPUT HERE]
+\\\`\\\`\\\`
+
+### Step 7 — UI Reflection
+\\\`\\\`\\\`
+[AGENT: PASTE OUTPUT HERE]
+\\\`\\\`\\\`
+
+### Step 8 — Security Check
+\\\`\\\`\\\`
+[AGENT: PASTE OUTPUT HERE]
+\\\`\\\`\\\`
+
+### Step 9 — Cleanup
+\\\`\\\`\\\`
+[AGENT: PASTE OUTPUT HERE]
+\\\`\\\`\\\`
+
+---
+
+## Production Readiness Verdict
+
+| Category | Result |
+|----------|--------|
+| Authentication | [AGENT: PASS / FAIL] |
+| Payment Flow | [AGENT: PASS / FAIL] |
+| Database Persistence | [AGENT: PASS / FAIL] |
+| UI Data Reflection | [AGENT: PASS / FAIL] |
+| Security Guards | [AGENT: PASS / FAIL] |
+| **Overall** | [AGENT: READY / NOT READY] |
+
+---
+
+*Report generated by Replit AI Agent — BilliardsLadder E2E Audit*
+*Date: \${date}*
+\`;
+
+// Write the log file
+const filename = 'e2e_audit_log_' + Date.now() + '.md';
+const filepath = '/home/user/' + filename;
+fs.writeFileSync(filepath, logTemplate);
+
+console.log('');
+console.log('==========================================');
+console.log('✅ AUDIT LOG TEMPLATE GENERATED');
+console.log('==========================================');
+console.log('File:', filepath);
+console.log('');
+console.log('AGENT INSTRUCTIONS:');
+console.log('1. Fill in each [AGENT: FILL IN] placeholder with actual results');
+console.log('2. Replace the bug table template with real bugs found (or delete if none)');
+console.log('3. Fill in the production readiness verdict');
+console.log('');
+console.log('TO CREATE DOWNLOAD LINK:');
+console.log('Run this command after filling in the log:');
+console.log('');
+console.log('  node -e \"');
+console.log('  const fs = require(\\\"fs\\\");');
+console.log('  const content = fs.readFileSync(\\\"' + filepath + '\\\", \\\"base64\\\");');
+console.log('  const html = \\\`<html><body>');
+console.log('  <a download=\\\\\\\"' + filename + '\\\\\\\" href=\\\\\\\"data:text/markdown;base64,\\\${content}\\\">');
+console.log('  Click here to download ' + filename + '</a></body></html>\\\`;');
+console.log('  fs.writeFileSync(\\\"/home/user/download.html\\\", html);');
+console.log('  console.log(\\\"Download page created at /home/user/download.html\\\");');
+console.log('  \"');
+"
+
+# Create the download link HTML immediately
+node -e "
+const fs = require('fs');
+
+// Find the most recently created audit log
+const files = fs.readdirSync('/home/user').filter(f => f.startsWith('e2e_audit_log_')).sort().reverse();
+
+if (files.length > 0) {
+  const filename = files[0];
+  const filepath = '/home/user/' + filename;
+  const content = fs.readFileSync(filepath, 'base64');
+  
+  const html = '<html><head><title>Download Audit Log</title><style>body{font-family:Arial;padding:40px;text-align:center;} a{display:inline-block;padding:16px 32px;background:#1B5E20;color:white;text-decoration:none;border-radius:8px;font-size:18px;margin-top:20px;} h1{color:#1B5E20;}</style></head><body><h1>BilliardsLadder E2E Audit Log</h1><p>Your audit log is ready for download.</p><a download=\"' + filename + '\" href=\"data:text/markdown;base64,' + content + '\">⬇ Download ' + filename + '</a></body></html>';
+  
+  fs.writeFileSync('/home/user/download_audit_log.html', html);
+  console.log('');
+  console.log('==========================================');
+  console.log('✅ DOWNLOAD LINK CREATED');
+  console.log('==========================================');
+  console.log('Open this file in the Replit webview:');
+  console.log('/home/user/download_audit_log.html');
+  console.log('');
+  console.log('Or serve it directly:');
+  console.log('npx serve /home/user --port 3001');
+} else {
+  console.log('No audit log file found. Run Step 10 first.');
+}
+"
+```
+
+---
+
+## FINAL AGENT INSTRUCTIONS
+
+After completing all 10 steps:
+
+1. **Fill in the audit log** — Go back through your terminal output and paste each step's result into the corresponding section of the .md file
+
+2. **Update the bug table** — List every ❌ error you encountered with severity, description, and recommended fix
+
+3. **Update the summary table** — Mark each step as PASS or FAIL
+
+4. **Fill in the verdict** — Based on results, mark overall as READY or NOT READY
+
+5. **Regenerate the download link** with the completed log:
+```bash
+node -e "
+const fs = require('fs');
+const files = fs.readdirSync('/home/user').filter(f => f.startsWith('e2e_audit_log_')).sort().reverse();
+const filename = files[0];
+const content = fs.readFileSync('/home/user/' + filename, 'base64');
+const html = '<html><head><title>Download</title><style>body{font-family:Arial;padding:40px;text-align:center;}a{display:inline-block;padding:16px 32px;background:#1B5E20;color:white;text-decoration:none;border-radius:8px;font-size:18px;}</style></head><body><h1>Audit Log Ready</h1><a download=\"' + filename + '\" href=\"data:text/markdown;base64,' + content + '\">Download ' + filename + '</a></body></html>';
+fs.writeFileSync('/home/user/download_audit_log.html', html);
+console.log('Download page ready: /home/user/download_audit_log.html');
+"
+```
+
+6. **Open** `/home/user/download_audit_log.html` in the Replit webview to get the download link
+
+---
+
+*End of agent instructions — BilliardsLadder E2E Audit v1.0*

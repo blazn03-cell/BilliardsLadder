@@ -1,6 +1,27 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { requireOwner, requireStaffOrOwner } from "../replitAuth";
+import { requireRole } from "../middleware/auth";
 import * as adminController from "../controllers/admin.controller";
+import * as rackPointsAdminController from "../controllers/rackPointsAdmin.controller";
+
+const appealRateLimits = new Map<string, { count: number; resetAt: number }>();
+const APPEAL_RATE_WINDOW_MS = 15 * 60 * 1000;
+const APPEAL_RATE_MAX = 5;
+
+function appealRateLimit(req: Request, res: Response, next: NextFunction) {
+  const ip = req.ip || req.socket.remoteAddress || "unknown";
+  const now = Date.now();
+  const entry = appealRateLimits.get(ip);
+  if (!entry || now > entry.resetAt) {
+    appealRateLimits.set(ip, { count: 1, resetAt: now + APPEAL_RATE_WINDOW_MS });
+    return next();
+  }
+  if (entry.count >= APPEAL_RATE_MAX) {
+    return res.status(429).json({ error: "Too many appeal requests. Please try again later." });
+  }
+  entry.count++;
+  return next();
+}
 
 export function registerAdminRoutes(app: Express) {
   app.post("/api/admin/staff/invite", requireOwner, adminController.inviteStaff);
@@ -10,9 +31,38 @@ export function registerAdminRoutes(app: Express) {
   app.get("/api/admin/organization/seats", requireOwner, adminController.getOrganizationSeats);
   app.post("/api/admin/organization/seats", requireOwner, adminController.updateOrganizationSeats);
   app.get("/api/admin/subscription-details", requireOwner, adminController.getSubscriptionDetails);
+
+  // Rack Points admin tools — manual grants/revokes with a full audit trail
+  app.post(
+    "/api/admin/rack-points/adjust",
+    requireStaffOrOwner,
+    rackPointsAdminController.adjustRackPoints,
+  );
+  app.get(
+    "/api/admin/rack-points/adjustments",
+    requireStaffOrOwner,
+    rackPointsAdminController.getRecentAdjustments,
+  );
+
+  app.post("/api/admin/users/:id/ban", requireStaffOrOwner, adminController.banUser);
+  app.post("/api/admin/users/:id/suspend", requireStaffOrOwner, adminController.suspendUser);
+  app.post("/api/admin/users/:id/unban", requireStaffOrOwner, adminController.unbanUser);
+  app.get("/api/admin/bans", requireStaffOrOwner, adminController.getBannedUsers);
+  app.get("/api/admin/users", requireStaffOrOwner, adminController.getAllUsersAdmin);
+
+  // Ban Appeals (submit is public - banned users can't auth, admin review requires auth)
+  app.post("/api/appeals", appealRateLimit, adminController.submitAppeal);
+  app.get("/api/admin/appeals", requireStaffOrOwner, adminController.getAllAppeals);
+  app.get("/api/admin/appeals/user/:userId", requireStaffOrOwner, adminController.getUserAppeals);
+  app.post("/api/admin/appeals/:id/review", requireStaffOrOwner, adminController.reviewAppeal);
 }
 
 export function registerOperatorRoutes(app: Express) {
+  const requireOperatorPlus = requireRole(["OWNER", "TRUSTEE", "STAFF", "OPERATOR"]);
+
+  app.get("/api/operator/settings-complete", requireOperatorPlus, adminController.checkOperatorSettingsComplete);
+  app.get("/api/operator/settings", requireOperatorPlus, adminController.getOperatorSettings);
+  app.put("/api/operator/settings", requireOperatorPlus, adminController.updateOperatorSettings);
   app.post("/api/operator/toggle-free-month", requireStaffOrOwner, adminController.toggleFreeMonth);
   app.post("/api/operator/customization", requireStaffOrOwner, adminController.updateOperatorCustomization);
 }

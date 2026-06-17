@@ -12,6 +12,7 @@ import {
 } from "@shared/schema";
 import { createStripeDescription } from "../utils/sanitize";
 import { emailService } from "../services/email-service";
+import { touchUserActivity } from "../utils/activity";
 
 export function getMatches(storage: IStorage) {
   return async (req: Request, res: Response) => {
@@ -29,6 +30,8 @@ export function createMatch(storage: IStorage) {
     try {
       const validatedData = insertMatchSchema.parse(req.body);
       const match = await storage.createMatch(validatedData);
+      const userId = (req as any).user?.id || (req as any).user?.claims?.sub;
+      touchUserActivity(storage, userId);
       res.status(201).json(match);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
@@ -295,6 +298,9 @@ export function createMatchEntry(storage: IStorage, stripe: Stripe) {
           divisionName: division.name,
         },
       });
+
+      const userId = (req as any).user?.id || (req as any).user?.claims?.sub;
+      touchUserActivity(storage, userId);
 
       res.status(201).json({
         matchEntry,
